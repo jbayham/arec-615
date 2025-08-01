@@ -8,7 +8,8 @@ layout: default
 	
 <h1>{{ site.subtitle }}</h1>
 
-{% include image.html url="/_images/stand-and-deliver-crop.jpg" caption="Add a snappy caption to your lead image to reach your kids." width=900 align="center" %}
+{% assign img_path = site.baseurl | append: '/_images/stand-and-deliver-crop.jpg' %}
+{% include image.html url=img_path width="900" align="center" %}
 
 {{ site.description }}
 
