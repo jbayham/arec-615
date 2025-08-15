@@ -6,7 +6,7 @@ description: |
 
 baseurl: "/arec-615" # the subpath of your site, e.g. /blog/
 url: "https://jbayham.github.io" # the base hostname & protocol for your site
-syllabus: "https://github.com/svmiller/svm-r-markdown-templates/blob/master/syllabus-example/svm-rmarkdown-syllabus-example.pdf"
+syllabus: "/syllabus"
 githubdir: "jbayham/arec-615"
 
 # Author/user information

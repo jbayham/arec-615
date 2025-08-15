@@ -35,6 +35,25 @@ This page contains link to the lectures I give throughout the semester. Clicking
 <a href="https://github.com/{{ site.githubdir}}/tree/master/{{ lectures.dirname }}/{{ lectures.filename}}.Rmd"><i class="fab fa-r-project"></i></a>&nbsp;&nbsp;
 <a href="https://github.com/{{ site.githubdir}}/blob/master/{{ lectures.dirname }}/{{ lectures.filename}}.pdf"><i class="fas fa-file-pdf"></i></a>
 </strong> 
+{% if lectures.readings %}
+  <br><strong>📖 Readings:</strong>
+  <ul>
+    {% for r in lectures.readings %}
+      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ r.url }}">{{ r.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+{% if lectures.code %}
+  <strong>💻 Code:</strong>
+  <ul>
+    {% for c in lectures.code %}
+      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ c.url }}">{{ c.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
+<br>
       </li>
 {% endfor %}
 </ul>

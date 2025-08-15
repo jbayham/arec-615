@@ -1,4 +1,24 @@
-- title: "Sample .Rmd File"
-  filename: Untitled
+- title: "Week 01"
+  filename: "Lec" 
   dirname: lectures
   tldr: "This is just a sample .rmd file to illustrate the use of the lectures.yml file."
+  readings:
+    - title: "McCarl & Spreen Ch. 2–3"
+      url: "readings/mccarl_ch2-3.pdf"
+    - title: "Judd 1998, Ch. 5"
+      url: "readings/judd_ch5.pdf"
+  code:
+    - title: "simplex_example.R"
+      url: "code/simplex_example.R"
+    - title: "LP-GAMS.gms"
+      url: "code/LP-GAMS.gms"
+      
+- title: "Week 02"
+  filename: "Lec2" 
+  dirname: lectures
+  tldr: "week 2."
+  readings:
+    - title: "McCarl & Spreen Ch. 2–3"
+      url: "readings/mccarl_ch2-3.pdf"
+    - title: "Judd 1998, Ch. 5"
+      url: "readings/judd_ch5.pdf"
