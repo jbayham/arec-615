@@ -7,7 +7,7 @@ permalink: /course-materials/
 
 ## Books
 
-We will 
+
 
 - McCarl & Spreen. *Applied Mathematical Programming Using Algebraic Systems*. [Available here](https://agecoresearch.tamu.edu/mccarl/regbook/)
 - Miranda & Fackler. *Applied Computational Economics and Finance*.  
