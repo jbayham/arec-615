@@ -1,0 +1,463 @@
+---
+format: pdf
+---
+
+# **Unit 1 Lecture Notes: Introduction to Mathematical Programming**
+
+------------------------------------------------------------------------
+
+
+
+
+## **Day 1: Motivation & Modeling Foundations**
+
+### Introductions
+    - Who am I?
+    - Student introductions: What year and what field? Research interests?
+
+### Course Orientation & Motivation
+
+-   Why optimization in economics?
+
+    -   Many economic problems are decision problems under constraints where some agent is pursuing an objective and faces constraints.
+
+    -   Examples:
+
+        -   A farmer allocates land and water across crops.
+        -   A firm chooses output facing costs and regulations.
+        -   A planner designs climate policy subject to resource limits and production technologies.
+        -   A consumer maximizes utility subject to income.
+
+-   Analytical solutions not always possible → need **numerical/computational methods**. Closed form solutions do not exist.
+
+    -   We will learn to optimize both analytically and numerically.
+
+-   Mathematical programming provides a structured, computer-implementable way to model these decisions.
+
+
+------------------------------------------------------------------------
+
+### What is a Mathematical Program?
+
+-   **General Form**:
+
+    $$    \max_{x} f(x) \quad \text{s.t. } g_i(x) \in S_1, \; x \in S_2    $$
+
+-   Components:
+
+    -   **Decision variables**: choices (e.g., acres planted, production levels).
+    -   **Objective function**: what we optimize (profit, cost, utility).
+    -   **Constraints**: resource limits, technology, budgets. 
+        - These constraints can be that functions of $x$ lie within some boundary or that the individual $x$'s lie in some boundary
+
+**Example (crop mix):**
+
+-   Variables: acres in wheat ($x_1$), corn ($x_2$).
+-   Objective: maximize profit.
+-   Constraints: land, labor, water.
+
+------------------------------------------------------------------------
+
+### Uses of Mathematical Programming (McCarl §1.3)
+
+```         
+What does McCarl say are the uses of math programming?
+```
+
+1.  **Problem Insight Construction**
+
+    -   State problem carefully and really understand the moving parts
+    -   Clarify objectives, constraints, and trade-offs.
+    -   Example: Writing down a water allocation model forces us to quantify resource limits. It also forces one to write down the functional relationships between variables, which may be a simplification or approximation of a physical or natural phenomenon: hydrology, population growth functions, atmospheric models.
+
+2.  **Numerical Applications**
+
+    -   **Prescription of Solutions**
+
+        -   Goal: Recommend an **optimal plan** given data, objectives, and constraints.
+
+        -   Example: Farm crop mix — how many acres of wheat, corn, soy to maximize profit?
+
+    -   **Prediction of Consequences**
+
+        -   Goal: Forecast **outcomes under scenarios**.
+        -   Example: If fertilizer availability drops 20%, what happens to optimal output and profit?
+
+    -  **Demonstration of Sensitivity**
+
+        -   Goal: Show how solutions **shift with parameters**.
+        -   Example: How does optimal irrigation use change as water prices rise?
+
+3. **Algorithm Development**
+
+    - solution algorithms... not that important for most of us.
+
+
+
+
+------------------------------------------------------------------------
+
+### Linear Programming (LP) Structure
+
+-   **Standard LP Form**:
+
+    $$
+    \max \; \pi'x \quad \text{s.t. } Ax \le b, \; x \ge 0
+    $$
+
+-   Characteristics:
+
+    -   Linear objective.
+    -   Linear constraints.
+    -   Nonnegativity.
+
+Can also be written in matrix notation.
+
+**Economic interpretation:**
+
+-   $\pi$: profit per unit.
+-   $A$: resource use matrix.
+-   $b$: resource endowment.
+
+------------------------------------------------------------------------
+
+### Model Building Process (McCarl framework)
+
+1.  Identify **decision variables**.
+2.  State the **objective**.
+3.  Identify and formulate **constraints**.
+4.  Collect data.
+5.  Translate into computer-readable form.
+6.  Solve and interpret.
+
+--------------------
+
+### Farm LP Example
+
+A farmer has 500 acres of land available and is deciding how to allocate it between wheat and corn.
+Each acre of wheat yields a profit of $200, requires 3 hours of labor, and 4 units of fertilizer.
+Each acre of corn yields a profit of $300, requires 4 hours of labor, and 3 units of fertilizer.
+The farm has at most 1,800 hours of labor available and 2,000 units of fertilizer.
+
+Formulate this situation as a linear programming problem. Clearly define the decision variables,
+write down the objective function representing total profit, and specify the constraints that capture
+the land, labor, fertilizer, and nonnegativity restrictions.
+
+**Decision variables.**  
+Let $W$ = acres of wheat, $C$ = acres of corn.
+
+### Scalar (algebraic) form
+$$
+\begin{aligned}
+\max_{W,C}\quad 
+& 200\,W + 300\,C \\
+\text{s.t.}\quad 
+& W + C \le 500 && \text{(land)}\\
+& 3W + 4C \le 1800 && \text{(labor)}\\
+& 4W + 3C \le 2000 && \text{(fertilizer)}\\
+& W,\; C \ge 0~.
+\end{aligned}
+$$
+
+### Matrix (compact) form
+$$
+\begin{aligned}
+\max_{x\in\mathbb{R}^2_{\ge 0}}\quad 
+& c^\top x \\
+\text{s.t.}\quad 
+& A x \le b,
+\end{aligned}
+\qquad
+\text{with}\quad
+x=\begin{bmatrix}W\\[2pt]C\end{bmatrix},\;
+c=\begin{bmatrix}200\\[2pt]300\end{bmatrix},\;
+A=\begin{bmatrix}
+1 & 1\\
+3 & 4\\
+4 & 3
+\end{bmatrix},\;
+b=\begin{bmatrix}
+500\\
+1800\\
+2000
+\end{bmatrix}.
+$$
+
+
+-------------------------
+
+## Summary
+
+- Optimization = decision making under constraints.
+- Mathematical programming provides a general framework: decision variables, objective, constraints.
+- Linear programs (LPs): linear objective + linear constraints + nonnegativity.
+- Example: Farm resource allocation with land, labor, fertilizer.
+
+
+
+\newpage
+
+## **Day 2: Linear Programming in Practice**
+
+### Review
+- General form of a mathematical program.
+- Structure of a linear program:
+  - Linear objective
+  - Linear constraints
+  - Nonnegativity
+- Wheat–Corn farm allocation example in scalar and matrix notation.
+
+---
+
+
+### 7 Assumptions of Linear Programming
+
+Linear programming models rely on a set of assumptions that make them tractable but also limit their realism. McCarl & Spreen (Ch. 2.4) identify **seven important assumptions**. The first three involve the *appropriateness of the formulation*; the last four describe *mathematical properties* of the LP model.
+
+---
+
+#### 1. Objective Function Appropriateness
+- The objective function is assumed to be the **sole criterion** for evaluating solutions.  
+- This means the decision maker’s preferences can be fully represented by a single linear function (e.g., profit, cost, utility).  
+- In practice, decisions may depend on multiple objectives (profit, risk, leisure), but LP assumes one dominates.
+
+
+
+#### 2. Decision Variable Appropriateness
+- All relevant decision variables must be included, and each must be **fully controllable** by the decision maker.  
+- Omitting key variables or including variables outside the decision maker’s control invalidates the formulation.
+
+
+
+#### 3. Constraint Appropriateness
+- Constraints must **accurately and completely capture** the limits faced by the decision maker:
+  - They fully describe resource, technological, and institutional limits.  
+  - Resources within a constraint are **homogeneous** and freely substitutable among activities.  
+  - No constraint should arbitrarily rule out feasible choices.  
+  - Constraints are assumed to be **inviolate** (cannot be bent outside the model).
+
+
+
+#### 4. Proportionality
+- Contributions of activities to the objective function are **proportional** to their level.  
+- Likewise, resource use is proportional: doubling an activity doubles its input use.  
+- This rules out fixed costs, economies of scale, or price effects that depend on output level.
+
+
+
+#### 5. Additivity
+- Total contributions to the objective and resource use are the **sum of individual contributions**.  
+- No interactions among variables are allowed (e.g., no multiplicative terms).  
+
+
+#### 6. Divisibility
+- Decision variables can take on **fractional values**.  
+- This assumes continuous activities (e.g., acres of land).  
+- When variables must be integer (e.g., number of tractors), integer programming is required instead.
+
+
+#### 7. Certainty
+- All parameters (objective coefficients, resource availability, input-output coefficients) are **known with certainty**.  
+- LP is thus a deterministic model.  
+- In practice, parameters are often estimated, and uncertainty can be explored with sensitivity or stochastic programming.
+
+
+
+### Teaching Note
+These assumptions both **enable LP to be solvable** and **limit realism**. They provide a natural segue to later topics in the course:
+
+- Multi-objective programming (relax objective function assumption)  
+- Integer programming (relax divisibility)  
+- Stochastic programming (relax certainty)  
+- Nonlinear programming (relax proportionality and additivity)
+
+-----
+
+### 2. Graphical Solution Method (2 variables)
+
+**Step 1. Draw the constraints.**
+
+- Land: $W + C \le 500$
+- Labor: $3W + 4C \le 1800$
+- Fertilizer: $4W + 3C \le 2000$
+- Nonnegativity: $W, C \ge 0$
+- Plot based on endpoints. set one var 0 and devote all resources to that var.
+
+
+
+```{r}
+#| echo: false
+
+xW <- seq(0, 500, by=1)
+land_line <- 500 - xW
+
+labor_line <- (1800 - 3*xW)/4
+
+fertilizer_line <- (2000 - 4*xW)/3
+
+library(ggplot2)
+
+df <- data.frame(
+  xW = xW,
+  land = land_line,
+  labor = labor_line,
+  fert = fertilizer_line
+)
+
+vertices <- data.frame(
+  xW = c(0, 0, 0, 200, 371, 500),
+  xC = c(0, 500, 450, 300, 171, 0)
+)
+
+ggplot(df, aes(x=xW)) +
+  geom_line(aes(y=land), color="blue") +
+  geom_line(aes(y=labor), color="red") +
+  geom_line(aes(y=fert), color="green") +
+  geom_point(data=vertices, aes(x=xW, y=xC), size=3, color="black") +
+  geom_text(data=vertices, aes(x=xW, y=xC, label=paste0("(",xW,",",xC,")")),
+            hjust=-0.1, vjust=-0.5, size=3) +
+  coord_cartesian(xlim=c(0,600), ylim=c(0,600)) +
+  labs(x="Wheat",y="Corn")
+
+
+```
+
+
+**Step 2. Identify the feasible region.**
+
+- Intersection of all constraints in the $(W, C)$ plane.
+- Polygon bounded by lines.
+
+**Step 3. Plot the objective function.**
+
+- Profit = $200W + 300C$.
+- Show isoprofit lines:
+    - Suppose we plot \$6000 profit. All wheat no corn, then all corn no wheat.
+    - lines of constant profit slope $-\tfrac{200}{300}=-\tfrac{2}{3}$.
+
+**Step 4. Locate the optimum.**
+
+- Slide the isoprofit line outward until the last point of contact with the feasible region.
+- Optimum is always at a **corner point** (fundamental theorem of LP).
+
+---
+
+### Simplex Method
+
+#### Why We Need It
+- The graphical method only works for **two variables**.
+- Real problems may involve **hundreds or thousands** of variables.
+- Key geometric fact:  
+  - The feasible region of an LP is a **convex polytope**.  
+  - The **optimal solution lies at a vertex (corner point)**.  What about the problem makes this a fact?
+- The simplex method provides a **systematic way** to move from vertex to vertex until the best one is found.
+
+---
+
+#### Core Idea
+- Start at a **basic feasible solution (BFS)** — a corner point of the feasible region.
+- At each step:
+  1. Compute **reduced costs** (how much the objective improves if a variable increases from 0).
+  2. Identify an **entering variable** (the candidate to increase).
+  3. Determine which constraint binds first — this sets the **leaving variable**.
+  4. **Pivot** to a new BFS.
+- Stop when no variable can improve the objective — this is optimal.
+
+---
+
+### Intuition
+- Simplex is like **walking along the edges** of the feasible polygon.
+- At each corner, ask: *“If I move along this edge, does profit go up?”*
+- Continue until no edge yields improvement.
+- The same logic applies in higher dimensions, even though we cannot draw the polytope.
+
+---
+
+## Simplex Pivot — Tiny Worked Example
+
+We use the smallest LP that still shows the mechanics:
+
+**Problem**
+$$
+\begin{aligned}
+\max\; & z = 3x_1 + 2x_2 \\
+\text{s.t. }& x_1 + x_2 \le 4, \quad x_1 \le 2, \quad x_1,x_2 \ge 0.
+\end{aligned}
+$$
+
+**Standard form (add slacks $s_1,s_2$)**
+$$
+\begin{aligned}
+x_1 + x_2 + s_1 &= 4,\\
+x_1 + s_2 &= 2,\\
+z - 3x_1 - 2x_2 &= 0, \qquad s_1,s_2\ge 0.
+\end{aligned}
+$$
+
+---
+
+### Initial tableau and choice of entering/leaving variables
+
+**Initial BFS:** $x_1=x_2=0 \Rightarrow s_1=4, s_2=2, z=0$.
+
+**Tableau**
+$$
+\begin{array}{c|rrrr|r}
+ & x_1 & x_2 & s_1 & s_2 & \text{RHS}\\\hline
+s_1 & 1 & 1 & 1 & 0 & 4\\
+s_2 & 1 & 0 & 0 & 1 & 2\\\hline
+z   & -3 & -2 & 0 & 0 & 0\\
+\end{array}
+$$
+
+- **Entering variable:** look at the objective row; most negative reduced cost is under $x_1$ (coefficient $-3$) → **enter $x_1$**.
+- **Leaving variable (ratio test):** divide RHS by the positive entries in the $x_1$ column:  
+  Row $s_1$: $4/1=4$, Row $s_2$: $2/1=2$. Minimum is 2 → **leave $s_2$**.
+- **Pivot element:** the entry at row $s_2$, column $x_1$ (which is $1$).
+
+We will **pivot on that 1**, swapping $s_2 \leftrightarrow x_1$.
+
+
+### Row operations (make pivot column a unit vector)
+
+Goal: pivot column $(x_1)$ should become $(0,1,0)^\top$.
+
+1) **Normalize pivot row** (already 1, so no change):
+$$
+(s_2)\;:\;[\,1\;\;0\;\;0\;\;1\;|\;2\,].
+$$
+
+2) **Zero out the other entries in the $x_1$ column:**
+
+- Row $s_1$: $(s_1) \leftarrow (s_1) - 1 \cdot (s_2)$
+$$
+[\,1\;\;1\;\;1\;\;0\;|\;4\,] - [\,1\;\;0\;\;0\;\;1\;|\;2\,]
+= [\,0\;\;1\;\;1\;\;-1\;|\;2\,].
+$$
+
+- Row $z$: $(z) \leftarrow (z) + 3 \cdot (s_2)$
+$$
+[\,-3\;\;-2\;\;0\;\;0\;|\;0\,] + 3\cdot[\,1\;\;0\;\;0\;\;1\;|\;2\,]
+= [\,0\;\;-2\;\;0\;\;3\;|\;6\,].
+$$
+
+---
+
+### New tableau (after one pivot)
+
+$$
+\begin{array}{c|rrrr|r}
+ & x_1 & x_2 & s_1 & s_2 & \text{RHS}\\\hline
+s_1 & 0 & 1 & 1 & -1 & 2\\
+\color{blue}{x_1} & 1 & 0 & 0 & 1 & 2\\\hline
+z   & 0 & -2 & 0 & 3 & 6\\
+\end{array}
+$$
+
+- **Basis after pivot:** $\{\,s_1,\;x_1\,\}$.  
+- **Current solution:** $x_1=2,\; x_2=0,\; s_1=2,\; s_2=0,\; z=6$.  
+- The column labels show that **$x_1$ entered** (blue row) and **$s_2$ left**.
+
+**Next step (if continuing):** the most negative in the $z$-row is under $x_2$ (−2), so $x_2$ would enter next; the algorithm would pivot again and reach the optimum at $(x_1,x_2)=(2,2)$ with $z=10$.
+
+[](simplex_example.png)
