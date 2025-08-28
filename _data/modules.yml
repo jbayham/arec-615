@@ -12,10 +12,13 @@
   dirname: modules/linear_programming
   desc: "Course overview and introduction to optimization concepts"
   readings:
-    - title: "McCarl & Spreen Ch. 1–2"
+    - title: "McCarl & Spreen Ch. 2–3"
       url: "course-materials/"
+  code:
     - title: "LP Example"
-      url: "lectures/week_01/lp_example.html"
+      url: "lp_example.html"
+    - title: "LP_land_alloc.xlsx"
+      url: "LP_land_alloc.xlsx"
   # code:
   #   - title: "simplex_example.R"
   #     #url: "code/simplex_example.R"
