@@ -5,3 +5,5 @@ _site
 *.DS_Store
 *.Rproj
 Gemfile.lock
+#remove temp files
+~* 

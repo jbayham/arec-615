@@ -1,0 +1,42 @@
+- title: "Course overview and introduction to optimization concepts"
+  filename: "notes" 
+  dirname: modules/intro
+  desc: "These notes provides a brief overview of the course and introduces several optimization concepts"
+  readings:
+    - title: "McCarl & Spreen Ch. 1"
+      url: "course-materials/"
+
+
+- title: "Linear Programming"
+  filename: "notes" 
+  dirname: modules/linear_programming
+  desc: "Course overview and introduction to optimization concepts"
+  readings:
+    - title: "McCarl & Spreen Ch. 1–2"
+      url: "course-materials/"
+    - title: "LP Example"
+      url: "lectures/week_01/lp_example.html"
+  # code:
+  #   - title: "simplex_example.R"
+  #     #url: "code/simplex_example.R"
+  #   - title: "LP-GAMS.gms"
+  #     #url: "code/LP-GAMS.gms"
+  
+  
+  
+  
+  
+# - title: "Course overview and introduction to optimization concepts"
+#   filename: "intro/intro" 
+#   dirname: lectures
+#   desc: "Course overview and introduction to optimization concepts"
+#   readings:
+#     - title: "McCarl & Spreen Ch. 1–2"
+#       url: "course-materials/"
+#     - title: "LP Example"
+#       url: "lectures/week_01/lp_example.html"
+#   code:
+#     - title: "simplex_example.R"
+#       url: "code/simplex_example.R"
+#     - title: "LP-GAMS.gms"
+#       url: "code/LP-GAMS.gms"

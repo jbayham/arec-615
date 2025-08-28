@@ -1,0 +1,9 @@
+project:
+  type: default
+
+format:
+  pdf:
+    toc: false
+    number-sections: true
+    documentclass: article
+    geometry: margin=1in
