@@ -234,7 +234,7 @@ Linear programming models rely on a set of assumptions that make them tractable 
   - They fully describe resource, technological, and institutional limits.  
   - Resources within a constraint are **homogeneous** and freely substitutable among activities.  
   - No constraint should arbitrarily rule out feasible choices.  
-  - Constraints are assumed to be **inviolate** (cannot be bent outside the model).
+  - Constraints cannot be bent outside the model.
 
 
 
@@ -273,7 +273,7 @@ These assumptions both **enable LP to be solvable** and **limit realism**. They 
 
 -----
 
-### 2. Graphical Solution Method (2 variables)
+### Graphical Solution Method (2 variables)
 
 **Step 1. Draw the constraints.**
 
@@ -373,7 +373,7 @@ ggplot(df, aes(x=xW)) +
 
 ---
 
-## Simplex Pivot — Tiny Worked Example
+### Simplex Pivot — Tiny Worked Example
 
 We use the smallest LP that still shows the mechanics:
 
@@ -386,6 +386,9 @@ $$
 $$
 
 **Standard form (add slacks $s_1,s_2$)**
+
+
+
 $$
 \begin{aligned}
 x_1 + x_2 + s_1 &= 4,\\
@@ -393,12 +396,21 @@ x_1 + s_2 &= 2,\\
 z - 3x_1 - 2x_2 &= 0, \qquad s_1,s_2\ge 0.
 \end{aligned}
 $$
+- Slack variables are added to “$\leq$” constraints to convert them into equalities, making the LP system compatible with the simplex algorithm.
+
+- They measure the unused portion of a resource — e.g., if a land constraint is $x_1 + x_2 \leq 500$ and only 400 acres are used, the slack variable equals 100.
+
+- Slack variables always have a zero coefficient in the objective function, since they do not directly contribute to profit or cost.
+
+- Each slack variable typically appears with a coefficient of +1 in one constraint and 0 elsewhere, so they “fill the gap” between resource availability and resource use.
+
+- At optimality, a nonzero slack indicates an unused resource. Checking which slack variables are positive helps interpret whether constraints are binding or loose.
 
 ---
 
 ### Initial tableau and choice of entering/leaving variables
 
-**Initial BFS:** $x_1=x_2=0 \Rightarrow s_1=4, s_2=2, z=0$.
+**Initial Basic Feasible Solution (BFS):** $x_1=x_2=0 \Rightarrow s_1=4, s_2=2, z=0$.
 
 **Tableau**
 $$
@@ -460,4 +472,28 @@ $$
 
 **Next step (if continuing):** the most negative in the $z$-row is under $x_2$ (−2), so $x_2$ would enter next; the algorithm would pivot again and reach the optimum at $(x_1,x_2)=(2,2)$ with $z=10$.
 
-[](simplex_example.png)
+![](simplex_example.png)
+
+### Excel Solver
+
+Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlxs](LP_land_alloc.xlsx)
+
+
+### Summary
+- Linear programming problems have:
+  - **Decision variables** (choices to make),
+  - **Objective function** (profit, cost, etc.),
+  - **Constraints** (resource limits, requirements).
+- Graphical method (2 variables) shows:
+  - Feasible region = convex polygon.
+  - Optimum occurs at a **corner point**.
+- **Fundamental theorem of LP:** optimum is always at a vertex of the feasible region.
+- **Simplex method** generalizes:
+  - Moves systematically from one **basic feasible solution (BFS)** to another.
+  - Uses **entering and leaving variables** to pivot.
+  - Stops when no further improvement is possible.
+- **Slack variables** convert inequalities to equalities and measure unused resources.
+- Tableau row operations implement pivots (targeted Gaussian elimination).
+
+
+
