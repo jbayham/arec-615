@@ -1,11 +1,6 @@
 ---
-format: pdf
+title: Linear Programming
 ---
-
-# **Unit 1 Lecture Notes: Linear Programming**
-
-------------------------------------------------------------------------
-
 
 
 ### Linear Programming (LP) Structure
@@ -407,4 +402,140 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 - Tableau row operations implement pivots (targeted Gaussian elimination).
 
 
+## Sensitivity Analysis 
 
+### Review
+- LPs make 7 assumptions. What are a few?
+- How do LPs algorithms solve? What is the fundamental theorem of LP?
+
+
+### Motivation
+- LPs give an **optimal solution** and an **objective value**.
+- But: parameters (profits, resources, input requirements) are rarely known with certainty.
+- We need to know how **robust** the solution is.
+
+---
+
+### What is Sensitivity Analysis?
+- Also called **post-optimality analysis**.
+- Asks: *how much can model parameters change before the current solution changes?*
+- Focus on three categories:
+  1. RHS (resources)  
+  2. Objective coefficients (profits/costs)  
+  3. Technical coefficients (input-output relationships)
+
+---
+
+### RHS (Right-Hand Side) Ranging
+- Suppose resource availability changes:  
+  $$b_{new} = b_{old} + \Delta r$$
+- Current solution remains optimal **as long as basic variables stay ≥ 0**. 
+- Interpretation:
+  - Within the allowable range, the **shadow price** is valid.
+  - Outside the range, the optimal activity mix shifts.
+
+
+---
+
+### Objective Coefficient Ranging
+- How much can a profit coefficient change before the basis changes?
+- For **nonbasic variables**: reduced costs must remain $≥$ 0.
+- For **basic variables**: check feasibility of objective row with new coefficient.
+
+
+---
+
+### Technical Coefficient Changes
+- What if technology or input requirements change?
+- Example: wheat now needs 3.5 instead of 3 labor hours per acre.
+- Sensitivity analysis uses shadow prices to approximate the effect on objective value.
+- Interpretation: tighter labor constraints may shift which crop dominates.
+
+---
+
+### **Wheat–Corn Example (Excel Solver Report):**
+
+#### Excel top panel: Variable Cells
+
+Interpretation of columns:
+
+- **Final Value** – the optimal level of the decision variable (e.g., acres of wheat or corn).
+- **Reduced Cost** – for nonbasic variables (value = 0), how much the objective coefficient must improve before the variable would enter the solution. Zero if the variable is positive in the solution.
+- **Objective Coefficient** – the profit (or cost) per unit used in the objective function.
+- **Allowable Increase / Decrease** – the range over which the objective coefficient can change without altering the current optimal basis (solution structure).
+
+Interpretation of results
+
+- Corn: optimal solution plants 450 acres of corn. Reduced cost = 0 because it’s in the basis.
+- Wheat: optimal solution plants 0 acres of wheat. Reduced cost = -25 means if wheat’s profit increased by more than $25/acre (from 200 → 225), it would enter the solution.
+
+Ranges:
+- Wheat: profit can increase up to +25 before wheat enters.
+- Corn: profit can fall as much as 33.3 (300 → 266.7) before solution changes.
+- Interpretation: Corn dominates under current prices. Wheat only becomes attractive if its relative profit improves substantially.
+
+#### Excel bottom panel: Constraints
+
+Interpretation of columns:
+
+- **Final Value** – the amount of the resource actually used at the solution.
+- **Constraint R.H. Side** – the available amount of the resource (the right-hand side of the inequality).
+- **Shadow Price** – the marginal value of relaxing the constraint (increase in objective if RHS increases by 1 unit), valid only within the allowable range.
+- **Allowable Increase / Decrease** – the range over which the shadow price remains valid and the current basis stays optimal.
+
+Interpretation of results:
+
+- Land: only 450 acres used out of 500. Slack = 50 acres. Shadow price = 0 because land is not binding. You can increase land indefinitely without improving profit (since labor is the true bottleneck).
+- Labor: fully used (1800/1800). Shadow price = 75 means each additional labor hour would increase profit by $75, valid for up to +200 extra hours.
+- Fertilizer: only 1350 units used of 2000. Slack = 650. Shadow price = 0 because it’s not binding.
+
+
+**Economic Takeaways for Discussion**
+
+- Which resource is scarce? Labor.
+- How much should the agent be willing to pay for an additional unit of labor? 75 per labor hour. This is also the opportunity cost of labor on this operation.
+- Why does wheat drop out of the solution? Because relative to corn it uses too much labor per profit dollar.
+- Policy thought experiment: If labor availability were increased by 200 hours, profit would rise by $15,000 (200 × 75).
+
+---
+
+### Economic Interpretation
+- **Shadow prices**: marginal value of resources.
+- **Allowable ranges**: robustness of those shadow prices.
+- **Managerial use**:  
+  - Identify which resources are most binding.  
+  - Assess which profit coefficients are critical.  
+  - Evaluate new technologies or policy changes.
+
+---
+
+### Summary
+- Sensitivity analysis extends LP results beyond a single point solution.
+- Provides insight into:
+  - Resource valuation (RHS changes),
+  - Profit robustness (objective changes),
+  - Technology shifts (coefficient changes).
+
+---
+
+## Getting Started with R & RStudio
+
+### RStudio Orientation (2–3 min tour)
+- **Source Pane (top-left):** where you edit scripts (`.R`) and notebooks (`.qmd`, `.Rmd`).
+- **Console (bottom-left):** runs commands immediately (`>` prompt).
+- **Environment/History (top-right):** objects in memory (data, vectors, functions).
+- **Files/Plots/Packages/Help (bottom-right):** manage files, see plots, install packages, read docs.
+
+**Workflow tips**
+- Create a **Project** (`File → New Project…`) for the course; it pins your working directory.
+- Put scripts in a `code/` folder, data in `data/`, and outputs in `out/`.
+- Use **scripts** for anything you might need to re-run. Avoid one-off console work for assignments.
+
+
+
+
+---
+
+### Preview
+- Next class: **duality** — formalize the relationship between primal and dual problems.
+- Show how shadow prices emerge naturally from the dual formulation.
