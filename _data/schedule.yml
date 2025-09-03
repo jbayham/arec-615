@@ -4,133 +4,167 @@
   due: ""
 
 - date: '2025-08-28'
-  topic: "Solving LPs: Simplex Method"
+  topic: "Linear Programming: Simplex Method"
   reading: "McCarl Ch. 2-3"
   due: ""
 
 - date: '2025-09-10'
-  topic: "Solving LPs: Sensitivity Analysis"
+  topic: "Linear Programming: Sensitivity Analysis"
   reading: "McCarl Ch. 3"
   due: ""
 
-- date: '2025-09-02'
-  topic: 'Solving LPs: Duality'
-  reading: 'McCarl Ch. 3'
+- date: '2025-09-04'
+  topic: "Linear Programming: LP Duality"
+  reading: ''
+  due: ''
+
+- date: '2025-09-09'
+  topic: "Linear Programming: Input-Output"
+  reading: "McCarl Ch. 7"
   due: ''
   
-- date: '2025-09-04'
-  topic: ''
-  reading: ''
-  due: ''
-- date: '2025-09-09'
-  topic: ''
-  reading: ''
-  due: ''
 - date: '2025-09-11'
-  topic: ''
-  reading: ''
-  due: ''
+  topic: 'Numerical Foundations: Rootfinding and Fixed Points'
+  reading: "Miranda & Fackler Ch. 3"
+  due: "Problem Set 1"
+  
 - date: '2025-09-16'
-  topic: ''
-  reading: ''
+  topic: "Unconstrained Nonlinear Optimization"
+  reading: "McCarl Ch. 12"
   due: ''
+  
 - date: '2025-09-18'
-  topic: ''
+  topic: 'Unconstrained Nonlinear Optimization: Numerical Methods'
   reading: ''
   due: ''
+
 - date: '2025-09-23'
-  topic: ''
+  topic: "Constrained Nonlinear Optimization"
   reading: ''
   due: ''
+
 - date: '2025-09-25'
-  topic: ''
+  topic: 'Constrained Nonlinear Optimization: Numerical Methods'
   reading: ''
   due: ''
+
 - date: '2025-09-30'
-  topic: ''
+  topic: 'Regression Applications: Likelihood Estimation'
   reading: ''
   due: ''
+  
 - date: '2025-10-02'
-  topic: ''
+  topic: 'Regression Applications: Generalized Method of Moments'
   reading: ''
   due: ''
+
 - date: '2025-10-07'
-  topic: ''
+  topic: "Positive Mathematical Programming"
   reading: ''
   due: ''
+  
 - date: '2025-10-09'
-  topic: ''
+  topic: "Positive Mathematical Programming"
   reading: ''
   due: ''
+  
 - date: '2025-10-14'
-  topic: ''
+  topic: "Review"
   reading: ''
-  due: ''
+  due: "Problem Set 2"
+
 - date: '2025-10-16'
-  topic: ''
+  topic: "Exam 1"
   reading: ''
   due: ''
+  
 - date: '2025-10-21'
-  topic: ''
+  topic: 'Foundations of Dynamic Programming'
   reading: ''
   due: ''
+
 - date: '2025-10-23'
-  topic: ''
-  reading: ''
+  topic: 'Discrete-state DP with finite horizon: Backward recursion, value function
+    iteration, policy extraction'
+  reading: "Miranda & Fackler Ch. 7"
   due: ''
+  
 - date: '2025-10-28'
-  topic: ''
+  topic: 'Infinite-horizon DP: Contraction mapping, Bellman operator, policy/value
+    iteration algorithms'
   reading: ''
   due: ''
+  
 - date: '2025-10-30'
-  topic: ''
+  topic: 'Functional equations and value function properties: concavity, monotonicity,
+    boundedness'
   reading: ''
   due: ''
+  
 - date: '2025-11-04'
-  topic: ''
-  reading: ''
-  due: ''
+  topic: 'Dynamic models with continuous state: Euler equations, continuous
+    control problems'
+  reading: "Miranda & Fackler Ch. 8"
+  due: "Problem Set 3"
+  
 - date: '2025-11-06'
-  topic: ''
+  topic: 'Value and policy functions in continuous spaces: Grid-based approximation,
+    need for interpolation'
   reading: ''
   due: ''
+  
 - date: '2025-11-11'
-  topic: ''
-  reading: ''
+  topic: 'Collocation and projection methods: Chebyshev polynomials, spline interpolation'
+  reading: "Miranda & Fackler Ch. 9"
   due: ''
+  
 - date: '2025-11-13'
-  topic: ''
+  topic: "Value function iteration and policy iteration using approximation"
   reading: ''
   due: ''
+  
 - date: '2025-11-18'
-  topic: ''
+  topic: 'Stochastic DP: Expectations in Bellman equation, discretizing shocks, Markov
+    processes'
   reading: ''
   due: ''
+  
 - date: '2025-11-20'
-  topic: ''
+  topic: 'Applications: Risk-averse resource use, stochastic growth, climate adaptation'
   reading: ''
   due: ''
+
 - date: '2025-11-25'
-  topic: ''
+  topic: "Fall Break - No Class"
   reading: ''
-  due: ''
+  due: ''  
+  
 - date: '2025-11-27'
-  topic: ''
+  topic: "Fall Break - No Class"
   reading: ''
-  due: ''
+  due: ''  
+  
 - date: '2025-12-02'
-  topic: ''
+  topic: "Presentation"
   reading: ''
-  due: ''
+  due: "Problem Set 4"
+  
 - date: '2025-12-04'
-  topic: ''
+  topic: "Presentation"
   reading: ''
   due: ''
+  
 - date: '2025-12-09'
-  topic: ''
+  topic: "Review"
   reading: ''
   due: ''
+  
 - date: '2025-12-11'
-  topic: ''
+  topic: "Review"
+  reading: ''
+  due: ''
+  
+- date: ""
+  topic: "Final Exam"
   reading: ''
   due: ''

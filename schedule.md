@@ -7,10 +7,10 @@ permalink: /schedule/
 <table>
   <thead>
     <tr>
-      <th>Date</th>
-      <th>Topic</th>
-      <th>Reading</th>
-      <th>Due</th>
+      <th style="width: 10%;">Date</th>
+      <th style="width: 55%;">Topic</th>
+      <th style="width: 20%;">Reading</th>
+      <th style="width: 15%;">Due</th>
     </tr>
   </thead>
   <tbody>
