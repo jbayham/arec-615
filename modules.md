@@ -48,11 +48,11 @@ The bottom right icons link to the Github directory for the lecture (<i class="f
   </ul>
 {% endif %}
 
-{% if modules.code %}
-  <strong>💻 Code:</strong>
+{% if modules.materials %}
+  <strong>Additional Materials:</strong>
   <ul>
-    {% for c in modules.code %}
-      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ c.url }}">{{ c.title }}</a></li>
+    {% for c in modules.materials %}
+      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ modules.dirname }}/{{ c.url }}">{{ c.title }}</a></li>
     {% endfor %}
   </ul>
 {% endif %}

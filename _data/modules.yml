@@ -10,20 +10,17 @@
 - title: "Linear Programming"
   filename: "notes" 
   dirname: modules/linear_programming
-  desc: "Course overview and introduction to optimization concepts"
+  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis."
   readings:
-    - title: "McCarl & Spreen Ch. 2–3"
+    - title: "McCarl & Spreen Ch. 2–4"
       url: "course-materials/"
-  code:
+  materials:
     - title: "LP Example"
       url: "lp_example.html"
     - title: "LP_land_alloc.xlsx"
       url: "LP_land_alloc.xlsx"
-  # code:
-  #   - title: "simplex_example.R"
-  #     #url: "code/simplex_example.R"
-  #   - title: "LP-GAMS.gms"
-  #     #url: "code/LP-GAMS.gms"
+    - title: "R_lp_example.pdf"
+      url: "R_lp_example.pdf"
   
   
   
