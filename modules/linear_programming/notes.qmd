@@ -429,7 +429,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 ### RHS (Right-Hand Side) Ranging
 - Suppose resource availability changes:  
   $$b_{new} = b_{old} + \Delta r$$
-- Current solution remains optimal **as long as basic variables stay ≥ 0**. 
+- Current solution remains optimal **as long as basic variables stay $≥$ 0**. 
 - Interpretation:
   - Within the allowable range, the **shadow price** is valid.
   - Outside the range, the optimal activity mix shifts.
@@ -453,6 +453,38 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ---
 
+### The 100% Rule
+
+The 100% Rule provides a way to evaluate whether simultaneous changes in objective function coefficients or right-hand side (RHS) values will preserve the current optimal basis — that is, whether the current solution remains optimal without re-solving the problem.
+
+This rule applies separately to:
+	
+  - Changes in objective function coefficients (i.e., the $c_i$’s), and
+  - Changes in the RHS values of constraints (i.e., the $b_j$’s).
+
+---
+
+Objective Function Coefficients
+
+Suppose multiple objective coefficients change. For each decision variable $x_i$, let:
+	
+  -	$\Delta c_i$ be the change in the objective coefficient.
+  -	$AL_i, AU_i$ be the allowable decrease and increase, respectively, as reported in the sensitivity analysis.
+
+Define the proportion of the allowable range used for each change:
+
+$$
+r_i =
+\begin{cases}
+\frac{|\Delta c_i|}{AL_i} & \text{if } \Delta c_i < 0 \\
+\frac{|\Delta c_i|}{AU_i} & \text{if } \Delta c_i > 0
+\end{cases}
+$$
+
+Then, compute: $\sum_{i \in \text{changed vars}} r_i$. If: $\sum r_i \leq 1$, then the current optimal basis remains optimal, although the optimal value of the objective function will generally change. If the sum exceeds 1, the basis may change, and re-solving the problem is required.
+
+---
+
 ### **Wheat–Corn Example (Excel Solver Report):**
 
 #### Excel top panel: Variable Cells
@@ -470,6 +502,7 @@ Interpretation of results
 - Wheat: optimal solution plants 0 acres of wheat. Reduced cost = -25 means if wheat’s profit increased by more than $25/acre (from 200 → 225), it would enter the solution.
 
 Ranges:
+
 - Wheat: profit can increase up to +25 before wheat enters.
 - Corn: profit can fall as much as 33.3 (300 → 266.7) before solution changes.
 - Interpretation: Corn dominates under current prices. Wheat only becomes attractive if its relative profit improves substantially.
