@@ -46,7 +46,7 @@
 - date: '2025-09-25'
   topic: 'Constrained Nonlinear Optimization: Numerical Methods'
   reading: ''
-  due: ''
+  due: 'Project: Choose Paper'
 
 - date: '2025-09-30'
   topic: 'Regression Applications: Likelihood Estimation'
@@ -60,7 +60,7 @@
 
 - date: '2025-10-07'
   topic: "Positive Mathematical Programming"
-  reading: ''
+  reading: 'Howitt, M. (1995)'
   due: ''
   
 - date: '2025-10-09'
