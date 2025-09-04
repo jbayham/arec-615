@@ -21,6 +21,11 @@
       margin-bottom: 15px;
     }
   </style>
+  <script>
+window.MathJax = { tex: { inlineMath: [['\\(','\\)'], ['$', '$']] } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" defer></script>
+
 </head>
 <body>
   <h1>Farm Resource Allocation Problem</h1>
@@ -35,5 +40,85 @@
     write down the objective function representing total profit, and specify the constraints that capture 
     the land, labor, fertilizer, and nonnegativity restrictions.
   </p>
+
+<section id="activity-duality-wheat-shock" markdown="1">
+  <h2> Wheat price increase </h2>
+  <p>
+    The price of wheat just increased from \$200 to \$230 per acre. 
+    Without running a solver, reason out what happens using <em>duality</em> and <em>complementary slackness</em>.
+  </p>
+
+   <ol>
+    <li><strong>Write the dual with the new profit vector.</strong> For dual variables $y_1,y_2,y_3 \ge 0$ (land, labor, fertilizer), the dual is
+      $$\min\ 500y_1 + 1800y_2 + 2000y_3 \quad \text{s.t.}\quad 
+      \begin{aligned}
+      y_1 + 3y_2 + 4y_3 &\ge 230 && \text{(wheat)} \\
+      y_1 + 4y_2 + 3y_3 &\ge 300 && \text{(corn)}
+      \end{aligned}$$
+    </li>
+    <li><strong>Prediction:</strong> With $c_W$ up to $230$, do you expect wheat to enter the optimal plan? Which constraints are likely to bind?</li>
+    <li><strong>Find a cheap feasible dual</strong> $(y_1,y_2,y_3)$ that satisfies the two “$\ge$” constraints. Can you make one or both constraints bind at equality to lower the dual objective?</li>
+    <li><strong>Use complementary slackness to recover a primal corner.</strong> If your dual has $y_i&gt;0$, the corresponding primal constraint must bind. Solve the implied binding constraints to get $(x_W,x_C)$ and check feasibility.</li>
+    <li><strong>Compare values.</strong> Check that $c^\top x = b^\top y$ at your candidates (strong duality). What changed relative to the pre-shock optimum?</li>
+  </ol>
+  
+  
+  <details markdown="1">
+    <summary><strong>Hint 1 (dual inspection):</strong> Try setting one dual variable to zero to cut cost. Which $y$ has a better return?</summary>
+    If you try \(y_3=0\) (fertilizer price 0), and force both activities to be produced (so both dual inequalities bind), solve:
+    $$
+    \begin{aligned}
+    y_1 + 3y_2 &= 230 \\
+    y_1 + 4y_2 &= 300
+    \end{aligned}
+    \Rightarrow
+    y_2 = 70,\; y_1 = 20.
+    $$
+    This gives a feasible dual \((y_1,y_2,y_3)=(20,70,0)\).
+  </details>
+  
+   <details markdown="1">
+    <summary><strong>Hint 2 (why \(y_2\) dominates \(y_3\) now?):</strong></summary>
+    Per unit cost, \(y_2\) “covers” 3–4 units in the dual constraints and costs 1800. The \(y_3\) variable covers 3–4 as well but costs 2000. Setting \(y_3=0\) and using \(y_1,y_2\) tends to be cheaper.
+  </details>
+
+  <details markdown="1">
+    <summary><strong>Reveal: A low-cost dual & value</strong></summary>
+    With \((y_1,y_2,y_3)=(20,70,0)\),
+    $$
+    \text{Dual value}=500(20)+1800(70)+2000(0)=136{,}000.
+    $$
+    Both dual constraints hold at equality for the produced activities (see below), so this is a strong candidate for optimal dual prices.
+  </details>
+
+  <details markdown="1">
+    <summary><strong>Recover the primal via complementary slackness</strong></summary>
+    Because \(y_1>0\) and \(y_2>0\), the **land** and **labor** constraints must bind in the primal; \(y_3=0\) implies fertilizer can be slack. Solve:
+    $$
+    \begin{aligned}
+    x_W + x_C &= 500 \quad (\text{land binds})\\
+    3x_W + 4x_C &= 1800 \quad (\text{labor binds})
+    \end{aligned}
+    \Rightarrow
+    x_C=300,\; x_W=200.
+    $$
+    Check fertilizer: \(4(200)+3(300)=1700\le 2000\). The new profit is
+    $$
+    230\cdot 200 + 300\cdot 300 = 136{,}000,
+    $$
+    matching the dual value (strong duality).
+  </details>
+
+  <details markdown="1">
+    <summary><strong>Discussion prompts</strong></summary>
+    <ul>
+    <li>*Entry:* Why did wheat enter at 230 but not at 200? (Connect to reduced cost / allowable increase.) </li> 
+    <li> *Prices:* Why did the labor shadow price fall from 75 to 70 after wheat entered? </li>
+    <li> *Binding set:* Which constraints bind pre-shock vs post-shock, and why does that matter for shadow prices? </li>
+    <li> *Policy:* If labor availability rose by 10 hours post-shock, how much would profit increase, and which constraint binds next? </li>
+    </ul>
+  </details>
+
+</section>
 </body>
 </html>

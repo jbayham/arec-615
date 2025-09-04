@@ -554,21 +554,192 @@ Interpretation of results:
 ## Getting Started with R & RStudio
 
 ### RStudio Orientation (2–3 min tour)
+
 - **Source Pane (top-left):** where you edit scripts (`.R`) and notebooks (`.qmd`, `.Rmd`).
 - **Console (bottom-left):** runs commands immediately (`>` prompt).
 - **Environment/History (top-right):** objects in memory (data, vectors, functions).
 - **Files/Plots/Packages/Help (bottom-right):** manage files, see plots, install packages, read docs.
 
 **Workflow tips**
+
 - Create a **Project** (`File → New Project…`) for the course; it pins your working directory.
 - Put scripts in a `code/` folder, data in `data/`, and outputs in `out/`.
 - Use **scripts** for anything you might need to re-run. Avoid one-off console work for assignments.
-
-
-
 
 ---
 
 ### Preview
 - Next class: **duality** — formalize the relationship between primal and dual problems.
 - Show how shadow prices emerge naturally from the dual formulation.
+
+
+--------------------------
+
+# Duality in Linear Programming
+
+## Review
+
+- Sensitivity analysis evaluates robustness of LP solutions to parameter changes.
+- Shadow prices measure the marginal value of resources.
+- Ranging analysis indicate how much parameters can change before the solution structure shifts.
+- The 100% Rule helps assess simultaneous changes in parameters.
+- Excel Solver provides a convenient way to solve LPs and get sensitivity reports.
+
+## Motivation for Duality
+
+- Duality provides a **theoretical foundation** for shadow prices.
+- Every LP (the **primal**) has a corresponding **dual** LP.
+- Solutions to the dual give the **shadow prices** of the primal constraints.
+- Duality reveals deep connections between resources and values.
+- Duality also aids in sensitivity analysis and economic interpretation.
+
+---
+
+## Canonical primal–dual pair
+
+**Primal (max form, $≤$ constraints):**
+$$
+\begin{aligned}
+\max_{x \ge 0}\quad & c^\top x \\
+\text{s.t.}\quad & Ax \le b
+\end{aligned}
+$$
+
+**Dual (min form, $≥$ constraints):**
+$$
+\begin{aligned}
+\min_{y \ge 0}\quad & b^\top y \\
+\text{s.t.}\quad & A^\top y \ge c
+\end{aligned}
+$$
+
+**Rules of transformation (quick guide):**
+
+- One **dual variable** per **primal constraint**; one **dual constraint** per **primal variable**.
+- Primal “$a_i^T x \leq b_i$” with $x \ge 0$ → dual variable $y_i \ge 0$. Relaxing the RHS makes the feasible set bigger, so the dual variable (shadow price) must be nonnegative.
+- Primal “$a_i^T x \geq b_i$” → dual variable $y_i \le 0$. Tightening the RHS makes the feasible set bigger (since it’s “$≥$”), so the associated price flips sign.
+- Primal “$a_i^T x = b_i$” → dual variable $y$ **free** (unrestricted in sign). An equality can cut the feasible set in either direction, so the shadow price can be positive or negative.
+- If a primal variable is **free**, the corresponding dual constraint is an **equality**; if primal variable has sign $x_j \le 0$, flip inequality accordingly.
+
+---
+
+## Wheat–Corn primal and its dual
+
+**Primal (wheat–corn):**
+
+$$
+\begin{aligned}
+\max\ & 200\,x_W + 300\,x_C\\
+\text{s.t. } 
+& x_W + x_C \le 500 && \text{(land)}\\
+& 3x_W + 4x_C \le 1800 && \text{(labor)}\\
+& 4x_W + 3x_C \le 2000 && \text{(fertilizer)}\\
+& x_W,\ x_C \ge 0~.
+\end{aligned}
+$$
+
+Introduce dual variables $y_1,y_2,y_3 \ge 0$ for (land, labor, fertilizer).  
+
+**Dual:**
+
+$$
+\begin{aligned}
+\min\ & 500\,y_1 + 1800\,y_2 + 2000\,y_3\\
+\text{s.t. } 
+& y_1 + 3y_2 + 4y_3 \ge 200 && \text{(wheat)}\\
+& y_1 + 4y_2 + 3y_3 \ge 300 && \text{(corn)}\\
+& y_1, y_2, y_3 \ge 0~.
+\end{aligned}
+$$
+
+**Economic meanings:**  
+
+$y_1$= land rent (per acre), $y_2$= wage (per labor hour), $y_3$= fertilizer value (per unit).
+
+### Solve directly by intuition
+
+A low-cost feasible choice is to try just one variable:
+
+- Set $y_1=0,\, y_3=0$. The corn constraint gives $4y_2 \ge 300 \Rightarrow y_2 \ge 75$.
+- Check wheat: $3y_2 \ge 200 \Rightarrow y_2 \ge 66.67$. So $y_2=75$ satisfies both.
+- Dual objective: $500(0) + 1800(75) + 2000(0) = 135{,}000$.
+- Could adding anything to $y_1$ or $y_3$ lower the cost? 
+- No, because both constraints are already satisfied and any increase would only raise the objective.
+- Feasibility check:
+  - Wheat: $0 + 3(75) + 4(0) = 225 \ge 200$ 
+  - Corn: $0 + 4(75) + 3(0) = 300 \ge 300$ 
+
+**Let's verify in excel**
+
+---
+
+## Duality theorems 
+
+### Weak duality 
+
+For any feasible solution $x$ and $y$, 
+
+$$c^\top x \le b^\top y$$
+
+- From the primal constraints: $Ax \le b$
+- From the dual constraints: $A^\top y \ge c$
+- Premultiply the dual constraint by $x^\top \ge 0$: $x^\top A^\top y \ge x^\top c$ and note that $x^\top A^\top y = (Ax)^\top y$ 
+- And post multiply the primal constraint by $y$: $(Ax)^\top y \le b^\top y$.
+- Then putting the two together gives $c^\top x \leq x^\top A^\top y = (Ax)^\top y \leq b^\top y$.
+
+Wheat-corn example:
+
+- Primal feasible: $x_W=0, x_C=450 \Rightarrow Z=135{,}000$.
+- Dual feasible: $y_1=0, y_2=75, y_3=0 \Rightarrow W=500(0)+1800(75)+2000(0)=135{,}000$.
+- Weak duality holds: $135{,}000 \le 135{,}000$.
+
+
+### Strong duality 
+
+If the primal and dual have optimal solutions, so does the other, and $c^{\top} x^* = b^{\top} y^*$.
+
+- At the optimum, the primal objective (profit) equals the dual objective (resource value).
+- The upper bound becomes tight: best possible activity plan = best possible valuation of resources.
+- Market analogy:
+  - Primal: maximize profit given resource costs.
+  - Dual: minimize resource costs to support given profits.
+  - At equilibrium, profit = cost of resources.
+  
+- Wheat–corn example:  
+  - Primal optimum: $Z^* = 135{,}000$.
+  - Dual optimum: $500(0) + 1800(75) + 2000(0) = 135{,}000$
+  
+
+
+### Complementary slackness conditions
+
+The **complementary slackness conditions** link the primal and dual solutions. They provide the bridge between activity levels and resource prices:
+
+- For each **primal constraint** $a_i^\top x \le b_i$ with dual variable $y_i \ge 0$:
+  $$
+  y_i \,(b_i - a_i^\top x) = 0
+  $$
+  This means that either:
+  - The constraint is **binding** ($a_i^\top x = b_i$) and then $y_i \ge 0$,  
+  - Or the constraint is **slack** ($a_i^\top x < b_i$) and then $y_i = 0$.
+
+- For each **primal variable** $x_j \ge 0$ with dual inequality $a_j^\top y \ge c_j$:
+  $$
+  x_j \,\big(a_j^\top y - c_j\big) = 0
+  $$
+  This means that either:
+  - The activity is **produced** ($x_j > 0$) and then its dual inequality binds exactly ($a_j^\top y = c_j$),  
+  - Or the activity is **not produced** ($x_j = 0$) and then the dual inequality can be slack ($a_j^\top y > c_j$).
+
+
+
+# Summary
+
+- Every LP has a corresponding dual LP.
+- Dual variables represent shadow prices of primal constraints.
+- Weak duality: primal objective $≤$ dual objective for any feasible solutions.
+- Strong duality: at optimality, primal objective = dual objective.
+- Complementary slackness links primal and dual solutions, indicating which constraints and variables are binding.
+- Duality provides a theoretical foundation for sensitivity analysis and economic interpretation of LP results.
+
+
