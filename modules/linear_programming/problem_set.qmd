@@ -1,0 +1,124 @@
+---
+title: "AREC 615 Problem Set: Linear Programming"
+#format: pdf
+---
+
+
+This problem set covers the material from the introduction to linear programming through the simplex method, duality, and sensitivity analysis. Questions vary in difficulty and format. **Show your work and justify your answers.** Where appropriate, use R or Excel to solve the problems and include outputs as appendices.
+
+---
+
+# LP-by-hand and Interpretation (On Paper)
+
+A small farm grows **heirloom tomatoes** and **bell peppers**.
+
+- Each acre of tomatoes yields a **profit of \$60**, while each acre of peppers yields **\$40**.
+- The farm has **8 acres** of suitable land available in total.
+- Additionally, tomatoes require **twice as much irrigation** as peppers. Due to water availability, the total irrigation capacity is equivalent to **10 acre-units** of pepper irrigation.
+
+Let:
+
+- $x_1$ be the number of acres planted with tomatoes
+- $x_2$ be the number of acres planted with peppers
+
+Answer the following:
+
+a. Formulate the linear program to maximize profit subject to the land and irrigation constraints. Define the decision variables, objective function, and constraints clearly.
+b. Graph and indicate the feasible region and plot one of the isoprofit lines. Identify the optimal solution graphically.
+c. Determine the optimal solution algebraically. What is the optimal objective value?
+d. Identify the **binding** constraints at the optimum. 
+e. Write out the tableau for the initial simplex method iteration.
+f. Perform one pivot operation (select entering and leaving variables). Show the updated tableau. Continue iterating until the optimal solution is reached. Identify the optimal basis and solution values.
+g. Compute the **shadow prices** (dual values) associated with the constraints. Interpret the shadow prices in economic terms.
+
+
+# Distribution Optimization (Use Computer)
+
+You are managing logistics for a food distribution network. There are **2 warehouses** (W1 and W2) and **5 cities** (C1 to C5) that need weekly shipments of food. Each warehouse can ship to each city — a total of **10 possible routes**.
+
+The **shipping cost per unit** from each warehouse to each city is shown below:
+
+|       | C1 | C2 | C3 | C4 | C5 |
+|-------|----|----|----|----|----|
+| W1    | 4  | 6  | 8  | 7  | 5  |
+| W2    | 5  | 4  | 7  | 6  | 6  |
+
+Let $x_{ij}$ be the number of units shipped from warehouse $i$ to city $j$.
+
+Each **city has a minimum demand** that must be met (in units):
+
+- C1: 80, C2: 70, C3: 60, C4: 90, C5: 50
+
+Each **warehouse has a maximum capacity** (in units):
+
+- W1: 200, W2: 180
+
+Due to storage and delivery constraints, the following **additional restrictions** apply:
+
+1. No more than 40 units can be shipped from W1 to C3.
+2. At least 20 units must be shipped from W2 to C5.
+3. W1 must supply at least 50 units to C1 and C2 combined.
+4. W2 must supply at least 100 units total.
+5. Total shipment to C4 must not exceed 100 units.
+6. No more than 60 units from W2 to C2.
+7. Shipments from W2 to C1 must be at least 10.
+8. W1 must ship at least 25 units to C5.
+9. Shipments from W1 to C2 must not exceed 30.
+10. Total shipments from W1 to all cities must be at least 150.
+11. Total shipments to C3 must be at least 70.
+12. No more than 100 units may be shipped to C5 in total.
+13. Combined shipments from both warehouses to C1 must not exceed 90.
+14. W2 must ship at least 50 units to C4 and C5 combined.
+15. W1 cannot ship to C1 and C4 simultaneously (use a big-M binary constraint).
+16. Either W1 or W2 ships to C3, not both (use binary variables).
+17. At most one of the warehouses can send more than 60 units to C2.
+18. At least one of the warehouses must send at least 30 units to C5.
+19. If W1 ships more than 50 units to C2, W2 must ship less than 40 to C4.
+20. Total cost must not exceed \$2,300.
+
+---
+
+a. **Formulate** this as a linear program:
+
+  - Define all **decision variables**.
+  - Write out the **objective function**.
+  - Specify all **20 constraints** clearly.
+
+b. **Solve** the model using R (e.g., `lpSolve`, `ompr`) or Excel Solver.
+
+  - Report the optimal shipment plan and total cost.
+  - Provide your code or spreadsheet setup in an appendix.
+
+c. **Interpret** the dual values (shadow prices) for the city demand constraints.
+
+  - What does the shadow price tell you for C4 and C5?
+
+d. Suppose the total budget is reduced to \$2,200.
+
+  - Re-solve and explain how the solution changes.
+  - What happens to the binding constraints?
+
+---
+
+# Dual Formulation and Interpretation
+
+Consider the following primal LP:
+
+$$
+\begin{aligned}
+\max \quad & 100x_1 + 150x_2 \\
+\text{s.t.} \quad 
+& x_1 + 2x_2 \le 10 \\
+& 3x_1 + x_2 \le 12 \\
+& x_1, x_2 \ge 0
+\end{aligned}
+$$
+
+a. Formulate the **dual** problem.
+
+b. Solve the **dual** using R or Excel. What are the optimal dual variable values?
+
+c. Verify **strong duality**: does the optimal value of the dual match the primal?
+
+d. Check **complementary slackness**. Which constraints are binding, and how does this relate to the dual?
+

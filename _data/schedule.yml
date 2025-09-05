@@ -1,170 +1,132 @@
 - date: '2025-08-26'
-  topic: "Course Introduction + Linear Programming"
-  reading: "McCarl Ch. 1"
-  due: ""
-
+  topic: Intro & Start Linear Programming
+  reading: M&S 1
+  due: ''
 - date: '2025-08-28'
-  topic: "Linear Programming: Simplex Method"
-  reading: "McCarl Ch. 2-3"
-  due: ""
-
-- date: '2025-09-10'
-  topic: "Linear Programming: Sensitivity Analysis"
-  reading: "McCarl Ch. 3"
-  due: ""
-
+  topic: LP Solution - Simplex Method
+  reading: M&S 2-3
+  due: ''
+- date: '2025-09-02'
+  topic: LP Sensitivity
+  reading: M&S 3
+  due: ''
 - date: '2025-09-04'
-  topic: "Linear Programming: LP Duality"
+  topic: LP Duality
   reading: ''
   due: ''
-
 - date: '2025-09-09'
-  topic: "Linear Programming: Input-Output"
-  reading: "McCarl Ch. 7"
+  topic: Input-Output Modeling
+  reading: M&S 7
   due: ''
-  
 - date: '2025-09-11'
-  topic: 'Numerical Foundations: Rootfinding and Fixed Points'
-  reading: "Miranda & Fackler Ch. 3"
-  due: "Problem Set 1"
-  
+  topic: Numerical Foundations
+  reading: M&F 3
+  due: Problem Set 1
 - date: '2025-09-16'
-  topic: "Unconstrained Nonlinear Optimization"
-  reading: "McCarl Ch. 12"
+  topic: Unconstrained nonlinear optimization
+  reading: M&S 12
   due: ''
-  
 - date: '2025-09-18'
-  topic: 'Unconstrained Nonlinear Optimization: Numerical Methods'
+  topic: 'Unconstrained nonlinear optimization: numerical methods'
   reading: ''
   due: ''
-
 - date: '2025-09-23'
-  topic: "Constrained Nonlinear Optimization"
+  topic: No Class
   reading: ''
   due: ''
-
 - date: '2025-09-25'
-  topic: 'Constrained Nonlinear Optimization: Numerical Methods'
+  topic: Constrained nonlinear optimization
   reading: ''
-  due: 'Project: Choose Paper'
-
+  due: Project Paper
 - date: '2025-09-30'
-  topic: 'Regression Applications: Likelihood Estimation'
+  topic: 'Constrained nonlinear optimization: numerical methods'
   reading: ''
   due: ''
-  
 - date: '2025-10-02'
-  topic: 'Regression Applications: Generalized Method of Moments'
+  topic: 'Regression applications: likelihood estimation'
   reading: ''
   due: ''
-
 - date: '2025-10-07'
-  topic: "Positive Mathematical Programming"
-  reading: 'Howitt, M. (1995)'
+  topic: 'Regression applications: generalized method of moments'
+  reading: ''
   due: ''
-  
 - date: '2025-10-09'
-  topic: "Positive Mathematical Programming"
+  topic: Review
   reading: ''
-  due: ''
-  
+  due: Problem Set 2
 - date: '2025-10-14'
-  topic: "Review"
+  topic: Exam 1
   reading: ''
-  due: "Problem Set 2"
-
+  due: ''
 - date: '2025-10-16'
-  topic: "Exam 1"
+  topic: Foundations of dynamic programming
   reading: ''
   due: ''
-  
 - date: '2025-10-21'
-  topic: 'Foundations of Dynamic Programming'
-  reading: ''
+  topic: Discrete-state DP with finite horizon
+  reading: M&F 7
   due: ''
-
 - date: '2025-10-23'
-  topic: 'Discrete-state DP with finite horizon: Backward recursion, value function
-    iteration, policy extraction'
-  reading: "Miranda & Fackler Ch. 7"
+  topic: Infinite-horizon DP
+  reading: ''
   due: ''
-  
 - date: '2025-10-28'
-  topic: 'Infinite-horizon DP: Contraction mapping, Bellman operator, policy/value
-    iteration algorithms'
+  topic: Functional equations and value function properties
   reading: ''
   due: ''
-  
 - date: '2025-10-30'
-  topic: 'Functional equations and value function properties: concavity, monotonicity,
-    boundedness'
-  reading: ''
-  due: ''
-  
+  topic: Dynamic models with continuous state
+  reading: M&F 8
+  due: Problem Set 3
 - date: '2025-11-04'
-  topic: 'Dynamic models with continuous state: Euler equations, continuous
-    control problems'
-  reading: "Miranda & Fackler Ch. 8"
-  due: "Problem Set 3"
-  
+  topic: Value and policy functions in continuous spaces
+  reading: ''
+  due: ''
 - date: '2025-11-06'
-  topic: 'Value and policy functions in continuous spaces: Grid-based approximation,
-    need for interpolation'
-  reading: ''
+  topic: Collocation and projection methods
+  reading: M&F 9
   due: ''
-  
 - date: '2025-11-11'
-  topic: 'Collocation and projection methods: Chebyshev polynomials, spline interpolation'
-  reading: "Miranda & Fackler Ch. 9"
+  topic: ''
+  reading: ''
   due: ''
-  
 - date: '2025-11-13'
-  topic: "Value function iteration and policy iteration using approximation"
+  topic: ''
   reading: ''
-  due: ''
-  
+  due: Problem Set 4
 - date: '2025-11-18'
-  topic: 'Stochastic DP: Expectations in Bellman equation, discretizing shocks, Markov
-    processes'
+  topic: ''
   reading: ''
   due: ''
-  
 - date: '2025-11-20'
-  topic: 'Applications: Risk-averse resource use, stochastic growth, climate adaptation'
+  topic: ''
   reading: ''
   due: ''
-
 - date: '2025-11-25'
-  topic: "Fall Break - No Class"
+  topic: No Class
   reading: ''
-  due: ''  
-  
+  due: ''
 - date: '2025-11-27'
-  topic: "Fall Break - No Class"
+  topic: No Class
   reading: ''
-  due: ''  
-  
+  due: ''
 - date: '2025-12-02'
-  topic: "Presentation"
+  topic: Presentation
   reading: ''
-  due: "Problem Set 4"
-  
+  due: ''
 - date: '2025-12-04'
-  topic: "Presentation"
+  topic: Presentation
   reading: ''
   due: ''
-  
 - date: '2025-12-09'
-  topic: "Review"
+  topic: Review
   reading: ''
   due: ''
-  
 - date: '2025-12-11'
-  topic: "Review"
+  topic: Review
   reading: ''
   due: ''
-  
-- date: ""
-  topic: "Final Exam"
+- date: '2025-12-17'
+  topic: Final Exam (Wednesday 6:20 - 8:20 PM)
   reading: ''
   due: ''

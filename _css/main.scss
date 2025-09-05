@@ -25,6 +25,15 @@ $grey-color:       #828282;
 $grey-color-light: lighten($grey-color, 40%);
 $grey-color-dark:  darken($grey-color, 25%);
 
+// Colors for syntax highlighting in tables
+.exam-row {
+  background-color: #d0e7ff; /* light blue */
+}
+
+.noclass-row {
+  background-color: #fff3cd; /* light yellow */
+}
+
 
 // Width of the content area
 $content-width:    950px;

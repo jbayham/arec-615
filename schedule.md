@@ -15,7 +15,14 @@ permalink: /schedule/
   </thead>
   <tbody>
     {% for item in site.data.schedule %}
-    <tr>
+    {% assign topic_lower = item.topic | downcase %}
+    {% if topic_lower contains "exam" %}
+      <tr class="exam-row">
+    {% elsif topic_lower contains "no class" %}
+      <tr class="noclass-row">
+    {% else %}
+      <tr>
+    {% endif %}
       <td>{{ item.date | date: "%b %d" }}</td>
       <td>{{ item.topic }}</td>
       <td>{{ item.reading }}</td>
