@@ -34,7 +34,7 @@ g. Compute the **shadow prices** (dual values) associated with the constraints. 
 
 # Distribution Optimization (Use Computer)
 
-You are managing logistics for a food distribution network. There are **2 warehouses** (W1 and W2) and **5 cities** (C1 to C5) that need weekly shipments of food. Each warehouse can ship to each city — a total of **10 possible routes**.
+You are managing logistics for a food distribution network. There are **2 warehouses** (W1 and W2) and **5 cities** (C1 to C5) that need weekly shipments of food. Each warehouse can ship to each city — a total of **10 possible routes**. You want to meet the cities' demands at minimum cost while respecting warehouse capacities and various restrictions.
 
 The **shipping cost per unit** from each warehouse to each city is shown below:
 
@@ -53,28 +53,71 @@ Each **warehouse has a maximum capacity** (in units):
 
 - W1: 200, W2: 180
 
-Due to storage and delivery constraints, the following **additional restrictions** apply:
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(igraph)
+library(ggraph)
+library(ggplot2)
 
-1. No more than 40 units can be shipped from W1 to C3.
-2. At least 20 units must be shipped from W2 to C5.
-3. W1 must supply at least 50 units to C1 and C2 combined.
-4. W2 must supply at least 100 units total.
-5. Total shipment to C4 must not exceed 100 units.
-6. No more than 60 units from W2 to C2.
-7. Shipments from W2 to C1 must be at least 10.
-8. W1 must ship at least 25 units to C5.
-9. Shipments from W1 to C2 must not exceed 30.
-10. Total shipments from W1 to all cities must be at least 150.
-11. Total shipments to C3 must be at least 70.
-12. No more than 100 units may be shipped to C5 in total.
-13. Combined shipments from both warehouses to C1 must not exceed 90.
-14. W2 must ship at least 50 units to C4 and C5 combined.
-15. W1 cannot ship to C1 and C4 simultaneously (use a big-M binary constraint).
-16. Either W1 or W2 ships to C3, not both (use binary variables).
-17. At most one of the warehouses can send more than 60 units to C2.
-18. At least one of the warehouses must send at least 30 units to C5.
-19. If W1 ships more than 50 units to C2, W2 must ship less than 40 to C4.
-20. Total cost must not exceed \$2,300.
+# Define nodes
+warehouses <- c("W1", "W2")
+cities <- c("C1", "C2", "C3", "C4", "C5")
+nodes <- data.frame(name = c(warehouses, cities),
+                    type = c(rep("Warehouse", 2), rep("City", 5)))
+
+# Define edges with costs
+edges <- data.frame(
+  from = rep(warehouses, each = 5),
+  to = rep(cities, times = 2),
+  cost = c(6, 7, 9, 8, 6, 7, 6, 9, 7, 7)
+)
+
+# Create igraph object
+g <- graph_from_data_frame(edges, vertices = nodes, directed = TRUE)
+
+# Create manual layout: W1 and W2 centered, cities on cost-proportional ring
+angle <- seq(0, 2 * pi, length.out = length(cities) + 1)[-6]
+
+layout_df <- data.frame(name = V(g)$name, x = 0, y = 0)
+
+# Warehouses vertically centered
+layout_df$x[layout_df$name == "W1"] <- 0
+layout_df$y[layout_df$name == "W1"] <- 1
+layout_df$x[layout_df$name == "W2"] <- 0
+layout_df$y[layout_df$name == "W2"] <- -1
+
+# Cities on circle, radius proportional to average cost
+for (i in seq_along(cities)) {
+  city <- cities[i]
+  avg_cost <- mean(edges$cost[edges$to == city])
+  radius <- avg_cost * 0.4
+  layout_df$x[layout_df$name == city] <- radius * cos(angle[i])
+  layout_df$y[layout_df$name == city] <- radius * sin(angle[i])
+}
+
+# Use create_layout() with manual layout
+g_layout <- create_layout(g, layout = "manual", x = layout_df$x, y = layout_df$y)
+g_layout <- create_layout(g, layout = "igraph",algorithm = "nicely")
+
+# Plot
+ggraph(g_layout) +
+  geom_edge_link(aes(label = paste0("$", cost)),
+                 angle_calc = 'along',
+                 label_dodge = unit(2.5, 'mm'),
+                 arrow = arrow(length = unit(4, 'mm')),
+                 end_cap = circle(4, 'mm'),
+                 start_cap = circle(4, 'mm'),
+                 label_size = 3,
+                 color = "gray40") +
+  geom_node_point(aes(color = type), size = 8) +
+  geom_node_text(aes(label = name), color = "black", size = 4) +
+  scale_color_manual(values = c("Warehouse" = "skyblue", "City" = "salmon")) +
+  theme_void() +
+  ggtitle("Transportation Network") +
+  theme(legend.position = "none")
+```
 
 ---
 
@@ -82,21 +125,27 @@ a. **Formulate** this as a linear program:
 
   - Define all **decision variables**.
   - Write out the **objective function**.
-  - Specify all **20 constraints** clearly.
+  - Specify all **7 constraints** clearly. Don't forget the nonnegativity constraints.
 
 b. **Solve** the model using R (e.g., `lpSolve`, `ompr`) or Excel Solver.
 
   - Report the optimal shipment plan and total cost.
+  - Conduct a sensitivity analysis including ranging analysis on the objective coefficients and  constraints.
+  - Insert a table summarizing the sensitivity analysis results.
   - Provide your code or spreadsheet setup in an appendix.
 
 c. **Interpret** the dual values (shadow prices) for the city demand constraints.
 
-  - What does the shadow price tell you for C4 and C5?
+  - Generate a table showing the shadow prices for all constraints.
+  - What do the shadow price tell you? Imagine explaining to a non-technical manager.
+  - If you could increase the capacity of one warehouse by 10 units, which one would you choose and why?
 
-d. Suppose the total budget is reduced to \$2,200.
+d. Suppose you could build a new warehouse with a capacity of 100 units at a fixed cost.
 
+  - Which cities should it serve to minimize total costs?
+  - Modify the LP to include this new warehouse and solve. You can make up new shipping costs.
   - Re-solve and explain how the solution changes.
-  - What happens to the binding constraints?
+  - Can you use your results to provide guidance on the amount the company should be willing to pay for the new warehouse?
 
 ---
 

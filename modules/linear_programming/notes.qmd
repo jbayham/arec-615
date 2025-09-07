@@ -743,3 +743,401 @@ The **complementary slackness conditions** link the primal and dual solutions. T
 - Duality provides a theoretical foundation for sensitivity analysis and economic interpretation of LP results.
 
 
+# Input–Output Modeling
+
+## Motivation
+
+- Economies are networks of interdependent sectors.  
+- The output of one sector (e.g., steel) may be an input for another (e.g., car manufacturing).  
+- Understanding these linkages helps us analyze how a change in demand or policy ripples through the entire economy.  
+- Input–output (I–O) analysis was developed by **Wassily Leontief** (Nobel Prize, 1973).  
+
+---
+
+## Basic Input–Output Structure
+
+- Consider an economy with $n$ sectors.  
+- **Notation:**
+  - $x_j$: total output of sector $j$.  
+  - $a_{ij}$: units of good $i$ required as an intermediate input to produce one unit of good $j$.  
+  - $f_j$: final demand for good $j$ (consumers, government, exports).  
+
+- **Balance equation (sector $j$):**
+  $$
+  x_j = \sum_i a_{ij} x_j + f_j
+  $$
+
+- In vector notation:
+  $$
+  x = A x + f
+  $$
+
+where $A$ is the matrix of technical coefficients.
+
+::: {.callout-note title="Productivity Condition in Input–Output Models"}
+For the Leontief model
+$$
+x = A x + f \quad \Rightarrow \quad (I - A)x = f,
+$$
+the matrix $(I - A)$ must be invertible for a unique solution $x$ to exist.  
+This requires that the **technical coefficient matrix $A$ be productive**.
+
+- For each sector $j$, the column sum
+  $$
+  \sum_i a_{ij} < 1
+  $$
+  means that producing one unit of output $j$ uses **less than one unit of total inputs**.  
+
+- Leaves some output available for **final demand** ($f_j > 0$).
+- If $\sum_i a_{ij} = 1$, the industry just produces to sell to other industries.
+- If $\sum_i a_{ij} > 1$, the industry is not productive - uses more resources than it produces.
+
+**More formally:**  
+The **spectral radius** (largest eigenvalue) of $A$ satisfies $\rho(A) < 1$.  
+This guarantees $(I - A)^{-1}$ exists and the Leontief inverse is well-defined.
+
+:::
+
+
+---
+
+## The Leontief Model
+
+- Rearrange the balance equation:
+  $$
+  x - A x = f \quad \Rightarrow \quad   (I - A)x = f
+  $$
+
+- Provided $(I - A)$ is invertible:
+  $$
+  x = (I - A)^{-1} f
+  $$
+
+- The matrix $(I - A)^{-1}$ is called the **Leontief inverse**.  
+- Interpretation: it captures both the **direct** and **indirect** requirements needed to meet final demand $f$.  
+- Example: An increase in demand for cars requires more steel, which in turn requires more mining, etc.  
+
+---
+
+## Worked Example (3-sector economy)
+
+Suppose three sectors: Agriculture (Ag), Manufacturing (M), and Services (S).  
+
+- **Technical coefficient matrix** the fraction of output from each sector used as input by others:
+  - Rows = input sectors (what is used).
+  - Columns = output sectors (what is produced).
+  - Entry $a_{ij}$ = units of input $i$ needed per unit of output $j$. Ag needs 30% of its own output, 20% from M, 10% from S, etc.
+  
+  $$
+  A =
+  \begin{bmatrix}
+  0.3 & 0.2 & 0.1 \\
+  0.1 & 0.4 & 0.2 \\
+  0.2 & 0.1 & 0.3
+  \end{bmatrix}
+  $$
+
+
+| Input /\ Output | Agriculture | Manufacturing | Services |
+|----------------|-------------|---------------|----------|
+| **Agriculture**    | 0.3         | 0.2           | 0.1      |
+| **Manufacturing**  | 0.1         | 0.4           | 0.2      |
+| **Services**       | 0.2         | 0.1           | 0.3      |
+
+
+
+- Final demand vector:
+  $$
+  f =
+  \begin{bmatrix}
+  100 \\ 150 \\ 200
+  \end{bmatrix}
+  $$
+
+- Solve:
+  $$
+  x = (I - A)^{-1} f
+  $$
+
+- Interpretation: The required outputs $x$ will be larger than $f$ because each sector’s output must also supply intermediates to others.  
+
+```{r}
+# Technical coefficients (3×3)
+A <- matrix(c(0.3,0.2,0.1,
+              0.1,0.4,0.2,
+              0.2,0.1,0.3), nrow = 3, byrow = TRUE)
+
+I3 <- diag(3)
+
+# Leontief inverse (you can also pre-specify L as below)
+L <- solve(I3 - A)
+
+# Base final demand
+f <- matrix(c(100,150,200), ncol = 1)
+
+# Compute gross outputs
+x <- L %*% f
+round(x, 5)
+```
+
+---
+
+## The Leontief Inverse and Multipliers
+
+The matrix $(I - A)^{-1}$ is called the **Leontief inverse**.  
+Each element of this matrix has an important interpretation: it measures the **total requirement** of one sector’s output needed to deliver one unit of final demand in another sector.
+
+- The entry $(i,j)$ of $(I - A)^{-1}$ tells us:  “How many units of sector $i$ are needed, directly and indirectly, to produce one additional unit of final demand for sector $j$.”
+
+- **Direct requirements:** given by $A$.  
+  - Example: if $a_{12} = 0.2$, producing 1 unit of sector 2 requires 0.2 units of sector 1 directly.  
+
+- **Indirect requirements:** captured through higher powers of $A$.  
+  - $A^2$ shows inputs needed two steps back (e.g., steel needed to make machine tools, which then make cars).  
+  - $A^3$ shows three-step linkages, and so on.  
+
+- The series expansion makes this clear (Nuemann):
+  $$
+  (I - A)^{-1} = I + A + A^2 + A^3 + \cdots
+  $$
+  So the Leontief inverse accumulates all **direct and indirect linkages**.
+
+### Multipliers
+
+- A **multiplier** measures the total effect on the economy of a 1-unit increase in final demand for a given sector.  
+- In practice, the multiplier for sector $j$ is the **column sum** of the $j$th column of $(I - A)^{-1}$.  
+  - It tells us how much total output across all sectors must rise to support 1 more unit of $f_j$.  
+- Sector-specific multipliers can also be read row by row:
+  - The $i,j$ entry shows the effect on sector $i$ of a unit shock to demand in sector $j$.
+
+### Example (2-sector economy)
+
+Suppose
+$$
+A =
+\begin{bmatrix}
+0.2 & 0.1 \\
+0.3 & 0.2
+\end{bmatrix}, \quad
+(I - A)^{-1} =
+\begin{bmatrix}
+1.27 & 0.16 \\
+0.48 & 1.24
+\end{bmatrix}.
+$$
+
+- A 1-unit increase in demand for sector 1 requires 1.27 units of sector 1 output and 0.48 units of sector 2 output in total.  
+- Column sums: $1.27 + 0.48 = 1.75$.  
+  - Interpretation: a 1-unit increase in final demand for sector 1 leads to 1.75 total units of output economy-wide (a multiplier of 1.75).  
+- For sector 2, the multiplier is $0.16 + 1.24 = 1.40$.
+
+
+
+**Takeaway:** The Leontief inverse is not just an algebraic trick — it directly encodes the multipliers that make input–output analysis such a powerful tool for tracing the effects of shocks.
+
+---
+
+## Assumptions of the Input–Output Model
+
+- **Fixed input coefficients (Leontief technology)**  
+  - Each sector uses inputs in fixed proportions.  
+  - Example: if it takes 0.3 units of steel to make a car, every car always uses 0.3 units — no substitution is allowed.  
+
+- **Constant returns to scale**  
+  - Doubling output requires exactly double the inputs.  
+  - There are no economies or diseconomies of scale.  
+
+- **Linearity**  
+  - Input requirements are linear in output.  
+  - The balance equation $x = Ax + f$ is valid for all production levels.  
+
+- **Homogeneous outputs**  
+  - Each sector produces a single, uniform good.  
+  - All uses of that good (whether as intermediate or final demand) are treated as identical.  
+
+- **No supply constraints**  
+  - Any level of final demand $f$ can, in principle, be met — resources are not limited.  
+  - The model solves for required gross outputs without considering feasibility of factors like labor, land, or capital.  
+
+- **Static technology and demand**  
+  - The input coefficients $A$ are assumed constant over time (no innovation or efficiency change within the model run).  
+  - The model is comparative static — it compares equilibria before and after shocks, not dynamic adjustment paths.  
+
+- **Closed vs. open model treatment**  
+  
+  - In the “open” model, households are part of final demand.  
+  - In the “closed” model, households are included as a sector that both consumes and supplies labor.  
+
+
+## Input–Output Analysis in Practice
+
+The input–output (I–O) model is usually used in a **calibration + shock** framework.  
+Rather than solving an optimization problem, we work with observed data to trace how the economy responds to changes in demand or technology.
+
+1. Calibration (Base Year)
+
+- Construct the **technical coefficient matrix** $A$ from observed data:  
+  $$a_{ij} = \frac{\text{input of $i$ used by $j$}}{\text{total output of $j$}}$$  
+  - Data typically come from national input–output tables.  
+- Observe base-year **final demand** $f$ (household consumption, government, exports).  
+- Solve the identity
+  $$
+  x = Ax + f \quad \Rightarrow \quad x = (I-A)^{-1}f
+  $$
+  to check consistency with observed outputs $x$.  
+- The calibrated model reproduces the base year exactly.
+
+2. Apply a Shock
+
+- Change final demand $f$:  
+  - Example: +10 units of exports of manufacturing.  
+- Or change technical coefficients $A$:  
+  - Example: new technology reduces electricity needed in agriculture.  
+- Or both.
+
+3. Recompute Outputs
+
+- Solve again:
+  $$
+  x' = (I-A)^{-1} f'
+  $$
+  where $f'$ is the new final demand (and possibly new $A$).  
+- The difference $x'-x$ shows the **direct and indirect effects** of the shock.
+
+4. Interpret Results
+
+- Which sectors expand the most?  
+- What are the **multipliers** (change in total output per unit change in final demand)?  
+- How do shocks propagate across the economy?
+
+---
+
+**Example (illustrative):**  
+
+- Suppose $f = (100, 150, 200)^\top$ and manufacturing exports rise by 20. And,  
+$$
+(I-A)^{-1} =
+\begin{bmatrix}
+1.6 & 0.6 & 0.4 \\
+0.4 & 1.9 & 0.6 \\
+0..5 & 0.4 & 1.6
+\end{bmatrix}
+$$
+
+- Recalculate $x'$. 
+- Agriculture and services expand too, even though their final demand did not change — because they supply inputs to manufacturing.
+
+
+```{r}
+
+
+# Shock: +20 to Manufacturing final demand
+df <- matrix(c(0,20,0), ncol = 1)
+f_prime <- f + df
+
+# New outputs after shock
+x_prime <- L %*% f_prime
+
+# Change in outputs
+dx <- x_prime - x
+
+list(
+  x = round(x, 5),
+  x_prime = round(x_prime, 5),
+  delta_x = round(dx, 5)
+) 
+
+# Manufacturing column of L (column 2)
+L_col_M <- L[,2, drop=FALSE]
+check_delta <- 20 * L_col_M
+
+cbind(
+  `20 * L[,2]` = round(check_delta, 5),
+  `delta x`    = round(dx, 5)
+)
+
+```
+
+
+
+This “calibrate + shock” procedure is the standard way input–output analysis is used in policy and research.
+
+---
+
+## Relation to LP
+
+We can recast the input–output system as a linear program. This allows us to apply the LP tools we’ve already studied (primal, dual, shadow prices) to questions of production and pricing.
+
+- **Primal problem (quantities).**  
+  Decision variables are sector outputs $x_j$. The planner’s problem might be to:
+  - *Minimize cost* of meeting a fixed vector of final demands $f$, subject to input–output balance, or  
+  - *Maximize welfare* given resource or technology constraints.  
+
+  The balance condition $x = Ax + f$ can be rearranged as  
+  $$
+  Ax + f \le x,
+  $$
+  meaning that each sector’s gross output must be at least enough to cover its intermediate input requirements ($Ax$) plus final demand ($f$).
+
+- **Objective.**  
+  A typical choice is to minimize the total value of inputs required to satisfy demand. For example:  
+  $$
+  \min \; c^\top x
+  $$
+  where $c$ is a vector of unit costs. Alternatively, if outputs are valued in welfare terms, the objective can be to maximize $v^\top f$.
+
+- **Constraints.**  
+  The inequalities $Ax + f \le x$ ensure feasibility: sectors cannot promise more intermediate and final goods than they can produce.
+
+- **Dual problem (prices).**  
+  The dual associates a variable $p_i$ with each balance constraint. These $p_i$ can be interpreted as **commodity prices** consistent with general equilibrium:  
+  - If a commodity is scarce (constraint binding), its price is positive.  
+  - If there is surplus, its shadow price falls to zero.  
+
+- **Strong duality.**  
+  At the optimum,
+  $$
+  \text{Value of outputs} = \text{Value of inputs}.
+  $$
+  In other words, the total revenue from selling goods at equilibrium prices equals the total cost of producing them using intermediate and primary inputs. This is the familiar condition for a competitive equilibrium in input–output economics.
+
+---
+
+Draw the parallels:
+
+- *Primal* = “quantities world”: how much each sector produces to satisfy demands.  
+- *Dual* = “prices world”: what set of commodity prices makes those quantities consistent with equilibrium.  
+- Duality ensures these two views are perfectly consistent. 
+
+---
+
+## Applications in Economics
+
+- **Environmental / Resource Economics**  
+  - Trace carbon, water, or energy embodied in consumption.  
+  - Assess land-use change from shifts in demand.  
+
+- **Policy Analysis**  
+  - Regional impact studies (IMPLAN, RIMS II).  
+  - Tariff or trade shock analysis.  
+
+- **Research extensions**  
+  - Hybrid I–O and LP models for energy systems planning.  
+  - Coupling I–O with CGE (computable general equilibrium) for price and income effects.  
+
+---
+
+## Classroom Activity
+
+- Provide students with a small 2×2 $A$ matrix and demand vector $f$.  
+- Ask them to compute:  
+  1. $(I - A)$  
+  2. $(I - A)^{-1}$  
+  3. $x = (I - A)^{-1} f$  
+
+- Discussion prompts:  
+  - Which sector has the larger multiplier?  
+  - What happens to required outputs if one coefficient $a_{ij}$ increases (e.g., manufacturing requires more agriculture)?  
+
+
+
