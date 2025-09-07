@@ -21,11 +21,11 @@
 - date: '2025-09-11'
   topic: Numerical Foundations
   reading: M&F 3
-  due: Problem Set 1
+  due: ''
 - date: '2025-09-16'
   topic: Unconstrained nonlinear optimization
   reading: M&S 12
-  due: ''
+  due: Problem Set 1
 - date: '2025-09-18'
   topic: 'Unconstrained nonlinear optimization: numerical methods'
   reading: ''
@@ -37,7 +37,7 @@
 - date: '2025-09-25'
   topic: Constrained nonlinear optimization
   reading: ''
-  due: Project Paper
+  due: Select Project Paper
 - date: '2025-09-30'
   topic: 'Constrained nonlinear optimization: numerical methods'
   reading: ''
@@ -87,19 +87,19 @@
   reading: M&F 9
   due: ''
 - date: '2025-11-11'
-  topic: ''
+  topic: Slack
   reading: ''
   due: ''
 - date: '2025-11-13'
-  topic: ''
+  topic: Slack
   reading: ''
   due: Problem Set 4
 - date: '2025-11-18'
-  topic: ''
+  topic: Slack
   reading: ''
   due: ''
 - date: '2025-11-20'
-  topic: ''
+  topic: How to present
   reading: ''
   due: ''
 - date: '2025-11-25'

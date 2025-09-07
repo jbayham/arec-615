@@ -14,6 +14,9 @@
   readings:
     - title: "McCarl & Spreen Ch. 2–4"
       url: "course-materials/"
+  ps:
+  - title: "Problem Set 1"
+    url: "problem_set.pdf"
   materials:
     - title: "LP Example"
       url: "lp_example.html"
@@ -21,6 +24,8 @@
       url: "LP_land_alloc.xlsx"
     - title: "R_lp_example.pdf"
       url: "R_lp_example.pdf"
+    - title: "IO Example"
+      url: "IO_example.html"
   
   
   

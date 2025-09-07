@@ -48,6 +48,15 @@ The bottom right icons link to the Github directory for the lecture (<i class="f
   </ul>
 {% endif %}
 
+{% if modules.ps %}
+  <strong>📝 Problem Set:</strong>
+  <ul>
+    {% for a in modules.ps %}
+      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ modules.dirname }}/{{ a.url }}">{{ a.title }}</a></li>
+    {% endfor %}
+  </ul>
+{% endif %}
+
 {% if modules.materials %}
   <strong>Additional Materials:</strong>
   <ul>
