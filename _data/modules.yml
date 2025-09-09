@@ -10,7 +10,7 @@
 - title: "Linear Programming"
   filename: "notes" 
   dirname: modules/linear_programming
-  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis."
+  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis. Submit problem set on Canvas."
   readings:
     - title: "McCarl & Spreen Ch. 2–4"
       url: "course-materials/"
@@ -28,7 +28,19 @@
       url: "IO_example.html"
   
   
-  
+- title: "Unconstrained and Constrained Nonlinear Programming"
+  filename: "notes" 
+  dirname: modules/nonlinear_programming
+  desc: "This unit introduces nonlinear programming (LP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
+  readings:
+    - title: "Miranda & Fackler Ch. 12"
+      url: "course-materials/"
+  # ps:
+  # - title: "Problem Set 1"
+  #   url: "problem_set.pdf"
+  # materials:
+  #   - title: "LP Example"
+  #     url: "lp_example.html"
   
   
 # - title: "Course overview and introduction to optimization concepts"
