@@ -33,7 +33,7 @@
   dirname: modules/nonlinear_programming
   desc: "This unit introduces nonlinear programming (LP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
   readings:
-    - title: "Miranda & Fackler Ch. 12"
+    - title: "Miranda & Fackler Ch. 3"
       url: "course-materials/"
   # ps:
   # - title: "Problem Set 1"
