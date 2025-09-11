@@ -60,44 +60,7 @@ This is equivalent to rootfinding if we define $f(x) = x - g(x)$. Many economic 
 
 Fixed-point methods often rely on contraction mappings, which guarantee convergence under certain conditions.
 
-::: {.callout-note title="What is a contraction mapping?"}
 
-Many economic problems — especially dynamic ones — are solved by **iterating a function** until it stops changing. For example:
-
-$\quad x^{(k+1)} = g(x^{(k)})$
-
-This process works well **if** the function $g$ pulls guesses closer together at each step.
-
-A **contraction mapping** is a function that does exactly that:  
-it **shrinks the distance** between inputs as you iterate, so that no matter where you start, you end up at the same place.
-
-- Think of it like repeatedly zooming in on the true solution.
-- Each step gets you closer, and you're guaranteed to eventually land on the fixed point.
-
-
-#### Example
-
-Suppose we are solving:
-
-$\quad x = g(x) = \frac{1}{2}(x + 3)$
-
-Let’s verify if $g$ is a contraction:
-
-$\quad |g(x) - g(y)| = \left| \frac{1}{2}(x - y) \right| = \frac{1}{2}|x - y|$
-
-So $\lambda = 0.5 < 1$ → $g$ is a contraction.
-
-Then starting from any $x^{(0)}$, say $x^{(0)} = 0$, the iterates:
-
-$\quad x^{(1)} = g(0) = 1.5$
-
-$\quad x^{(2)} = g(1.5) = 2.25$
-
-$\quad x^{(3)} = g(2.25) = 2.625$
-
-converge to the fixed point $x^* = 3$.
-
-:::
 
 **Also complementarity problems are a more general form of fixed point problem, but we won't cover those here.**
 
@@ -160,7 +123,7 @@ After several iterations, we get very close to the root.
 
 
 
-## Convergence Criteria
+### Convergence Criteria
 
 The bisection method illustrates an important question in all numerical methods:
 
@@ -168,7 +131,6 @@ The bisection method illustrates an important question in all numerical methods:
 
 There’s no exact answer in most cases — so we stop when we’re “close enough.”  
 There are two common ways to define this:
-
 
 1. Interval is small enough
 
@@ -178,11 +140,16 @@ There are two common ways to define this:
 
 - Alternatively, we can stop when: $\quad |f(c)| < \epsilon$. This ensures the function value at our current guess is nearly zero — a general-purpose convergence test used in many methods.
 
-
 Why Both?
 
 - In some methods, the updates $x^{(k+1)} - x^{(k)}$ may become small **even when the function value isn't** (e.g. at flat spots).
 - We'll use these same convergence criteria in more sophisticated methods throughout the course.
+
+### Multiple Roots
+
+If the function has multiple roots in the interval, bisection will find one of them, but which one depends on the initial interval. If you need a specific root, you may need to adjust your interval accordingly. You could sample the domain to find intervals that bracket different roots.
+
+Note also that if the function just touches zero (e.g., $f(x) = (x-1)^2$ at $x=1$), bisection may fail since there is no sign change.
 
 ----
 
@@ -197,6 +164,64 @@ $x = g(x)$
 We then use this as a **rule for iteration**:
 
 $x^{(k+1)} = g(x^{(k)})$
+
+::: {.callout-note title="Contraction Mapping"} 
+
+Many economic problems — especially dynamic ones — are solved by **iterating a function** until it stops changing. For example:
+
+$\quad x^{(k+1)} = g(x^{(k)})$
+
+This process works well **if** the function $g$ pulls guesses closer together at each step.
+
+A **contraction mapping** is a function that does exactly that: it **shrinks the distance** between inputs as you iterate, so that no matter where you start, you end up at the same place.
+
+A function $g(x)$ is a contraction on a set $S$ if there exists a constant $\lambda \in [0,1)$ such that:
+
+$$
+|g(x) - g(y)| \leq \lambda |x - y| \quad \text{for all } x, y \in S
+$$
+
+
+
+
+- Think of it like repeatedly zooming in on the true solution.
+- Each step gets you closer, and you're guaranteed to eventually land on the fixed point.
+
+
+Can we determine ex ante if a function is a contraction? Yes!
+
+In the univariate case, a sufficient condition is:
+
+$$
+|g’(x)| < 1 \quad \text{for all } x \in S
+$$
+
+This guarantees that $g(x)$ is a contraction on $S$.
+:::
+
+#### Example
+
+Suppose we are solving:
+
+$\quad x = g(x) = \frac{1}{2}(x + 3)$
+
+Let’s verify if $g$ is a contraction:
+
+$\quad |g(x) - g(y)| = \left| \frac{1}{2}(x - y) \right| = \frac{1}{2}|x - y|$
+
+So $\lambda = 0.5 < 1$ → $g$ is a contraction.
+
+Then starting from any $x^{(0)}$, say $x^{(0)} = 0$, the iterates:
+
+$\quad x^{(1)} = g(0) = 1.5$
+
+$\quad x^{(2)} = g(1.5) = 2.25$
+
+$\quad x^{(3)} = g(2.25) = 2.625$
+
+converge to the fixed point $x^* = 3$.
+
+
 
 ### Example
 
@@ -277,6 +302,13 @@ This is the heart of Newton’s method:  each step uses the slope of $f(x)$ to m
 Imagine standing on the curve of $f(x)$ at the point $(x^{(k)}, f(x^{(k)}))$. You draw the tangent line at that point. The next guess, $x^{(k+1)}$, is where this tangent line crosses the x-axis. This process is repeated, using the new point to draw a new tangent line, and so on, until you get sufficiently close to the root.
 
 
+### Newtons method assumptions
+
+1. $f(x)$ is **differentiable** in the neighborhood of the root.
+2. The derivative $f'(x)$ is **not zero** at the root (to avoid division by zero).
+3. The initial guess $x^{(0)}$ is **sufficiently close** to the actual root for convergence.
+4. $f(x)$ is sufficiently **smooth** (e.g., continuous second derivative) near the root to ensure good approximation by the tangent line.
+5. The root is **simple**. The root is simple if $f'(x^*) \neq 0$. If $f'(x^*) = 0$), the newtons method converges **linearly**.
 
 
 ---
