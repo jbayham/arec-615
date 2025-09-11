@@ -1,0 +1,82 @@
+---
+title: "Problem Set: Nonlinear Programming"
+execute: 
+  echo: true
+  warning: false
+  message: false
+---
+
+**Instructions**
+
+In this problem set, you will implement three numerical methods for solving nonlinear equations:
+
+- Bisection Method
+- Fixed Point Iteration
+- Newton’s Method
+
+For each problem:
+
+- Write your own implementation from scratch (no use of built-in solvers like `uniroot()` or `nleqslv()`).
+- Use a convergence criterion of $|x_{k+1} - x_k| < 10^{-6}$.
+- Include a plot of the function over an appropriate interval.
+- Report the final root estimate, number of iterations, and whether convergence was successful.
+
+---
+
+## Bisection Method
+
+Let
+
+$$
+f(x) = \cos(x) - x
+$$
+
+Use the bisection method to solve $f(x) = 0$ on the interval $[0, 1]$.
+
+### Tasks
+
+a. Confirm that $f(0) \cdot f(1) < 0$.
+b. Implement the bisection method.
+c. Plot $f(x)$ over $[0, 1]$ and mark the root.
+d. Report: number of iterations, final estimate, and value of $f(x)$ at the root.
+
+> **Comment**: Explain why is convergence guaranteed given the function?
+
+---
+
+## Fixed Point Iteration
+
+Consider the function:
+
+$$
+x = g(x) = \sqrt{1 + x}
+$$
+
+### Tasks
+
+a. Define the iteration $x_{n+1} = g(x_n)$.
+b. Use $x_0 = 1$ as the starting value.
+c. Plot $g(x)$ and the 45-degree line $y = x$ over $[0, 3]$.
+d. Determine whether the iteration converges.
+e. Try other initial values (e.g., $x_0 = 0.5$, $x_0 = 3$) and compare behavior.
+f. Check the derivative $g'(x)$ at the fixed point. What does this tell you about convergence?
+
+---
+
+## Problem 3: Newton's Method
+
+Let
+
+$$
+f(x) = x^3 - 2x + 2
+$$
+
+### Tasks
+
+a. Implement Newton’s method.
+b. Use $x_0 = 0$ and $x_0 = -1.5$ as two different initial values.
+c. Plot $f(x)$ and its derivative over $[-3, 3]$.
+d. Report the outcome of the iteration for each starting point.
+e. Compare the convergence (or divergence) behavior. What role does the choice of initial guess play?
+f. Why does the method fail to move when starting at $x_0 = 0$? explain. 
+
