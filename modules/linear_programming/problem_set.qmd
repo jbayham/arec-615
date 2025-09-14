@@ -71,7 +71,7 @@ nodes <- data.frame(name = c(warehouses, cities),
 edges <- data.frame(
   from = rep(warehouses, each = 5),
   to = rep(cities, times = 2),
-  cost = c(6, 7, 9, 8, 6, 7, 6, 9, 7, 7)
+  cost = c(4, 6, 8, 7, 5, 5, 4, 7, 6, 6)
 )
 
 # Create igraph object
