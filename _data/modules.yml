@@ -35,6 +35,8 @@
   readings:
     - title: "Miranda & Fackler Ch. 3"
       url: "course-materials/"
+    - title: "McCarl & Spreen Ch. 12"
+      url: "course-materials/"
   ps:
     - title: "Problem Set 2"
       url: "problem_set.pdf"
