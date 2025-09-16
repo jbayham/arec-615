@@ -27,7 +27,7 @@
   reading: M&S 12
   due: Problem Set 1
 - date: '2025-09-18'
-  topic: 'Unconstrained nonlinear optimization: numerical methods'
+  topic: 'Regression applications: likelihood estimation'
   reading: ''
   due: ''
 - date: '2025-09-23'
@@ -43,11 +43,11 @@
   reading: ''
   due: ''
 - date: '2025-10-02'
-  topic: 'Regression applications: likelihood estimation'
+  topic: 'Regression applications: generalized method of moments'
   reading: ''
   due: ''
 - date: '2025-10-07'
-  topic: 'Regression applications: generalized method of moments'
+  topic: ''
   reading: ''
   due: ''
 - date: '2025-10-09'
