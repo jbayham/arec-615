@@ -402,6 +402,25 @@ In practice, it’s common to use both.
 - Very effective for well-behaved, smooth functions
 - Poor choice if $f'(x)$ is expensive to compute or not available
 
+-----
+
+## Quasi-Newton Methods
+
+When the derivative $f'(x)$ is not available or too costly to compute, we can use **quasi-Newton methods**. These methods approximate the derivative using finite differences or other techniques.
+
+### Finite Difference Approximation
+A simple way to approximate the derivative is using finite differences:
+$f'(x) \approx \frac{f(x^k) - f(x^{k-1})}{x^k - x^{k-1}}$
+
+You can then plug this approximation into the Newton update formula:
+$x^{(k+1)} = x^{(k)} - \frac{f(x^{(k)})}{f'(x^{(k)})}$
+
+This approach is called the **secant method** in one dimension. You can substitute the finite difference approximation for the derivative in the Newton update.
+
+
+
+-----
+
 ## Summary: Comparing Rootfinding Algorithms
 
 | Method               | Speed              | Derivative Needed | Convergence Guarantee | Robustness       | Common Use Cases                       |
@@ -409,6 +428,7 @@ In practice, it’s common to use both.
 | Bisection            | Slow (linear)      | No                 | Yes (if sign change)   | Very robust      | Bracketing roots in univariate problems |
 | Fixed-Point Iteration| Slow (linear)      | No                 | Only if contraction    | Medium           | Dynamic programming, expectations       |
 | Newton's Method      | Fast (quadratic)   | Yes ($f'(x)$)      | Local (if well-started)| Less robust      | Solving FOCs, likelihood equations      |
+| Quasi-Newton Methods | Fast (superlinear) | No                 | Local (if well-started)| More robust than Newton | Large-scale optimization, machine learning |
 
 **Choosing the Right Method**
 
@@ -417,4 +437,410 @@ In practice, it’s common to use both.
 - Use **Newton's method** for fast convergence when you have a good initial guess and can compute derivatives.
 - In practice, hybrid methods that combine these approaches are often employed to balance speed and robustness.
 
+-----
 
+# Unconstrained Optimization
+
+## Motivation
+Unconstrained optimization involves finding the maximum or minimum of a function without any restrictions on the variable values. This is a common problem in economics, where we often want to maximize utility or profit, or minimize cost.
+
+- It establishes the **mathematical foundation** for more general optimization problems (e.g., constrained optimization, dynamic programming).
+- Many economic models can first be understood in a frictionless, unconstrained environment before constraints are introduced.
+- It provides intuition for how **marginal conditions** (equating marginal benefits and costs) determine optimal decisions.
+- It introduces key concepts like **first-order conditions (FOCs)** and **second-order conditions (SOCs)** that are essential for understanding optimality.
+
+### Example
+- **Profit maximization by a firm**:  
+  A monopolist choosing output $q$ to maximize profits:  
+  $$
+  \max_q \; \pi(q) = p(q)q - C(q)
+  $$
+  where $p(q)$ is the inverse demand function and $C(q)$ is the cost function.  
+  If there are no capacity or policy restrictions, this is an unconstrained problem.
+
+
+## Mathematical Setup
+
+The general unconstrained optimization problem can be written as:
+
+$$
+\max_{x \in \mathbb{R}^n} f(x)
+$$
+
+where $f:\mathbb{R}^n \to \mathbb{R}$ is the objective function.  
+The solution $x^*$ is called an **optimum** if $f(x^*) \geq f(x)$ for all $x$ in some neighborhood of $x^*$.
+
+### Assumptions for tractability
+
+- $f(x)$ is continuous and differentiable at least once (so gradients exist).
+- For stronger results, $f(x)$ is twice differentiable (so the Hessian exists).
+- The function is well-behaved: bounded above (for maximization problems) or below (for minimization problems).
+
+> **Note**: In economics, many standard functional forms (Cobb-Douglas, CES, quadratic, log-linear) satisfy these assumptions, making unconstrained optimization analytically tractable.
+
+## Univariate case
+
+If $f:\mathbb{R} \to \mathbb{R}$, the problem reduces to finding the optimal point $x^*$ such that:
+
+1. First-order condition (FOC):  
+   $$
+   f'(x^*) = 0
+   $$
+
+2. Second-order condition (SOC):  
+   - $f''(x^*) < 0 \implies$ local maximum  
+   - $f''(x^*) > 0 \implies$ local minimum  
+
+### Example: A quadratic profit function
+
+$$
+\pi(q) = aq - bq^2, \quad a,b > 0
+$$
+The first-order condition is:
+$$
+\pi'(q) = a - 2bq = 0 \implies q^* = \frac{a}{2b}
+$$
+so $\pi(q)$ has optimum at $q^* = \frac{a}{2b}$. We can verify this is a maximum by checking the second-order condition.
+
+The second-order condition is:
+$$
+\pi''(q) = -2b < 0
+$$
+
+
+### Multivariate case
+
+If $f:\mathbb{R}^n \to \mathbb{R}$, the optimization problem is:
+
+$$
+\max_{x \in \mathbb{R}^n} f(x_1, x_2, \ldots, x_n)
+$$
+
+1. First-order condition:  
+   $$
+   \nabla f(x^*) = 
+   \begin{bmatrix}
+   \frac{\partial f}{\partial x_1}(x^*) \\
+   \frac{\partial f}{\partial x_2}(x^*) \\
+   \vdots \\
+   \frac{\partial f}{\partial x_n}(x^*)
+   \end{bmatrix} 
+   = 0
+   $$
+$\nabla f(x^*)$ is the **gradient vector** of first derivatives. It is also called the **Jacobian** in the multivariate case.
+
+
+2. Second-order condition:  
+   Let $H(x)$ denote the Hessian matrix of second derivatives:
+   $$
+   H(x) = 
+   \begin{bmatrix}
+   \frac{\partial^2 f}{\partial x_1^2} & \frac{\partial^2 f}{\partial x_1 \partial x_2} & \cdots \\
+   \frac{\partial^2 f}{\partial x_2 \partial x_1} & \frac{\partial^2 f}{\partial x_2^2} & \cdots \\
+   \vdots & \vdots & \ddots
+   \end{bmatrix}
+   $$
+
+One way to classify the Hessian is by examining the **leading principal minors** — the determinants of the top-left $k \times k$ submatrices:
+
+
+   - If $H(x^*)$ is **negative definite** $\implies$ local maximum. The sequence of leading principal minors alternates in sign, starting with negative.
+   - If $H(x^*)$ is **negative semi-definite** $\implies$ local maximum or saddle point. All odd-order leading principal minors are non-positive, and all even-order leading principal minors are non-negative.
+   - If $H(x^*)$ is **positive definite** $\implies$ local minimum. All leading principal minors are positive.  
+   - If $H(x^*)$ is **positive semi-definite** $\implies$ local minimum or saddle point. All leading principal minors are non-negative.
+   - If $H(x^*)$ is **indefinite** $\implies$ saddle point. The leading principal minors do not follow a consistent sign pattern.
+
+An alternative (and often more intuitive) test is to examine the **eigenvalues** of $H$:
+
+  - Each eigenvalue represents curvature along a particular direction in the variable space.  
+  - If **all eigenvalues are positive** → function is locally convex (minimum).  
+  - If **all eigenvalues are negative** → function is locally concave (maximum).  
+  - If eigenvalues have **mixed signs** → the point is a saddle.  
+
+For a 2-variable case:
+
+- The determinant is simply the **product of the eigenvalues**, and  
+- The trace ($f_{xx} + f_{yy}$) is the **sum of the eigenvalues**.  
+
+So by checking determinant and trace together, one can infer the eigenvalues’ signs without fully computing them.
+
+**Economic intuition**
+
+- The determinant test is like asking: *“Does curvature bend in the same direction along both variables, or in opposite directions?”*  
+- The eigenvalue test is like asking: *“If I walk in any direction in input space, is the function bending upwards, downwards, or differently depending on the direction?”*
+
+
+### Multivariate Example: Two–Variable Unconstrained Maximization
+
+Consider the problem:
+
+$$
+\max_{x,y} f(x,y) = 100x + 150y - x^2 - y^2 - xy
+$$
+
+**Step 1: First–Order Conditions**
+
+Compute the partial derivatives:
+
+$$
+\frac{\partial f}{\partial x} = 100 - 2x - y
+$$
+
+$$
+\frac{\partial f}{\partial y} = 150 - 2y - x
+$$
+
+Set both equal to zero:
+
+$$
+\begin{cases}
+100 - 2x - y = 0 \\
+150 - 2y - x = 0
+\end{cases}
+$$
+
+Solve the system:
+
+From the first equation, $y = 100 - 2x$.  
+Substitute into the second:
+
+$150 - 2(100 - 2x) - x = 0 \implies 150 - 200 + 4x - x = 0 \implies 3x - 50 = 0$.  
+
+So $x^* = \frac{50}{3} \approx 16.67$.  
+Then $y^* = 100 - 2(16.67) = 66.67$.
+
+**Step 2: Second–Order Conditions**
+
+Hessian matrix:
+
+$$
+H =
+\begin{bmatrix}
+f_{xx} & f_{xy} \\
+f_{yx} & f_{xx}
+\end{bmatrix}
+=
+\begin{bmatrix}
+-2 & -1 \\
+-1 & -2
+\end{bmatrix}
+$$
+
+Compute its eigenvalues or leading principal minors:
+
+- Determinant = $|H|$ =  $(-2)(-2)-(-1)^2=4-1=3>0$
+- Top-left element = $-2 < 0$  
+
+So $H$ is **negative definite** → local maximum.
+
+
+**Step 4: Visualizing in R**
+
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(ggplot2)
+library(dplyr)
+
+f <- function(x,y) 100*x + 150*y - x^2 - y^2 - x*y
+
+# Create grid
+x <- seq(0,100, length.out=100)
+y <- seq(0,100, length.out=100)
+grid <- expand.grid(x=x,y=y) %>%
+  mutate(z=f(x,y))
+
+# Contour plot
+ggplot(grid, aes(x=x,y=y,z=z)) +
+  geom_contour(bins=30,show.legend = F) +
+  geom_point(aes(x=50/3,y=66.67),color="red",size=3) +
+  labs(title="Contours of f(x,y) with Optimum Marked",
+       x="x", y="y") +
+  coord_equal()
+
+```
+
+
+## Global vs. Local Optimality
+
+When analyzing optimization problems, it is essential to distinguish between **local** and **global** optima.
+
+### Local optimum
+
+A point $x^*$ is a **local maximum** if there exists a neighborhood $\mathcal{N}(x^*)$ such that:
+$$
+f(x^*) \geq f(x) \quad \forall x \in \mathcal{N}(x^*).
+$$
+
+Similarly, $x^*$ is a **local minimum** if:
+$$
+f(x^*) \leq f(x) \quad \forall x \in \mathcal{N}(x^*).
+$$
+
+Local optima are determined by **first- and second-order conditions**:
+
+- FOC: $\nabla f(x^*) = 0$
+- SOC: Hessian conditions (positive/negative definiteness)
+
+These tests, however, only ensure optimality relative to nearby points.
+
+### Global optimum
+
+A point $x^*$ is a **global maximum** if:
+$$
+f(x^*) \geq f(x) \quad \forall x \in \mathbb{R}^n.
+$$
+
+A point $x^*$ is a **global minimum** if:
+$$
+f(x^*) \leq f(x) \quad \forall x \in \mathbb{R}^n.
+$$
+
+Global optimality requires stronger conditions about the **shape** of the objective function:
+
+- If $f(x)$ is **strictly concave**, then any local maximum is also the global maximum.
+- If $f(x)$ is **strictly convex**, then any local minimum is also the global minimum.
+
+This is why assumptions of concavity and convexity are central in economics: they allow us to equate **marginal conditions** (first-order conditions) with **global results**.
+
+### Illustration
+
+- A quadratic profit function
+  $$
+  \pi(q) = aq - bq^2, \quad a,b > 0
+  $$
+  is globally concave. The FOC $a - 2bq = 0$ yields $q^* = a/2b$, which is both a local and global maximum.
+
+- A non-concave function such as
+  $$
+  f(x) = x^3 - 3x
+  $$
+  has two local extrema ($x=-1, x=1$), but only one global maximum (as $x \to -\infty$, $f(x) \to -\infty$ and as $x \to \infty$, $f(x) \to \infty$). The FOC and SOC identify local points, but without concavity the global solution is not guaranteed.
+  
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+
+library(ggplot2)
+library(dplyr)
+
+# Define function
+f <- function(x) x^3 - 3*x
+
+# Create data grid
+df <- data.frame(x = seq(-3, 3, length.out = 400)) %>%
+  mutate(y = f(x))
+
+# Critical points
+crit_points <- data.frame(
+  x = c(-1, 1),
+  y = f(c(-1, 1)),
+  label = c("Local max", "Local min")
+)
+
+# Plot
+ggplot(df, aes(x, y)) +
+  geom_line(color = "steelblue", linewidth = 1) +
+  geom_hline(yintercept = 0, color = "grey50", linetype = "dashed") +
+  geom_vline(xintercept = 0, color = "grey50", linetype = "dashed") +
+  geom_point(data = crit_points, aes(x, y), color = "red", size = 3) +
+  geom_text(data = crit_points, aes(label = label), vjust = -1, color = "red") +
+  labs(
+    title = expression(f(x) == x^3 - 3*x),
+    x = "x",
+    y = "f(x)"
+  ) +
+  theme_minimal(base_size = 14)
+```
+
+### Economic interpretation
+
+- **Local optimality** corresponds to an agent being at a point where no *small deviation* is profitable.  
+- **Global optimality** ensures that the agent is making the *best possible choice* over the entire feasible set.  
+
+Economists typically assume concavity (utility, production, profit functions) to avoid the difficulty of distinguishing between local and global solutions. This ensures that solving the FOC is sufficient for finding the true economic optimum.
+
+
+
+------
+
+## Maximum Likelihood Estimation
+
+Many econometric problems can be expressed as optimization problems. In particular, **Maximum Likelihood Estimation (MLE)** is a method of estimating unknown parameters by maximizing the likelihood of observing the sample data.
+
+### Likelihood function
+
+Suppose we observe a sample of independent realizations $\{y_1, y_2, \ldots, y_T\}$, each drawn from a distribution with density $f(y|\theta)$ parameterized by $\theta \in \Theta$.  
+
+The **likelihood function** is
+
+$$
+L(\theta) = \prod_{t=1}^T f(y_t|\theta).
+$$
+
+Because products of densities can be numerically unstable, we usually maximize the **log-likelihood function**:
+
+$$
+\ell(\theta) = \log L(\theta) = \sum_{t=1}^T \log f(y_t|\theta).
+$$
+
+### Optimization problem
+
+The MLE is defined as
+
+$$
+\hat{\theta}_{MLE} = \arg \max_{\theta \in \Theta} \ell(\theta).
+$$
+
+This is an **unconstrained optimization problem** whenever the parameter space $\Theta = \mathbb{R}^k$. In practice, standard optimization methods (Newton-Raphson, quasi-Newton, gradient ascent) are employed to find $\hat{\theta}_{MLE}$.
+
+### First- and second-order conditions
+
+- **FOC (Score equation):**
+  $$
+  \nabla_\theta \ell(\hat{\theta}) = 0.
+  $$
+
+- **SOC (Information matrix):**  
+  For $\hat{\theta}$ to be a maximum, the Hessian of $\ell(\theta)$ must be negative definite:
+  $$
+  H(\hat{\theta}) = \nabla^2_\theta \ell(\hat{\theta}) \prec 0.
+  $$
+$\prec$ denotes negative definiteness.
+
+In large samples, the covariance matrix of $\hat{\theta}$ is approximated by the inverse of the **Fisher information matrix**:
+
+$$
+\text{Var}(\hat{\theta}) \approx \mathcal{I}(\hat{\theta})^{-1}, \quad \mathcal{I}(\theta) = -\mathbb{E}[\nabla^2_\theta \ell(\theta)].
+$$
+
+### Example: Normal distribution
+
+Let $y_t \sim \mathcal{N}(\mu, \sigma^2)$ i.i.d. The log-likelihood is
+
+$$
+\ell(\mu,\sigma^2) = -\frac{T}{2}\log(2\pi\sigma^2) - \frac{1}{2\sigma^2} \sum_{t=1}^T (y_t - \mu)^2.
+$$
+
+- Maximizing with respect to $\mu$ yields
+  $$
+  \hat{\mu} = \frac{1}{T} \sum_{t=1}^T y_t.
+  $$
+
+- Maximizing with respect to $\sigma^2$ yields
+  $$
+  \hat{\sigma}^2 = \frac{1}{T} \sum_{t=1}^T (y_t - \hat{\mu})^2.
+  $$
+
+Both estimators emerge naturally from solving an optimization problem.
+
+### Economic applications
+
+MLE is widely used in economics:
+- Estimation of discrete choice models (logit, probit).  
+- Structural estimation of dynamic models [oai_citation:1‡Miranda_and_Fackler-Applied_Computational_Economics.pdf](file-service://file-9poQvgYH1rdv7mXmoud9sn).  
+- Calibration of production or policy models where likelihood-based estimation can incorporate uncertainty.
+
+MLE links optimization methods with statistical inference: the **same algorithms** (Newton, quasi-Newton, gradient descent) used to find optima in deterministic models also underpin parameter estimation in econometrics.
