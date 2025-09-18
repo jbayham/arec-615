@@ -40,6 +40,9 @@
   ps:
     - title: "Problem Set 2"
       url: "problem_set.pdf"
+  materials:
+    - title: "MLE Surface"
+      url: "mle_example.r"
 
   
   
