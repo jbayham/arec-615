@@ -455,8 +455,7 @@ Unconstrained optimization involves finding the maximum or minimum of a function
   $$
   \max_q \; \pi(q) = p(q)q - C(q)
   $$
-  where $p(q)$ is the inverse demand function and $C(q)$ is the cost function.  
-  If there are no capacity or policy restrictions, this is an unconstrained problem.
+  where $p(q)$ is the inverse demand function and $C(q)$ is the cost function.  If there are no capacity or policy restrictions, this is an unconstrained problem.
 
 
 ## Mathematical Setup
@@ -504,7 +503,7 @@ so $\pi(q)$ has optimum at $q^* = \frac{a}{2b}$. We can verify this is a maximum
 
 The second-order condition is:
 $$
-\pi''(q) = -2b < 0
+\pi''(q) = -2b < 0 \quad \text{(since } b > 0\text{)}
 $$
 
 
@@ -541,28 +540,67 @@ $\nabla f(x^*)$ is the **gradient vector** of first derivatives. It is also call
    \end{bmatrix}
    $$
 
-One way to classify the Hessian is by examining the **leading principal minors** — the determinants of the top-left $k \times k$ submatrices:
+One way to classify the Hessian is by examining the **leading principal minors** — the determinants of the top-left $k \times k$ submatrices ($\det(H) = f_{xx} f_{yy} - (f_{xy})^2$, more than two vars gets complicated):
 
 
-   - If $H(x^*)$ is **negative definite** $\implies$ local maximum. The sequence of leading principal minors alternates in sign, starting with negative.
-   - If $H(x^*)$ is **negative semi-definite** $\implies$ local maximum or saddle point. All odd-order leading principal minors are non-positive, and all even-order leading principal minors are non-negative.
-   - If $H(x^*)$ is **positive definite** $\implies$ local minimum. All leading principal minors are positive.  
-   - If $H(x^*)$ is **positive semi-definite** $\implies$ local minimum or saddle point. All leading principal minors are non-negative.
-   - If $H(x^*)$ is **indefinite** $\implies$ saddle point. The leading principal minors do not follow a consistent sign pattern.
+   - If $H(x^*)$ is **negative definite** $\implies$ local maximum. The sequence of leading principal minors alternates in sign, starting with negative. $det(H) > 0$ and $f_{xx} < 0$.
+   - If $H(x^*)$ is **negative semi-definite** $\implies$ local maximum or saddle point. All odd-order leading principal minors are non-positive, and all even-order leading principal minors are non-negative. $det(H) \geq 0$ and $f_{xx} \leq 0$.
+   - If $H(x^*)$ is **positive definite** $\implies$ local minimum. All leading principal minors are positive. $det(H) > 0$ and $f_{xx} > 0$.
+   - If $H(x^*)$ is **positive semi-definite** $\implies$ local minimum or saddle point. All leading principal minors are non-negative. $det(H) \geq 0$ and $f_{xx} \geq 0$.
+   - If $H(x^*)$ is **indefinite** $\implies$ saddle point. The leading principal minors do not follow a consistent sign pattern. $det(H) < 0$.
 
-An alternative (and often more intuitive) test is to examine the **eigenvalues** of $H$:
+#### Eigenvalues
 
-  - Each eigenvalue represents curvature along a particular direction in the variable space.  
-  - If **all eigenvalues are positive** → function is locally convex (minimum).  
-  - If **all eigenvalues are negative** → function is locally concave (maximum).  
-  - If eigenvalues have **mixed signs** → the point is a saddle.  
+An alternative (and often more intuitive) test is to examine the **eigenvalues** of $H$. Each eigenvalue corresponds to curvature along a principal direction (elements of the vector x).  
 
-For a 2-variable case:
+- If all eigenvalues > 0 ⇒ strictly convex (local minimum).
+- If all eigenvalues < 0 ⇒ strictly concave (local maximum).
+- Mixed signs ⇒ saddle point.
+- Zero eigenvalues ⇒ flat directions, inconclusive.
 
-- The determinant is simply the **product of the eigenvalues**, and  
-- The trace ($f_{xx} + f_{yy}$) is the **sum of the eigenvalues**.  
+::: {.callout-note title="Eigenvalue Intuition"}
 
-So by checking determinant and trace together, one can infer the eigenvalues’ signs without fully computing them.
+
+For a square matrix $H \in \mathbb{R}^{n \times n}$, an **eigenvalue** $\lambda$ and corresponding **eigenvector** $v \neq 0$ satisfy:
+
+$$
+H v = \lambda v.
+$$
+
+- $\lambda$ is a scalar that tells how the matrix $H$ scales the vector $v$.
+- $v$ is the direction in which the scaling occurs. 
+
+
+The eigenvalues are solutions to the **characteristic equation**:
+
+$$
+\det(H - \lambda I) = 
+\begin{vmatrix}
+a - \lambda & b \\
+b & c - \lambda
+\end{vmatrix}
+= 0.
+$$
+
+Expanding:
+
+$$
+\lambda^2 - (a+c)\lambda + (ac - b^2) = 0.
+$$
+
+Thus,
+
+$$
+\lambda_{1,2} = \frac{(a+c) \pm \sqrt{(a-c)^2 + 4b^2}}{2}.
+$$
+
+
+:::
+
+
+
+The eigenvalue approach is more diagnostic because it tells you the curvature in every independent direction. The determinant only summarizes them into a single product, which can hide cases in higher dimensions. That’s why Miranda & Fackler (and others in numerical optimization) emphasize eigenvalues for curvature checks 
+
 
 **Economic intuition**
 
@@ -626,12 +664,17 @@ f_{yx} & f_{xx}
 \end{bmatrix}
 $$
 
-Compute its eigenvalues or leading principal minors:
+Compute its leading principal minors:
 
 - Determinant = $|H|$ =  $(-2)(-2)-(-1)^2=4-1=3>0$
 - Top-left element = $-2 < 0$  
 
-So $H$ is **negative definite** → local maximum.
+So $H$ is **negative definite** → local maximum. 
+
+Alternatively, using eigenvalues, the characteristic polynomial is:
+$$\lambda_{1,2} = \frac{-4 \pm \sqrt{(2+2)^2 - 4(-1)^2}}{2} = \frac{-4 \pm \sqrt{4}}{2} = \frac{-4 \pm 2}{2} = -1, -3
+$$
+The eigenvalues are $\lambda_1 = -1$ and $\lambda_2 = -3$, both negative, indicating that the curvature is downward sloping in both dimensions and confirming a local maximum.
 
 
 **Step 4: Visualizing in R**
@@ -766,11 +809,11 @@ Economists typically assume concavity (utility, production, profit functions) to
 
 ------
 
-## Maximum Likelihood Estimation
+# Maximum Likelihood Estimation
 
 Many econometric problems can be expressed as optimization problems. In particular, **Maximum Likelihood Estimation (MLE)** is a method of estimating unknown parameters by maximizing the likelihood of observing the sample data.
 
-### Likelihood function
+## Likelihood function
 
 Suppose we observe a sample of independent realizations $\{y_1, y_2, \ldots, y_T\}$, each drawn from a distribution with density $f(y|\theta)$ parameterized by $\theta \in \Theta$.  
 
@@ -786,7 +829,7 @@ $$
 \ell(\theta) = \log L(\theta) = \sum_{t=1}^T \log f(y_t|\theta).
 $$
 
-### Optimization problem
+## Optimization problem
 
 The MLE is defined as
 
@@ -796,19 +839,26 @@ $$
 
 This is an **unconstrained optimization problem** whenever the parameter space $\Theta = \mathbb{R}^k$. In practice, standard optimization methods (Newton-Raphson, quasi-Newton, gradient ascent) are employed to find $\hat{\theta}_{MLE}$.
 
-### First- and second-order conditions
+## First- and second-order conditions
 
 - **FOC (Score equation):**
   $$
   \nabla_\theta \ell(\hat{\theta}) = 0.
   $$
+  
+  - The term dates back to R.A. Fisher (1920s). He imagined the score as a running tally or “score card” of how much the data favors one parameter value over another.
+  -	If the score is zero, the data have no incentive to move the estimate — you’ve “scored even.”
 
 - **SOC (Information matrix):**  
   For $\hat{\theta}$ to be a maximum, the Hessian of $\ell(\theta)$ must be negative definite:
   $$
   H(\hat{\theta}) = \nabla^2_\theta \ell(\hat{\theta}) \prec 0.
   $$
-$\prec$ denotes negative definiteness.
+  - $\prec$ denotes negative definiteness.
+  - The sharper the log-likelihood curve, the more information the sample contains about the true parameter.
+  - A steep peak → small variance of $\hat{\theta}$.
+  - A flat peak → large variance.
+  - $\mathcal{I}(\theta)$ thus quantifies the precision of the estimator.
 
 In large samples, the covariance matrix of $\hat{\theta}$ is approximated by the inverse of the **Fisher information matrix**:
 
@@ -816,7 +866,7 @@ $$
 \text{Var}(\hat{\theta}) \approx \mathcal{I}(\hat{\theta})^{-1}, \quad \mathcal{I}(\theta) = -\mathbb{E}[\nabla^2_\theta \ell(\theta)].
 $$
 
-### Example: Normal distribution
+## Example: Normal distribution
 
 Let $y_t \sim \mathcal{N}(\mu, \sigma^2)$ i.i.d. The log-likelihood is
 
@@ -836,11 +886,143 @@ $$
 
 Both estimators emerge naturally from solving an optimization problem.
 
-### Economic applications
+## Economic applications
 
 MLE is widely used in economics:
+
 - Estimation of discrete choice models (logit, probit).  
-- Structural estimation of dynamic models [oai_citation:1‡Miranda_and_Fackler-Applied_Computational_Economics.pdf](file-service://file-9poQvgYH1rdv7mXmoud9sn).  
+- Structural estimation of dynamic models 
 - Calibration of production or policy models where likelihood-based estimation can incorporate uncertainty.
 
 MLE links optimization methods with statistical inference: the **same algorithms** (Newton, quasi-Newton, gradient descent) used to find optima in deterministic models also underpin parameter estimation in econometrics.
+
+## Numerically Solving MLE
+
+In most economic applications, the log-likelihood function $\ell(\theta)$ does not admit a closed-form solution. We therefore rely on iterative optimization algorithms to find $\hat{\theta}_{MLE}$. These algorithms search over parameter values, guided by the slope (gradient) and sometimes curvature (Hessian) of the log-likelihood surface.
+
+Gradient-based solvers:
+
+- Newton-Raphson: Uses both the gradient and the exact Hessian. Converges quickly near the optimum but requires computing and inverting the Hessian at each step, which can be costly or unstable if the Hessian is poorly conditioned.
+- Quasi-Newton methods (e.g. BFGS, BHHH): Approximate the Hessian rather than computing it directly. More stable and widely used in practice.
+
+### Newton-Raphson
+
+1.	Initialization: Start from an initial guess $\theta^{(0)}$ of length $m$.
+
+2.	Iterative update:
+  -	Compute the $m \times 1$ gradient  $g^{(k)} = \nabla_\theta \ell(\theta^{(k)})$ and $m \times m$ Hessian $H^{(k)} = \nabla^2_\theta \ell(\theta^{(k)})$.
+  -	Update parameters:
+  $$
+  \theta^{(k+1)} = \theta^{(k)} - [H^{(k)}]^{-1} g^{(k)}.
+  $$
+  
+### Berndt-Hall-Hall-Hausman (BHHH)
+
+The BHHH algorithm is a quasi-Newton method that approximates the Hessian using the outer product of gradients. It is particularly useful for MLE because it leverages the structure of the likelihood function.
+
+1.	Initialization: Start from an initial guess $\theta^{(0)}$.
+
+2.	Iterative update:
+  -	Compute the gradient $g^{(k)} = \nabla_\theta \ell(\theta^{(k)})$ which is an $m \times 1$.
+  -	Compute the outer product of gradients for each observation $t$:
+  $$
+  B^{(k)} = \sum_{t=1}^T g_t^{(k)} g_t^{(k)\prime},
+  $$
+  where $g_t^{(k)}$ is the gradient contribution from observation $t$. The dimensions of $B^{(k)}$ are $m \times m$..
+  
+  -	Update parameters:
+  $$
+  \theta^{(k+1)} = \theta^{(k)} + [B^{(k)}]^{-1} g^{(k)}.
+  $$
+  
+
+### Broyden–Fletcher–Goldfarb–Shanno (BFGS)
+
+The BFGS algorithm is a quasi-Newton method. It updates an approximation of the inverse Hessian at each iteration using only gradient information.
+	
+1.	Initialization:
+    - Start from an initial guess $\theta^{(0)}$. 
+    - Initialize an approximate inverse Hessian $H^{(0)}$ (often the identity matrix).
+
+2.	Iterative update:
+    -	Compute the gradient $g^{(k)} = \nabla_\theta \ell(\theta^{(k)})$.
+    -	Choose a search direction:
+    $$
+    d^{(k)} = - H^{(k)} g^{(k)}.
+    $$
+	
+    -	Perform a line search to select a step size $\alpha^{(k)}$ that increases $\ell(\theta)$ sufficiently.
+    -	Update parameters:
+    $$
+    \theta^{(k+1)} = \theta^{(k)} + \alpha^{(k)} d^{(k)}.
+    $$
+	
+3.	Update Hessian approximation:
+    -	Define $s^{(k)} = \theta^{(k+1)} - \theta^{(k)}$ and $y^{(k)} = g^{(k+1)} - g^{(k)}$.
+    -	Update inverse Hessian:
+    $$
+    H^{(k+1)} = \left(I - \frac{s^{(k)} y^{(k)\prime}}{y^{(k)\prime} s^{(k)}}\right) H^{(k)} \left(I - \frac{y^{(k)} s^{(k)\prime}}{y^{(k)\prime} s^{(k)}}\right) + \frac{s^{(k)} s^{(k)\prime}}{y^{(k)\prime} s^{(k)}}.
+    $$
+
+**Intuition**
+
+- Think of BFGS as learning the curvature of the log-likelihood surface on the fly.
+- Newton’s method jumps directly using the true curvature (the Hessian), but if that curvature estimate is noisy or expensive, the algorithm can diverge.
+-	BFGS instead builds a smoothed memory of past gradient steps to approximate curvature:
+  -	$s^{(k)}$ tells the algorithm how parameters moved.
+  -	$y^{(k)}$ tells the algorithm how gradients changed.
+  -	Together, these updates gradually refine the Hessian approximation.
+-	As iterations proceed, the approximation converges to the true Hessian, so convergence accelerates.
+
+Why Economists Like BFGS
+
+-	Robustness: Works well even when the likelihood is not globally concave.
+-	Efficiency: Avoids direct inversion of the Hessian, which is costly in high dimensions.
+-	Generality: Most econometric software (e.g., R’s optim(), Stata’s ml, MATLAB’s fminunc) use BFGS as a default solver.
+
+## MLE Example
+
+We'll estimate a simple logit model
+
+$$
+\Pr(y_i=1 \mid x_i) = p_i = \frac{1}{1+\exp(-x_i^{\prime} \beta)}.
+$$
+
+Equivalently,
+
+$$
+\text{logit}(p_i) = \log\left(\frac{p_i}{1-p_i}\right) = x_i^{\prime} \beta.
+$$
+
+
+
+Likelihood
+
+Given i.i.d. data ${(y_i, x_i)}_{i=1}^n$, the likelihood is
+
+$$
+L(\beta) = \prod_{i=1}^n p_i^{y_i} (1-p_i)^{1-y_i}.
+$$
+
+Log-likelihood:
+
+$$
+\ell(\beta) = \sum_{i=1}^n \Big[ y_i \log(p_i) + (1-y_i)\log(1-p_i) \Big].
+$$
+
+⸻
+
+Gradient (Score)
+
+$$
+\nabla_\beta \ell(\beta) = \sum_{i=1}^n (y_i - p_i) x_i.
+$$
+
+⸻
+
+Hessian
+
+$$
+\nabla^2_\beta \ell(\beta) = - \sum_{i=1}^n p_i (1-p_i) x_i x_i^{\prime}.
+$$
+
