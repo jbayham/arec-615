@@ -37,7 +37,7 @@
 - date: '2025-09-25'
   topic: Constrained nonlinear optimization
   reading: ''
-  due: Select Project Paper
+  due: ''
 - date: '2025-09-30'
   topic: 'Constrained nonlinear optimization: numerical methods'
   reading: ''
@@ -45,7 +45,7 @@
 - date: '2025-10-02'
   topic: 'Regression applications: generalized method of moments'
   reading: ''
-  due: ''
+  due: Select Project Paper
 - date: '2025-10-07'
   topic: ''
   reading: ''
@@ -81,7 +81,7 @@
 - date: '2025-11-04'
   topic: Value and policy functions in continuous spaces
   reading: ''
-  due: ''
+  due: Replication and Extension Proposal
 - date: '2025-11-06'
   topic: Collocation and projection methods
   reading: M&F 9
@@ -119,7 +119,7 @@
   reading: ''
   due: ''
 - date: '2025-12-09'
-  topic: Review
+  topic: Presentation
   reading: ''
   due: ''
 - date: '2025-12-11'
