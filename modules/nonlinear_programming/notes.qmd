@@ -809,6 +809,8 @@ Economists typically assume concavity (utility, production, profit functions) to
 
 ------
 
+*This section didn't work well for the class - too much for MS students and redundant for PhD students that have taken 735*
+
 # Maximum Likelihood Estimation
 
 Many econometric problems can be expressed as optimization problems. In particular, **Maximum Likelihood Estimation (MLE)** is a method of estimating unknown parameters by maximizing the likelihood of observing the sample data.
@@ -816,6 +818,8 @@ Many econometric problems can be expressed as optimization problems. In particul
 ## Likelihood function
 
 Suppose we observe a sample of independent realizations $\{y_1, y_2, \ldots, y_T\}$, each drawn from a distribution with density $f(y|\theta)$ parameterized by $\theta \in \Theta$.  
+
+For a concrete example, lets consider the Poisson.
 
 The **likelihood function** is
 
@@ -1026,3 +1030,342 @@ $$
 \nabla^2_\beta \ell(\beta) = - \sum_{i=1}^n p_i (1-p_i) x_i x_i^{\prime}.
 $$
 
+
+------
+
+\newpage
+
+# Constrained Optimization
+
+Let's start with the simple univariate case. The objective function has a single-dimension argument, $x$. Similarly, there is just one constraint and the function, $g(x)$ has a single dimension-argument, $x$. 
+
+## Problem Setup
+
+We consider the general problem:
+
+$$
+\max_{x} f(x)
+\quad \text{s.t. } g(x) \leq b, 
+$$
+
+- $f(x)$: objective function
+- $g(x) \leq b$: inequality constraint  
+
+
+---
+
+## The Lagrangian and KKT Conditions
+
+The **Lagrangian** is
+
+$$
+\mathcal{L}(x,\lambda) = f(x) +  \lambda (b-g(x))
+$$
+
+where $\lambda$ are Lagrange multipliers (also called **shadow values**). The shadow price tells you the marginal value (in terms of the objective) of relaxing the resource constraint by a unit.
+
+The **KKT conditions** are:
+
+1. **Stationarity**  
+   $$
+   \frac{\partial \mathcal{L}}{\partial x}  = \frac{\partial f(x^*)}{\partial x}  - \lambda \frac{\partial g(x^*)}{\partial x} = 0
+   $$
+
+2. **Primal feasibility**: the solution $x^*$ must lie in the feasible set. You cannot propose an “optimal” solution that violates the budget, land, time, or other resource limits.
+
+   $$g(x^*) \leq b$$
+
+3. **Dual feasibility**: the Lagrange multipliers (shadow prices) must be nonnegative. Why? Because if a constraint is binding, the multiplier represents the increase in the objective from relaxing that constraint.
+   $$\lambda \geq 0$$
+
+4. **Complementary slackness**: Either the constrain binds and holds with equality and the shadow price is nonnegative **or** the constraint does not bind and the shadow price is 0. 
+
+   $$\lambda (b- g(x^*)) = 0 $$
+
+
+## Bordered Hessian (Second Order Condition)
+
+The SOCs use the **bordered Hessian** to check the **curvature of $f$ along feasible directions**. With constraints, we can’t just look at the full Hessian. Some directions are **forbidden** (they would leave the feasible set). The bordered Hessian modifies the Hessian so that curvature is evaluated only along directions that *respect the constraints*. Imagine standing at the tangent plane of the feasible set at $x^*$. The bordered Hessian checks if $f$ bends downward (for a max) or upward (for a min) *within that tangent plane*.
+
+
+For one variable and one active constraint, the bordered Hessian is a $2\times2$ matrix:
+
+$$
+H_B =
+\begin{bmatrix}
+0 & -g_x(x^*) \\
+-g_x(x^*) & \mathcal{L}_{xx}(x^*,\lambda^*)
+\end{bmatrix}.
+$$
+
+(The minus sign comes from writing the constraint as $b-g(x)\ge0$ in the Lagrangian.)
+
+The determinant is
+
+$$
+\det(H_B)=
+- \bigl[g'(x^*)\bigr]^2.
+$$
+
+- For a **constrained maximum** with one binding constraint, we require $\det(H_B)<0$. 
+- For a **constrained minimum**, $\det(H_B)>0$.
+
+Suppose we have a vector $x$ with n dimensions and $q$ constraints. 
+
+$$
+H_B =
+\begin{bmatrix}
+0 & \nabla_x g(x^*)^{\top} \\
+\nabla_x g(x^*) & \nabla^2_{xx}\mathcal{L}(x^*,\lambda^*)
+\end{bmatrix}.
+$$
+
+- The **sign pattern of the principal minors** of $H_B$ gives the curvature test:
+  - For a maximum: determinants alternate in sign, starting with $(-1)^q$ starting from $q+1$.  
+  - For a minimum: determinants are all $(-1)^{q+r}$ for the $r$th minor.  
+
+In constrained optimization: You must "filter out" the directions that are not feasible. The **bordered Hessian** does that filtering — it’s just a device to enforce that curvature is checked along the constraint surface.  
+
+In economics, global results often come from convexity assumptions:
+	
+	-	Concave objective + convex feasible set → every local maximum is global.
+	-	This is why so much of microeconomic theory leans on convex analysis.
+	
+A set $C \subseteq \mathbb{R}^n$ is convex if, for any two points $x,y \in C$ and any $\theta \in [0,1]$, the convex combination
+$$
+z = \theta x + (1-\theta)y
+$$
+also belongs to $C$.
+
+### Example
+
+Suppose we have a profit function $f(x_1,x_2)$ and a linear resource constraint:
+
+$$
+\max_{x_1,x_2} f(x_1,x_2) = 10x_1 + 15x_2 - (x_1^2+x_2^2)
+\quad \text{s.t. } x_1+x_2 \leq 10
+$$
+
+
+1. Find the optimum
+
+The first-order conditions are
+
+$$
+10 - 2x_1 - \lambda = 0,
+$$
+
+$$
+15 - 2x_2 - \lambda = 0,
+$$
+
+together with the binding constraint
+
+$$
+x_1 + x_2 = 10.
+$$
+
+---
+
+From the first two equations:
+
+$$
+2x_1 = 10 - \lambda, \qquad 2x_2 = 15 - \lambda.
+$$
+
+Solving for $\lambda$, setting equal, and subbing into the constraint,
+
+$$
+10 - 2x_1 = 15 - 2x_2 \Rightarrow x_1 = x_2-5/2; \quad x_2 -5/2 +x_2 =10 \Rightarrow  x_2 = 12.5/2=6.25
+$$
+
+
+Substituting back:
+
+$$
+x_1 = 6.25 - 2.5 =  3.75,
+$$
+
+
+2. Check the SOCs
+
+$\nabla g(x)=[1 1]$ so the borders are 1. Then, $\nabla f(x_1,x_2)$: 
+
+$$
+H_B =
+\begin{bmatrix}
+0 & 1 & 1 \\
+1 & -2 & 0 \\
+1 & 0 & -2
+\end{bmatrix}.
+$$
+
+Starting from $q+1 = 1+1 = 2$, must alternate sign starting with $(-1)^q=1$:
+
+$$
+|H_B| =
+| \begin{bmatrix}
+0 & 1  \\
+1 & -2  \\
+\end{bmatrix} | <0
+$$
+
+and the full $H_B$
+
+
+```{r}
+#| echo: false
+
+# Load packages
+library(ggplot2)
+
+# Objective function
+f <- function(x1, x2) {
+  10*x1 + 15*x2 - (x1^2 + x2^2)
+}
+
+# Constraint: g(x) = x1 + x2 - 10 <= 0
+g <- function(x1, x2) x1 + x2 - 10
+
+# Compute gradient and Hessian of f
+grad_f <- function(x) {
+  c(10 - 2*x[1], 15 - 2*x[2])
+}
+
+hess_f <- function(x) {
+  matrix(c(-2, 0,
+           0, -2), nrow=2)
+}
+
+# Solve via KKT (analytical in this case)
+# Stationarity: grad_f(x) - lambda * grad_g = 0
+# grad_g = (1,1)
+# -> 10 - 2x1 - lambda = 0
+# -> 15 - 2x2 - lambda = 0
+# -> constraint binds: x1 + x2 = 10
+
+# From first two equations:
+# 2x1 = 10 - lambda
+# 2x2 = 15 - lambda
+# Add: 2(x1+x2) = 25 - 2lambda
+# 20 = 25 - 2lambda => lambda = 2.5
+# x1 = (10 - 2.5)/2 = 3.75
+# x2 = (15 - 2.5)/2 = 6.25
+
+x_star <- c(3.75, 6.25)
+lambda <- 2.5
+
+# Bordered Hessian
+grad_g <- matrix(c(1,1), nrow=1)
+hess_L <- hess_f(x_star) # constraint is linear, so g''=0
+H_b <- rbind(
+  cbind(0, grad_g),
+  cbind(t(grad_g), hess_L)
+)
+
+H_b
+det(H_b[1:2,1:2])
+det(H_b)
+
+# -------- Visualization --------
+# Create grid for plotting
+x1 <- seq(0, 12, length=100)
+x2 <- seq(0, 12, length=100)
+grid <- expand.grid(x1=x1, x2=x2)
+grid$z <- with(grid, f(x1,x2))
+
+# Feasible region: x1+x2 <= 10
+grid$feasible <- with(grid, x1+x2 <= 10)
+
+# Plot contours of f and the feasible set
+ggplot(grid, aes(x=x1, y=x2, z=z)) +
+  geom_contour(aes(color=after_stat(level)), alpha=0.6) +
+  geom_abline(intercept=10, slope=-1, color="red", size=1.2) +
+  geom_point(aes(x=x_star[1], y=x_star[2]), color="black", size=3) +
+  annotate("text", x=x_star[1]+0.5, y=x_star[2]-.5, label="Optimum") +
+  labs(title="Constrained Optimization Example",
+       subtitle="Contours of f(x1,x2), red line = binding constraint",
+       x=expression(x[1]), y=expression(x[2])) +
+  coord_equal()
+
+```
+
+What is the shadow price of our constraint? $2(3.75)-10=2.5=\lambda$
+
+What is the direction of steepest ascent? 
+
+- $f_{x_1}(x_1^*,x_2^*) = 10-2(3.75) = 2.5$
+- $f_{x_2}(x_1^*,x_2^*) = 15-2(6.25) = 2.5$
+
+- $\nabla g(x)$ points perpendicular to the constraint boundary (the “normal vector” to the feasible set).
+- $\nabla f(x)$ points in the unconstrained steepest ascent direction.
+- At the optimum on the boundary, these must line up — otherwise there would be a feasible direction in which $f$ could still increase. One is just a rescaled version of the other, with the multiplier $\lambda$ giving the scaling factor.
+
+
+## Envelope Theorem
+
+-	Once you set up the Lagrangian, the effect of parameter changes on the optimal value of the objective is given by multipliers.
+-	Example: In a consumer problem, $\frac{\partial V}{\partial I} = \lambda$ (marginal utility of income).
+-	Economists use this all the time in comparative statics, welfare analysis, and derivations of demand.
+
+## Duality
+
+- The problem you solved is the primal: maximize the objective subject to constraints.
+-	Every primal problem has a dual problem, where the variables are the multipliers (the $\lambda$’s).
+-	The dual is not just a mathematical trick — it has deep economic meaning: it’s a price system that supports the allocation chosen in the primal.
+
+The Lagrangian itself is the bridge:
+$$
+\mathcal{L}(x,\lambda) = f(x) + \lambda(b-g(x)).
+$$
+The dual function is
+$$
+q(\lambda) = \max_x \mathcal{L}(x,\lambda).
+$$
+The dual problem is
+$$
+\min_{\lambda \ge 0} q(\lambda).
+$$
+Economic interpretation: The dual chooses shadow prices $\lambda$ so that the cost of resources (valued at $\lambda$) supports the primal allocation.
+
+### Example
+
+The dual function is obtained by maximizing the Lagrangian over $(x_1,x_2)$ for a given $\lambda\ge 0$:
+$$
+q(\lambda) = \max_{x_1,x_2\ge0}
+\Bigl[10x_1+15x_2 - x_1^2 - x_2^2 + \lambda(10 - x_1-x_2)\Bigr].
+$$
+
+Stationarity conditions for the inner maximization:
+$$
+\begin{aligned}
+\frac{\partial \mathcal{L}}{\partial x_1}
+&= 10-2x_1 - \lambda=0
+\quad\Rightarrow\quad x_1=\frac{10-\lambda}{2},\\[0.5em]
+\frac{\partial \mathcal{L}}{\partial x_2}
+&= 15-2x_2 - \lambda=0
+\quad\Rightarrow\quad x_2=\frac{15-\lambda}{2}.
+\end{aligned}
+$$
+
+Plugging these $x_1(\lambda),x_2(\lambda)$ back into $\mathcal{L}$ gives the dual function. Compute each piece:
+
+$x_1^=\frac{10-\lambda}{2}, x_2^=\frac{15-\lambda}{2}$.
+
+$$
+q(\lambda)=10\frac{10-\lambda}{2}-\left(\frac{10-\lambda}{2}\right)^2
++15\frac{15-\lambda}{2}-\left(\frac{15-\lambda}{2}\right)^2+\lambda(\lambda-2.5).
+$$
+
+
+The dual problem
+$$
+\min_{\lambda\ge 0} q(\lambda).
+$$
+
+**Takeaways**
+
+- The dual problem says: find the resource price \lambda so that when agents maximize net benefit subject to that price, total demand for the resource just equals 10.
+- The primal says: given 10 units of the resource, allocate across $x_1$ and $x_2$ to maximize net benefit.
+
+Both yield the same value function, which is exactly the welfare–equilibrium duality economists care about.
