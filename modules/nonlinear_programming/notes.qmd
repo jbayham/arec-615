@@ -1369,3 +1369,253 @@ $$
 - The primal says: given 10 units of the resource, allocate across $x_1$ and $x_2$ to maximize net benefit.
 
 Both yield the same value function, which is exactly the welfare–equilibrium duality economists care about.
+
+
+-------
+
+# Numeric Methods for Constrained Optimization
+
+We will introduce constrained optimization numerical methods with the portfolio problem. In resource economics we often face **allocation problems under risk**.  A manager (or policymaker) must decide how to allocate a fixed resource across several uses, where each use has uncertain payoffs.  
+
+Examples:  
+
+- An agricultural producer allocates land across crops with uncertain yields.  
+- A fishery regulator allocates harvest quotas across regions with uncertain stock growth.  
+- An energy portfolio manager invests in renewable projects with uncertain output.  
+
+These problems share a common structure:  
+
+- Decision variables $x = (x_1, \dots, x_n)$ represent fractions of the resource allocated to each activity.  
+- Each activity $i$ has an **expected return** $\mu_i$ and **risk** $\Omega$ (variance and covariance with other activities).  
+
+
+## Portfolio Problem
+
+The manager wants to maximize expected return while managing risk, subject to a budget constraint $\sum_i x_i = 1$ and possibly non-negativity constraints $x_i \ge 0$ (no short selling).
+
+We want to choose portfolio weights $x = (x_1, \dots, x_n)$ to maximize mean–variance utility:
+
+$$
+\max_{x} ; U(x) = \mu^\top x - \tfrac{\lambda}{2} x^\top \Omega x
+$$
+
+subject to:
+
+-	Budget constraint: $\sum_{i=1}^n x_i = 1$
+-	Non-negativity (no short selling, or negative land/harvest): $x_i \ge 0$
+
+where:
+
+-	$\mu$ = vector of expected returns
+-	$\Omega$ = covariance matrix of returns
+-	$\lambda$ = risk aversion parameter
+
+This utility function is called **mean–variance utility** aka Markowitz utility. It captures the tradeoff between expected return and risk (variance of returns). The parameter $\lambda$ controls how much the manager dislikes risk. 
+
+### Solving the problem
+
+Define the Lagrangian:
+
+$$
+\mathcal{L}(x, \gamma, \nu) = \mu^\top x - \tfrac{\lambda}{2} x^\top \Omega x
+	+	\gamma \left( 1 - \mathbf{1}^\top x \right)
+	+	\nu^\top x
+$$
+
+where:
+
+-	$\gamma$ is the multiplier for the budget constraint,
+-	$\nu \ge 0$ are multipliers for non-negativity constraints.
+
+**Intuition**
+
+- The problem is a **risk-return tradeoff**:  
+  - Higher return activities often come with higher variance.
+  - Diversification reduces overall risk because covariance matters.  
+
+- In resource economics, this framework generalizes:  
+  - A farmer diversifying across crops is solving a **portfolio of land use** problem.
+  - An energy planner investing in solar, wind, and hydro is solving a **portfolio of renewable energy projects**.
+  - A conservation agency allocating budgets across programs faces the same tradeoff. 
+
+- The **shadow price** of the resource constraint tells us how much expected utility increases if we could expand the available resource slightly. In this case, it tells us about our marginal utility of wealth.
+
+
+### KKT Conditions
+
+The KKT conditions are:
+
+- Stationarity:
+  $$\nabla_x\mathcal{L}=\mu-\lambda\Omega x-\gamma\mathbf{1}+\nu=0$$
+
+- Primal feasibility:
+  $$\mathbf{1}^\top x=1,\quad x\ge 0.$$
+
+- Dual feasibility:
+  $$\nu\ge 0.$$
+
+- Complementary slackness:
+  $$\nu_i x_i=0\quad\forall i.$$
+   
+**Analytical Solution Without Inequality Constraints**
+
+Ignoring $x\ge 0$ (set $\nu=0$), stationarity gives
+$$\lambda\Omega x=\mu-\gamma\mathbf{1}\;\;\Rightarrow\;\;x(\gamma)=\tfrac{1}{\lambda}\Omega^{-1}(\mu-\gamma\mathbf{1})$$
+**Interpretation**: 
+
+- First, note that the optimal allocation balances excess returns with the risk (weighted by risk aversion)
+- allocate more to assets with higher excess returns $\mu_i-\gamma$ and lower variance (diagonal of $\Omega$) and covariance (off-diagonal of $\Omega$). 
+- Excess return is return above the shadow price $\gamma$ of wealth. In this problem, the shadow price $\gamma$ varies inversely with $\lambda$. 
+- If you are more risk averse (higher $\lambda$), the shadow price of wealth is lower because you value safety more. In other words, you need a higher expected return to compensate for risk.
+
+
+If we impose the constraint, $\mathbf{1}^\top x=1$, we can solve for $\gamma$ (shadow price of wealth):
+$$\mathbf{1}^\top \Omega^{-1}(\mu-\gamma\mathbf{1})=\lambda
+\;\Rightarrow\;
+\gamma=\frac{\mathbf{1}^\top\Omega^{-1}\mu-\lambda}{\mathbf{1}^\top\Omega^{-1}\mathbf{1}}.$$
+
+
+---
+
+## Numerical Example in R
+
+```{r}
+library(ggplot2)
+
+# Parameters
+mu1 <- 0.10
+Omega <- matrix(c(0.04,0.02,
+                  0.02,0.09), 2, 2)
+lambda <- 2
+
+# Function: returns weights and gamma
+project_nn <- function(mu, Omega, lambda){
+  OmegaInv <- solve(Omega); one <- rep(1, length(mu))
+  gamma <- as.numeric((t(one)%*%OmegaInv%*%mu - lambda) /
+                      (t(one)%*%OmegaInv%*%one))
+  x <- as.numeric((1/lambda) * OmegaInv %*% (mu - gamma*one))
+  
+  # enforce nonnegativity
+  if(all(x >= -1e-10)) {
+    return(list(x = pmax(x,0)/sum(pmax(x,0)), gamma = gamma))
+  }
+  if(x[1] < 0) return(list(x = c(0,1), gamma = gamma))
+  if(x[2] < 0) return(list(x = c(1,0), gamma = gamma))
+  list(x = pmax(x,0)/sum(pmax(x,0)), gamma = gamma)
+}
+
+# Sweep mu2
+mu2_vals <- seq(0.001, 0.3, by=0.005)
+results <- lapply(mu2_vals, function(m2) project_nn(c(mu1,m2), Omega, lambda))
+
+weights <- t(sapply(results, function(r) r$x))
+gammas  <- sapply(results, function(r) r$gamma)
+
+df <- data.frame(mu2 = mu2_vals,
+                 x1 = weights[,1],
+                 x2 = weights[,2],
+                 gamma = gammas)
+
+# For teaching: take gamma at baseline mu2 = 0.15
+gamma_ref <- df$gamma[10]
+
+# Plot weights vs mu2 with vertical line at gamma
+ggplot(df, aes(x=mu2)) +
+  geom_line(aes(y=x1, color="Asset 1"), size=1) +
+  geom_line(aes(y=x2, color="Asset 2"), size=1) +
+  # geom_vline(xintercept = gamma_ref, linetype="dashed") +
+  # annotate("text", x=gamma_ref, y=1.05,
+  #          label=paste0("gamma = ", round(gamma_ref,3)),
+  #          hjust=-0.1, vjust=0, angle=90) +
+  labs(title="Portfolio Weights vs. Expected Return of Asset 2",
+       x="Expected Return of Asset 2 (mu2)", y="Optimal Weight",
+       color="Asset") +
+  theme_minimal()
+```
+
+## Sequential Least Squares Quadratic Programming
+
+For larger allocation problems with many assets and constraints, we often need to use numerical solvers. One popular algorithm is **Sequential Least Squares Quadratic Programming (SLSQP)**.
+
+**The SLSQP idea**
+
+1.	Start from a feasible $x^k$.
+2.	At each step, approximate the problem locally with a quadratic program (QP).
+3.	Solve the QP → gives a search direction $d^k$.
+4.	Update $x^{k+1} = x^k + \alpha d^k$ with a line search.
+5.	Repeat until gradients + constraints satisfy tolerances.
+
+
+**More details**
+
+1.	Nonlinear problem setup   
+You have an objective $f(x)$ and constraints $g(x) = 0$ (budget) and $h(x) \geq 0$ (no short selling).
+Analytically, the KKT conditions require solving a system of equations involving gradients and multipliers.
+	
+2.	Local quadratic approximation
+At the current guess $x^k$, SLSQP builds a quadratic model of the objective and linear models of the constraints:
+  -	Objective approximated by a quadratic (second-order Taylor expansion).  
+
+$$ f(x) \approx f(x^k) + \nabla f(x^k)^\top (x-x^k) *	\tfrac{1}{2} (x-x^k)^\top B^k (x-x^k)$$
+
+  - where $B^k$ is an approximation of the Hessian (e.g. BFGS update).
+  - Constraints approximated by linearizing their gradients.    
+
+$$ g(x) \approx g(x^k) + \nabla g(x^k)^\top (x-x^k) $$  
+$$ h(x) \approx h(x^k) + \nabla h(x^k)^\top (x-x^k) $$  
+
+
+  - This reduces the nonlinear program to a Quadratic Program (QP) at each step.
+	
+3.	Solve the QP subproblem   
+The QP is much easier: quadratic objective + linear constraints.
+
+Then find $d$ to solve the QP subproblem:
+
+$$
+\min_d ; \nabla f(x^k)^\top d + \tfrac{1}{2} d^\top B^k d
+$$
+
+subject to linearized constraints:
+
+$$
+g(x^k) + \nabla g(x^k)^\top d = 0, \
+h(x^k) + \nabla h(x^k)^\top d \ge 0.
+$$
+
+
+- The QP solution gives a step direction $d^k$.
+
+4.	Update with line search   
+To ensure stability, SLSQP does a line search along $d^k$:
+
+$$x^{k+1} = x^k + \alpha d^k, \quad 0 < \alpha \le 1$$
+
+-	It chooses $\alpha$ to reduce the merit function (a mix of objective + penalties for constraint violation).
+-	Then it updates $B^k$ (the Hessian approximation).
+
+5.	Iterate until convergence   
+Repeat until the gradients are small and the constraints are satisfied (up to tolerance).
+- Stationarity holds: $\nabla f(x^*) + \sum \lambda_j \nabla g_j(x^*) = 0$.
+-	Constraints satisfied: $g(x^*)=0$, $h(x^*)\ge 0$.
+-	Complementary slackness: $\lambda_j h_j(x^*)=0$.
+
+### Roles of gradient and Hessian
+-	Gradient term $\nabla f(x^k)$ gives the local direction of steepest descent/ascent.
+
+  - If we only used this term, the subproblem would be a linear program:
+$$
+\min_d ;\nabla f(x^k)^\top d
+$$
+  - subject to linearized constraints. That would always push to an extreme corner of the feasible region (like simplex in LP).
+
+-	Hessian term $B^k$ curves the model of the objective.
+  - It tells the solver how the slope changes as you move, i.e. how “sharp” or “flat” the function is in different directions.
+  - This ensures the step $d$ is not just feasible and descending, but also “shaped” to anticipate the curvature of $f$.
+
+In optimization language:
+
+-	Gradient = first-order information (direction of decrease).
+-	Hessian = second-order information (how big of a step you can take in each direction without overshooting).
+
+## Example in R
