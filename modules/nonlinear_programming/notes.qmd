@@ -1531,6 +1531,11 @@ ggplot(df, aes(x=mu2)) +
        x="Expected Return of Asset 2 (mu2)", y="Optimal Weight",
        color="Asset") +
   theme_minimal()
+
+df |>
+  ggplot(aes(x=mu2,y=gamma)) +
+  geom_line()
+
 ```
 
 ## Sequential Least Squares Quadratic Programming
@@ -1618,4 +1623,221 @@ In optimization language:
 -	Gradient = first-order information (direction of decrease).
 -	Hessian = second-order information (how big of a step you can take in each direction without overshooting).
 
-## Example in R
+
+-----
+
+# Simulated Method of Moments: A Static Abatement Model
+
+We consider a simple static environmental economics problem. A firm emits pollution but can **abate** emissions at a cost. The regulator imposes a penalty on residual emissions, which induces the firm to choose a positive abatement level.
+
+## Model Setup
+
+- Each firm $i$ has baseline emissions $e_i^0$ before abatement.  
+- The firm chooses abatement $a_i \ge 0$.  
+- True abatement costs are quadratic in $a_i$:  
+
+$$
+C(a_i;\theta) = \theta_1 a_i + \tfrac{1}{2}\theta_2 a_i^2
+$$
+
+where $\theta_1,\theta_2 > 0$.  
+
+- Actual residual emissions after abatement are stochastic:  
+
+$$
+e_i = e_i^0 - a_i + \varepsilon_i,
+$$
+
+with $\varepsilon_i \sim N(0,\sigma^2)$, independent across firms.  
+
+- The regulator imposes a per-unit penalty $P$ on realized residual emissions. The expected penalty to firm $i$ is  
+
+$$
+P \cdot \mathbb{E}\big[\max\{0,\, e_i^0 - a_i + \varepsilon_i\}\big].
+$$
+
+- Firm $i$ solves  
+
+$$
+\min_{a_i \ge 0} \;\; C(a_i;\theta) + P \cdot \mathbb{E}\big[\max\{0, e_i^0 - a_i + \varepsilon_i\}\big].
+$$
+
+**Suppose we could move the expectation operator inside the max function (we cannot) and assume that $e_i^0 - a_i$ is always positive (we cannot). Solve the problem.**
+  
+## Deriving the FOC
+
+
+### Step 1. Firm’s problem
+The firm minimizes expected cost:
+
+$$
+\min_{a \ge 0} \; \theta_1 a + \tfrac{1}{2}\theta_2 a^2
+\;+\; P \cdot \mathbb{E}\!\left[\max\{0,\, e_0 - a + \varepsilon\}\right],
+$$
+
+where $\varepsilon \sim N(0,\sigma^2)$.
+
+
+
+### Step 2. Derivative of the cost function
+The marginal cost of abatement is:
+
+$$
+\frac{\partial}{\partial a}\Big(\theta_1 a + \tfrac{1}{2}\theta_2 a^2\Big)
+= \theta_1 + \theta_2 a.
+$$
+
+
+### Step 3. Derivative of the expected penalty
+Inside the max function:
+
+$$
+g(a,\varepsilon) = \max\{0, e_0 - a + \varepsilon\}.
+$$
+
+The derivative with respect to $a$ is:
+
+$$
+\frac{\partial g}{\partial a} =
+\begin{cases}
+-1, & \text{if } e_0 - a + \varepsilon > 0, \\
+0,  & \text{otherwise}.
+\end{cases}
+$$
+
+So:
+
+$$
+\frac{\partial}{\partial a} \mathbb{E}[g(a,\varepsilon)]
+= \mathbb{E}\!\left[\tfrac{\partial g}{\partial a}\right]
+= -\Pr(e_0 - a + \varepsilon > 0).
+$$
+
+
+
+### Step 4. Probability expression
+Since $\varepsilon \sim N(0,\sigma^2)$:
+
+$$
+\Pr(e_0 - a + \varepsilon > 0)
+= \Pr(\varepsilon > a - e_0)
+= 1 - \Phi\!\left(\tfrac{a-e_0}{\sigma}\right)
+= \Phi\!\left(\tfrac{e_0-a}{\sigma}\right),
+$$
+
+where $\Phi(\cdot)$ is the standard normal CDF.
+
+
+
+### Step 5. First-order condition
+Setting marginal cost = expected marginal benefit:
+
+$$
+\theta_1 + \theta_2 a
+= P \cdot \Phi\!\left(\tfrac{e_0-a}{\sigma}\right).
+$$
+
+Then plugging in our true theta values $\theta_1=2$, $\theta_2=0.5$, $P=10$, $\sigma=1$, and $e_0=10$:
+$$ 1 + 0.5 a = 10 \cdot \Phi(e_0 - a). $$
+
+When $e_0 - a$ is large, $\Phi(\cdot) \approx 1$, so $a \approx 18$. When $e_0 - a$ is small or negative, $\Phi(\cdot) \approx 0$, so $a \approx -4$ (infeasible). The solution is somewhere in between.
+
+
+
+## Economic Intuition
+
+- The firm trades off **abatement cost** (increasing and convex in $a_i$) against the **expected penalty** (decreasing in $a_i$).  
+- Optimal abatement $a_i^*$ rises when:
+  - Penalty $P$ is higher,  
+  - Baseline emissions $e_i^0$ are larger,  
+  - The variance of $\varepsilon_i$ is lower (less uncertainty in residuals).  
+- In practice, the expectation over $\varepsilon_i$ has no simple closed form. Thus, we approximate it by Monte Carlo simulation.
+
+---
+
+## Simulated Method of Moments (SMM)
+
+### Why simulation?
+
+- Analytical expressions for expected penalties are unavailable.  
+- However, we can simulate many $\varepsilon_i$ draws, approximate the expectation, and solve for optimal $a_i$ numerically.  
+- This creates a “black box” mapping from parameters $\theta=(\theta_1,\theta_2,\sigma)$ to simulated data $\{a_i\}$.
+
+## Observed data and empirical moments
+
+Suppose we observe a sample of $N$ firms with $(e_i^0, a_i)$ pairs. We can compute **empirical moments** such as:
+
+- Mean abatement:  
+
+$$
+m_1 = \frac{1}{N}\sum_{i=1}^N a_i
+$$
+
+- Variance of abatement:  
+
+$$
+m_2 = \frac{1}{N}\sum_{i=1}^N (a_i - \bar a)^2
+$$
+
+- Covariance of abatement with baseline emissions:  
+
+$$
+m_3 = \frac{1}{N}\sum_{i=1}^N (a_i - \bar a)(e_i^0 - \bar e^0).
+$$
+
+These provide identifying information about $\theta$.  
+
+## Simulated moments
+
+Given a candidate parameter vector $\theta$:
+
+1. For each firm $i$, simulate shocks $\varepsilon_{i,s}$ using common random numbers.  
+2. Solve the firm’s optimization problem for optimal abatement $a_i(\theta)$.  
+3. Compute **simulated moments** $\psi(\theta) = (\psi_1(\theta), \psi_2(\theta), \psi_3(\theta))$ analogous to $m_1,m_2,m_3$.  
+
+## The SMM criterion
+
+The estimator chooses $\theta$ to minimize the distance between data and simulated moments:
+
+$$
+\hat\theta = \arg\min_{\theta \in \Theta} \; \big[m - \psi(\theta)\big]^\top W \big[m - \psi(\theta)\big]
+$$
+
+- $m$ = vector of empirical moments.  
+- $\psi(\theta)$ = vector of simulated moments.  
+- $W$ = weighting matrix. We start with the identity matrix, then can improve efficiency using the inverse of the estimated covariance of the moments.  
+
+This is a **constrained optimization problem**: $\theta_1,\theta_2,\sigma > 0$. The SMM criterion is generally nonlinear and must be solved numerically.
+
+---
+
+## Economic Interpretation
+
+- **$\theta_1$**: linear cost of abatement, shifts the level of optimal abatement.  
+- **$\theta_2$**: curvature of cost; higher $\theta_2$ implies rapidly increasing marginal costs, reducing optimal abatement variance.  
+- **$\sigma$**: noise in residual emissions. Higher $\sigma$ makes penalties more uncertain, dampening abatement incentives.  
+
+By matching simulated and empirical moments, we infer the structural cost parameters from observed behavior.
+
+---
+
+## Implementation Highlights
+
+- Use **common random numbers (CRNs)**: fix random shocks across evaluations so the SMM objective is smooth.  
+- Inner loop: for each firm, solve a one-dimensional minimization in $a_i$ using `optimize()` in R.  
+- Outer loop: minimize the SMM objective using a constrained solver such as `nloptr`.  
+- Diagnostic checks:
+  - Compare simulated moments at $\hat\theta$ vs empirical moments.  
+  - Plot the objective surface in 2D slices around $\hat\theta$.  
+  - Sensitivity of $\hat\theta$ to number of simulation draws and weighting matrix.  
+
+---
+
+## Key Takeaways
+
+- SMM allows us to estimate structural parameters in models where expectations are analytically intractable.  
+- The method is flexible: as long as we can simulate from the model, we can estimate it.  
+- The abatement example is intentionally simple, but the same framework scales to more complex resource and environmental economics problems:  
+  - groundwater extraction under stochastic recharge,  
+  - fishery harvest with stochastic stock dynamics,  
+  - permit allocation under uncertainty.  

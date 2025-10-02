@@ -65,7 +65,7 @@ n <- 5
 mu <- runif(n, 0.05, 0.15)
 A <- matrix(rnorm(n^2), n)
 Omega <- crossprod(A)/n
-lambda <- 5
+lambda <- 8
 
 # --- container to store trace ---
 trace_list <- list()
@@ -117,8 +117,8 @@ trace_long <- reshape2::melt(trace_df, id.vars = "iter",
                              variable.name = "Asset", value.name = "Weight")
 
 ggplot(trace_long, aes(x = iter, y = Weight, color = Asset)) +
-  geom_line(linewidth = 1) +
-  geom_point(size = 2) +
+  geom_line(linewidth = 1,alpha=.6) +
+  geom_point(size = 2,alpha=.6) +
   labs(title = "Evolution of Portfolio Weights During Optimization",
        x = "Iteration", y = "Weight")
 
