@@ -78,5 +78,57 @@ b. Use $x_0 = 0$ and $x_0 = -1.5$ as two different initial values.
 c. Plot $f(x)$ and its derivative over $[-3, 3]$.
 d. Report the outcome of the iteration for each starting point.
 e. Compare the convergence (or divergence) behavior. What role does the choice of initial guess play?
-f. Why does the method fail to move when starting at $x_0 = 0$? explain. 
+f. Why does the method fail to move when starting at $x_0 = 0$? explain.
+
+
+
+## Problem 4: Pollution Abatement under an Emissions Cap
+
+A firm produces output $q$ which generates pollution. For each unit of output, one unit of emissions is generated unless the firm invests in abatement $a$ (e.g., cleaner technology, filters). Abatement reduces emissions one-for-one, but it is costly.
+
+- Profit function (before regulation):
+$$
+\pi(q,a) = 100q - 2q^2 - \tfrac{1}{2}a^2
+$$
+
+-	Emissions constraint:
+$$
+q - a \leq E
+$$
+where $E$ is the regulatory emissions cap.
+
+- Non-negativity: $q \geq 0$, $a \geq 0$.
+
+⸻
+
+Questions:
+
+a.	Lagrangian: Construct the Lagrangian for the problem, introducing a multiplier $\lambda$ on the emissions constraint.
+
+b.	KKT conditions: Derive the first-order conditions (stationarity, complementary slackness, feasibility).
+
+c.	Solution:
+    - Solve for the unconstrained optimum $(q^u, a^u)$ and show whether the emissions constraint binds.
+    - Solve for the constrained optimum $(q^,a^)$ when the cap is $E=20$.
+  
+d. Verify that the second-order conditions for a maximum are satisfied at the constrained optimum.
+
+e.	Interpretation of $\lambda$:
+	-	What is the economic meaning of $\lambda^*$ in this problem?
+	-	How does it relate to the marginal cost of tightening the emissions cap?
+
+f.	Comparative statics: Suppose $E$ decreases by one unit (stricter regulation). Use $\lambda^*$ to predict the change in the firm’s profit.
+
+g.	Dual problem: Formulate the dual problem and interpret its objective function in this context.
+
+
+## Problem 5: Extend the Simulated Method of Moments Problem
+
+Recall the SMM problem from class and the course notes. See more information on SMM [here](https://opensourceecon.github.io/CompMethods/struct_est/SMM.html) 
+
+The r script for the class example is in the modules material.
+
+a. Estimate the standard errors of the parameters. You can use asymptotic theory (Hessian) or bootstrap methods. 
+
+b. The current SMM estimator uses an identity weighting matrix. Modify the code to use an optimal weighting matrix. You can use the sample variance-covariance matrix of the moments as an estimate of the optimal weighting matrix. Compare the estimates and standard errors of the parameters using the identity and optimal weighting matrices. Which one is more efficient? Why?
 

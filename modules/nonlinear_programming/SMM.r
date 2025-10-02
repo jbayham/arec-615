@@ -5,7 +5,6 @@
 
 library(stats)
 library(Matrix)
-library(Rcpp)     # optional, for speed if needed later
 library(nloptr)   # or another optimizer for constrained optimization
 
 # -----------------------
@@ -13,7 +12,6 @@ library(nloptr)   # or another optimizer for constrained optimization
 # -----------------------
 
 # (In practice, replace this with your observed data)
-set.seed(123)
 N_data <- 500
 
 set.seed(999)  # master seed for reproducibility
@@ -129,7 +127,6 @@ smm_obj <- function(param_vec, e0_vector, P, m_data, eps_mat) {
   diff = m_sim - m_data
   #diff = (m_sim - m_data)/m_data  # relative differences
   weight_matrix <- diag(length(theta)) #equal weights
-  #weight_matrix <- solve(diff%*%t(diff) + .000001*diag(length(diff)))  #weight by outer product of moment differences
 
   out <- t(diff) %*% weight_matrix %*% (diff)
   #diff <- sum((m_sim - m_data)^2)
