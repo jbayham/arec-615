@@ -31,7 +31,7 @@
 - title: "Unconstrained and Constrained Nonlinear Programming"
   filename: "notes" 
   dirname: modules/nonlinear_programming
-  desc: "This unit introduces nonlinear programming (LP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
+  desc: "This unit introduces nonlinear programming (NLP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
   readings:
     - title: "Miranda & Fackler Ch. 3"
       url: "course-materials/"
@@ -43,8 +43,27 @@
   materials:
     - title: "MLE Surface"
       url: "mle_example.r"
+    - title: "Portfolio Problem"
+      url: "portfolio_problem.r"
+    - title: "Simulated Method of Moments"
+      url: "SMM.r"
+    - title: "Bootstrap Example"
+      url: "bootstrap_example.R"
 
   
+- title: "Dynamic Programming: Finite Horizon"
+  filename: "notes" 
+  dirname: modules/dynamic_programming_A
+  desc: "This unit introduces dynamic programming. Submit problem set on Canvas."
+  readings:
+    - title: "Miranda & Fackler Ch. 7"
+      url: "course-materials/"
+  # ps:
+  #   - title: "Problem Set 2"
+  #     url: "problem_set.pdf"
+  # materials:
+  #   - title: "MLE Surface"
+  #     url: "mle_example.r"
   
 # - title: "Course overview and introduction to optimization concepts"
 #   filename: "intro/intro" 
