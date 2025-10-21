@@ -148,7 +148,375 @@ subject to
 $$s_{t+1} = s_t - h_t + G(s_t), \quad s_0 \text{ given}$$
 The components are the same, but there is no terminal time or salvage value. The problem is usually well-behaved when $\beta < 1$ and $\pi(h_t)$ is bounded.
 
+----------
+
+# Discrete time and state space
+
+- Dynamic optimization problems describe sequential decision-making over time, where future states depend on current actions.  
+
+- In discrete time and discrete state settings, time proceeds in periods $t = 0, 1, \dots, T$, and the system occupies one of a finite set of states $s_t \in S$ at each time $t$.
+
+- The decision variable is denoted by $x_t \in X(s_t)$, representing the feasible choices when the system is in state $s_t$.
+
+## General Problem
+
+- The general **finite-horizon** problem is to choose a sequence $\{x_t\}_{t=0}^{T-1}$ to maximize the expected discounted sum of single-period payoffs:
+
+$$
+\max_{\{x_t\}_{t=0}^{T-1}} 
+\sum_{t=0}^{T-1} \beta^t \pi(s_t, x_t)
++ \beta^T V_T(s_T)
+$$
+
+where:    
+
+- $\beta \in (0,1)$ is the discount factor,
+- $\pi(s_t, x_t)$ is the single-period reward (or profit),
+- $V_T(s_T)$ is the *terminal value function* (salvage value) at the end of the horizon.
+
+The **transition dynamics** are deterministic:
+$$
+s_{t+1} = f(s_t, x_t),
+$$
+with an initial state $s_0$ given.
 
 
+## Bellman Equation
+
+- The recursive formulation expresses the problem in terms of a **value function** $V_t(s_t)$ that gives the maximal attainable value starting from state $s_t$ at time $t$:
+
+$$
+V_t(s_t) = 
+\max_{x_t \in X(s_t)} 
+\Big\{ 
+\pi(s_t, x_t) + \beta \, V_{t+1}(f(s_t, x_t))
+\Big\}.
+$$
+
+- The **terminal condition** closes the recursion:
+
+$$
+V_T(s_T) = \pi_T(s_T) \quad \text{or a given terminal value function.}
+$$
+
+The Bellman equation expresses the principle of optimality:   
+
+> The value of being in state $s_t$ is the maximum over current actions of the immediate payoff plus the discounted value of the next state. 
+
+### Backward Recursion (Finite Horizon)
+
+To solve:
+
+1. Start from the terminal period $T$, where $V_T(s_T)$ is known.
+2. For each earlier period $t = T-1, \dots, 0$, compute $V_t(s_t)$ from the Bellman equation.
+3. The corresponding optimal policy is
+   $$
+   x_t^*(s_t) =
+   \max_{x_t \in X(s_t)}
+   \Big\{
+   \pi(s_t, x_t) + \beta \, V_{t+1}(f(s_t, x_t))
+   \Big\}.
+   $$
+
+This recursion yields both the value function and the optimal policy for each possible state.
+
+---
+
+### Example Template
+
+Once this structure is clear, we can apply it directly to the **mine management problem**, where:
+
+- state: remaining ore $s_t$, and initial stock $s_0=4$,
+- control: extraction $x_t \in \{0,1,\dots,s_t\}$,
+- transition: $s_{t+1} = s_t - x_t$,
+- reward: $\pi(s_t, x_t) = 10 x_t - (2x_t + x_t^2)$,
+- terminal condition: $V_{T}(s_{T}) = 0$
+- horizon: $T=3$,
+- discount factor: $\beta=0.9$.
+
+**Students: set up the problem/Bellman equation and solve via backward induction.**
+
+We solve by **backward induction**:
+$$
+V_t(s)=\max_{x\in\{0,\dots,s\}}\{\pi(x)+\beta V_{t+1}(s-x)\},\quad V_3(s)\equiv 0.
+$$
+
+### Parameters (chosen for clean mental math)
+
+- Horizon: $T=3$ (decisions at $t=0,1,2$, terminal at $t=3$)  
+- Initial stock: $s_0=4$  
+- Discount factor: $\beta=0.9$  
+- Price per unit: $p=10$  
+- Cost: $c(x)=2x+x^2$  
+- Per-period profit: $\pi(x)=px-c(x)=10x-(2x+x^2)=8x-x^2$
+
+This gives the handy lookup:
+- $\pi(0)=0$, $\pi(1)=7$, $\pi(2)=12$, $\pi(3)=15$, $\pi(4)=16$.
+
+We solve by **backward induction**:
+$$
+V_t(s)=\max_{x\in\{0,\dots,s\}}\{\pi(x)+\beta V_{t+1}(s-x)\},\quad V_3(s)\equiv 0.
+$$
+
+---
+
+### Step 1: Final decision period $t=2$
+Here $V_3(\cdot)=0$, so extract to maximize $\pi(x)$ subject to $x\le s$:
+
+- $V_2(0)=0$
+- $V_2(1)=\pi(1)=7$
+- $V_2(2)=\pi(2)=12$
+- $V_2(3)=\pi(3)=15$
+- $V_2(4)=\pi(4)=16$
+
+Optimal action at $t=2$ is $x_2^*(s)=s$ (extract all that remains).
+
+---
+
+### Step 2: Period $t=1$
+Compute $V_1(s)=\max_{x\le s}\{\pi(x)+\beta V_2(s-x)\}$:
+
+- $s=0$: only $x=0$ $\Rightarrow$ $V_1(0)=0$  
+- $s=1$:  
+  - $x=0$: $0+0.9\cdot V_2(1)=6.3$  
+  - $x=1$: $7+0.9\cdot 0=7$  
+  $\Rightarrow V_1(1)=7$ at $x=1$  
+- $s=2$:  
+  - $x=0$: $0+0.9\cdot12=10.8$  
+  - $x=1$: $7+0.9\cdot7=13.3$  
+  - $x=2$: $12+0=12$  
+  $\Rightarrow V_1(2)=13.3$ at $x=1$  
+- $s=3$:  
+  - $x=0$: $0+0.9\cdot15=13.5$  
+  - $x=1$: $7+0.9\cdot12=17.8$  
+  - $x=2$: $12+0.9\cdot7=18.3$  
+  - $x=3$: $15+0=15$  
+  $\Rightarrow V_1(3)=18.3$ at $x=2$  
+- $s=4$:  
+  - $x=0$: $0+0.9\cdot16=14.4$  
+  - $x=1$: $7+0.9\cdot15=20.5$  
+  - $x=2$: $12+0.9\cdot12=22.8$  
+  - $x=3$: $15+0.9\cdot7=21.3$  
+  - $x=4$: $16+0=16$  
+  $\Rightarrow V_1(4)=22.8$ at $x=2$
+
+**Summary at $t=1$**:  
+$V_1(0)=0,\;V_1(1)=7,\;V_1(2)=13.3,\;V_1(3)=18.3,\;V_1(4)=22.8$.
+
+---
+
+### Step 3: Initial period $t=0$ (with $s_0=4$)
+Compute $V_0(4)=\max_{x\le 4}\{\pi(x)+\beta V_1(4-x)\}$:
+
+- $x=0$: $0+0.9\cdot22.8=20.52$  
+- $x=1$: $7+0.9\cdot18.3=23.47$  
+- $x=2$: $12+0.9\cdot13.3=23.97$  
+- $x=3$: $15+0.9\cdot7=21.3$  
+- $x=4$: $16+0=16$
+
+$\Rightarrow$ **Optimal** $x_0^*(4)=2$ and $V_0(4)=23.97$.
+
+---
+
+### Optimal path and value
+
+Starting at $s_0=4$:
+- $t=0$: extract $x_0=2$ $\Rightarrow s_1=2$
+- $t=1$: with $s_1=2$, optimal $x_1=1$ $\Rightarrow s_2=1$
+- $t=2$: with $s_2=1$, extract all $x_2=1$ $\Rightarrow s_3=0$
+
+**Discounted payoff**:
+- $t=0$: $\pi(2)=12$
+- $t=1$: $\beta\pi(1)=0.9\cdot7=6.3$
+- $t=2$: $\beta^2\pi(1)=0.81\cdot7=5.67$
+
+Total $=12+6.3+5.67=23.97=V_0(4)$.
+Thus, the optimal extraction policy is to extract 2 units at $t=0$, 1 unit at $t=1$, and 1 unit at $t=2$, yielding a total discounted profit of 23.97.
+
+![](mine_tree_with_values.pdf)
 
 
+## The Curse of Dimensionality
+
+Dynamic programming offers an elegant recursive solution principle, but it suffers from a major practical limitation known as the **curse of dimensionality**.
+
+The term was coined by Richard Bellman to describe the exponential growth in computational complexity as the number of state or control variables increases.
+
+
+### Illustration
+
+In our mine management problem, the state $s_t$ took on a small number of discrete values
+(e.g., $s_t \in \{0,1,2,3,4\}$).  
+If we introduce additional state variables — such as capital, technology, or another resource —
+the number of possible state combinations grows rapidly.
+
+For example:
+
+| Dimension | Grid points per variable | Total grid points |
+|------------|--------------------------|--------------------|
+| 1 state variable | 100 | $100$ |
+| 2 state variables | 100 | $10^4$ |
+| 3 state variables | 100 | $10^6$ |
+| 4 state variables | 100 | $10^8$ |
+
+Even modest discretizations quickly lead to millions of points. At each grid point, we must compute and compare values for all possible controls, making the full state–action space enormous.
+
+
+Each additional state dimension multiplies the size of:
+
+- The **value function table** $V_t(s)$
+- The **policy function** $x_t^*(s)$
+- The **transition mapping** $s_{t+1}=f(s_t,x_t)$
+- And the computational effort of evaluating $\pi(s_t,x_t) + \beta V_{t+1}(f(s_t,x_t))$
+
+This explosion makes naive enumeration infeasible.
+
+For instance, if we allowed both **ore stock** and **equipment age** as states:
+$$
+s_t = (s_t^{ore}, s_t^{equip}),
+$$
+and if each dimension had only 10 discrete values, then $V_t$ must be evaluated at $10 \times 10 = 100$ points per period. Add one more variable (say, capital), and it jumps to $1{,}000$ points. For higher dimensions, this quickly exceeds computational limits.
+
+The curse of dimensionality is not merely a computational nuisance—it shapes how economists model behavior.
+
+In applied work, we rarely solve high-dimensional dynamic programs exactly.
+Instead, we rely on:
+
+- **Approximations**: e.g., functional forms or interpolation of $V(s)$
+- **Monte Carlo methods**: random sampling of states rather than full enumeration
+- **Problem decomposition**: splitting the model into subproblems or exploiting structure (e.g., separability)
+- **Aggregation or discretization**: grouping similar states or actions
+
+These methods trade accuracy for tractability.
+
+## Introducing Stochastic Transitions: A Random Ore Price
+
+So far, our mine problem was **deterministic**: the ore stock $s_t$ evolved predictably according to 
+$$
+s_{t+1} = s_t - x_t,
+$$
+and the price of ore was constant across periods.
+
+Now suppose the **ore price fluctuates randomly** over time.
+We introduce a stochastic state variable $p_t$ representing the market price.
+
+---
+
+### The stochastic model
+
+At each time $t$, the manager observes the current state $(s_t, p_t)$ and chooses extraction $x_t$.
+Profits in period $t$ are given by
+$$
+\pi(s_t, p_t, x_t) = p_t x_t - c(x_t),
+$$
+where $c(x_t)$ is the cost of extraction.
+
+The state evolves according to:
+$$
+\begin{aligned}
+s_{t+1} &= s_t - x_t, \\
+p_{t+1} &\sim \Pr(p' \mid p_t),
+\end{aligned}
+$$
+where $\Pr(p' \mid p_t)$ describes the **transition probability** from the current price $p_t$ to the next price $p_{t+1}$.
+
+This is a **Markov process**:  future prices depend only on the current price, not on the full past history.
+
+---
+
+### Bellman equation under uncertainty
+
+With stochastic prices, the decision problem becomes:
+
+$$
+V_t(s_t, p_t) =
+\max_{x_t \in [0, s_t]}
+\Big[
+\pi(s_t, p_t, x_t)
++ \beta \, \mathbb{E}_{p_{t+1} \mid p_t}
+\big[V_{t+1}(s_t - x_t, p_{t+1})\big]
+\Big].
+$$
+
+The expectation operator $\mathbb{E}_{p_{t+1} \mid p_t}$ averages future value across all possible next-period prices, weighted by their probabilities.
+
+The terminal condition remains:
+$$
+V_T(s_T, p_T) = 0.
+$$
+
+### Discrete-state example
+
+To make this concrete, suppose the ore price can take **two values**:
+
+| Price state | Value | Label |
+|--------------|--------|--------|
+| Low | $p_L = 8$ | state 1 |
+| High | $p_H = 12$ | state 2 |
+
+and transitions follow a **Markov matrix**:
+$$
+P =
+\begin{pmatrix}
+0.8 & 0.2 \\
+0.3 & 0.7
+\end{pmatrix},
+$$
+where $P_{ij} = \Pr(p_{t+1} = j \mid p_t = i)$.
+
+This means:
+
+- When price is **low** ($p_L$), it stays low with 80% probability, rises to high with 20%.
+- When price is **high** ($p_H$), it stays high with 70% probability, falls to low with 30%.
+
+The Markov transition matrix $P$ captures **price persistence** or **volatility**.  
+- If diagonal elements are close to 1, prices are persistent and predictable.
+- If off-diagonals are large, the price fluctuates more frequently.
+
+These transition probabilities summarize *all relevant uncertainty* about future prices — 
+no additional information about earlier prices is needed.
+That is the **Markov property**.
+
+---
+
+### Bellman recursion with discrete price states
+
+At each period $t$ and ore stock $s_t$, we solve for both price states:
+
+$$
+\begin{aligned}
+V_t(s_t, p_L)
+&= \max_{x_t \in [0,s_t]} 
+\Big[
+p_L x_t - c(x_t)
++ \beta \big(
+0.8\, V_{t+1}(s_t - x_t, p_L)
++ 0.2\, V_{t+1}(s_t - x_t, p_H)
+\big)
+\Big], \\[1em]
+V_t(s_t, p_H)
+&= \max_{x_t \in [0,s_t]} 
+\Big[
+p_H x_t - c(x_t)
++ \beta \big(
+0.3\, V_{t+1}(s_t - x_t, p_L)
++ 0.7\, V_{t+1}(s_t - x_t, p_H)
+\big)
+\Big].
+\end{aligned}
+$$
+
+The manager now faces **two dimensions of state**:
+
+1. **Physical stock** ($s_t$): determines extraction feasibility.
+2. **Price state** ($p_t$): determines current revenue and expected continuation value.
+
+The decision rule $x_t^*(s_t, p_t)$ will generally satisfy:
+
+- Extract more when price is high ($p_H$)  
+- Conserve when price is low ($p_L$)
+
+The trade-off is now between:
+
+- Exploiting the resource when prices are favorable
+- Saving for the future when low prices make extraction less profitable
