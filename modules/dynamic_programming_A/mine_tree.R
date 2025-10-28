@@ -1,129 +1,129 @@
-library(tidyverse)
-library(igraph)
-library(ggraph)
+# ------------------------------------------------------------
+# Mine Extraction Problem: Finite-Horizon Dynamic Programming
+# ------------------------------------------------------------
+# The mine has a stock s_t ∈ {0,1,2,3,4}
+# At each t, choose extraction x_t ∈ [0, s_t]
+# Reward: π(x_t) = 8x_t - x_t^2
+# Transition: s_{t+1} = s_t - x_t
+# Horizon: T = 2 (decisions at t=0, t=1)
+# ------------------------------------------------------------
 
-# parameters
+rm(list = ls())
+
+# Parameters
 beta <- 0.9
-pi <- function(x) 8*x - x^2   # per-period profit
-V2 <- c(`0`=0, `1`=7, `2`=12, `3`=15, `4`=16)   # terminal values at t=2
+pi <- function(x) 8 * x - x^2    # per-period profit function
+S <- 0:4                         # possible stock levels
+T <- 2                           # horizon
 
-# compute V1(s)
-V1 <- tibble(s = 0:4) %>%
-  mutate(V1 = map_dbl(s, \(s)
-                      max(sapply(0:s, \(x) pi(x) + beta*V2[as.character(s - x)]))
-  ))
+# ------------------------------------------------------------
+# Step 1: Initialize terminal period value function V_T(s)
+# ------------------------------------------------------------
+V <- list()                      # list to hold value function at each period
+V[[T + 1]] <- pi(S)              # terminal period t=2, given in problem
+names(V[[T + 1]]) <- S
 
-# helper for discounted total value
-edge_value <- function(x, s_next, t) {
-  cont <- if (t == 0) V1[["V1"]][s_next + 1] else V2[as.character(s_next)]
-  val <- pi(x) + beta * cont
-  round(val, 2)
-}
+# Initialize policy storage (same structure as V)
+policy <- list()
+policy[[T + 1]] <- rep(NA, length(S))  # no decisions at terminal period
 
-# -------------------------------
-# Build only feasible paths from s0 = 4
-# -------------------------------
-
-# t0 -> t1 edges (s0=4)
-edges_01 <- tibble(
-  from = "t0_s4",
-  to   = paste0("t1_s", 4 - 0:4),
-  x    = 0:4,
-  t    = 0,
-  s_next = 4 - 0:4
-)
-
-# t1 -> t2 edges (from all s1 reachable from s0=4)
-edges_12 <- map_dfr(0:4, \(s1) {
-  tibble(
-    from = paste0("t1_s", s1),
-    to   = paste0("t2_s", s1 - 0:s1),
-    x    = 0:s1,
-    t    = 1,
-    s_next = s1 - 0:s1
-  )
-})
-
-edges <- bind_rows(edges_01, edges_12) %>%
-  mutate(payoff = pi(x),
-         total_value = mapply(edge_value, x, s_next, t),
-         label = paste0("x=", x, "\nπ=", payoff))
-
-# -------------------------------
-# Filter to nodes reachable from t0_s4
-# -------------------------------
-# Collect only edges reachable from s0=4
-reachable <- function(edges, start = "t0_s4") {
-  # BFS to find reachable nodes
-  visited <- start
-  repeat {
-    new_nodes <- edges %>% filter(from %in% visited) %>% pull(to)
-    new_nodes <- setdiff(new_nodes, visited)
-    if (length(new_nodes) == 0) break
-    visited <- union(visited, new_nodes)
+# ------------------------------------------------------------
+# Step 2: Backward recursion over time
+# ------------------------------------------------------------
+for (t in T:1) {
+  V[[t]] <- numeric(length(S))
+  policy[[t]] <- numeric(length(S))
+  
+  for (s in S) {
+    # Feasible extractions: x = 0,1,...,s
+    feasible_x <- 0:s
+    
+    # For each feasible extraction, compute value
+    total_value <- numeric(length(feasible_x))
+    for (i in seq_along(feasible_x)) {
+      x <- feasible_x[i]
+      s_next <- s - x
+      total_value[i] <- pi(x) + beta * V[[t + 1]][s_next + 1]
+    }
+    
+    # Find maximum value and corresponding extraction
+    V[[t]][s + 1] <- max(total_value)
+    policy[[t]][s + 1] <- feasible_x[which.max(total_value)]
   }
-  edges %>% filter(from %in% visited & to %in% visited)
 }
 
-edges <- reachable(edges, start = "t0_s4")
-
-# -------------------------------
-# Mark optimal path
-# -------------------------------
-edges <- edges %>%
-  mutate(optimal = case_when(
-    from == "t0_s4" & x == 2 ~ TRUE,   # x0=2
-    from == "t1_s2" & x == 1 ~ TRUE,   # x1=1
-    from == "t2_s1" & x == 1 ~ TRUE,   # x2=1
-    TRUE ~ FALSE
-  ))
-
-# Node values
-node_values <- tribble(
-  ~name,      ~V,
-  "t0_s4", 23.97,
-  "t1_s4", 22.8,
-  "t1_s3", 18.3,
-  "t1_s2", 13.3,
-  "t1_s1", 7,
-  "t1_s0", 0,
-  "t2_s4", 16,
-  "t2_s3", 15,
-  "t2_s2", 12,
-  "t2_s1", 7,
-  "t2_s0", 0
+# ------------------------------------------------------------
+# Step 3: Combine results into a readable table
+# ------------------------------------------------------------
+value_table <- data.frame(
+  s = S,
+  V0 = round(V[[1]], 3),
+  V1 = round(V[[2]], 3),
+  V2 = round(V[[3]], 3)
 )
 
-# vertices used
-vertex_names <- sort(unique(c(edges$from, edges$to)))
-nodes <- tibble(name = vertex_names) %>%
-  left_join(node_values, by = "name") %>%
-  mutate(optimal = name %in% c("t0_s4", "t1_s2", "t2_s1", "t3_s0"))
+policy_table <- data.frame(
+  s = S,
+  x0 = policy[[1]],
+  x1 = policy[[2]],
+  x2 = S
+  )
 
-# -------------------------------
-# Build and plot graph
-# -------------------------------
-g <- graph_from_data_frame(d = edges, vertices = nodes, directed = TRUE)
+value_table
+policy_table
+# The policy table tells you the optimal extraction x_t for each stock level s_t at each time t. If we start at s=4, we extract 2 units at t=0, then 1 units at t=1, then 1 unit at the final T=2 (since there is no value beyond T=2. We trace across the elements of the policy table to see this optimal path.
 
-p <- ggraph(g, layout = "tree") +
-  geom_edge_link(aes(label = label, color = optimal),
-                 angle_calc = "along",
-                 label_dodge = unit(3, "mm"),
-                 label_size = 2.8,
-                 end_cap = circle(3, "mm"),
-                 arrow = arrow(length = unit(2, "mm")),
-                 show.legend = FALSE) +
-  geom_node_label(aes(label = paste0(name, "\nV=", round(V,1)),
-                      fill = optimal),
-                  color = "black",
-                  size = 3.5,
-                  label.padding = unit(2, "mm")) +
-  scale_fill_manual(values = c("TRUE" = "gold", "FALSE" = "lightyellow")) +
-  scale_color_manual(values = c("TRUE" = "darkorange", "FALSE" = "grey70")) +
-  theme_void() +
-  coord_flip(xlim = NULL, ylim = NULL) +   # flip layout: t0 on left, t2 on right
-  ggtitle("Mine Management Decision Tree (s=4, Left→Right, Payoffs Shown)")
+# Example: Optimal extraction path starting from s=4
+s_current <- 4
+for (t in 0:T) {
+  x_optimal <- policy_table[s_current+1,t + 2]
+  cat("At time", t, "with stock", s_current, "extract", x_optimal, "\n")
+  s_current <- s_current - x_optimal
+}
+# Plot of the optimal extraction path
+library(ggplot2)
+extraction_path <- data.frame(
+  time = 0:T,
+  stock = numeric(T + 1),
+  extraction = numeric(T + 1)
+)
+s_current <- 4
+for (t in 0:T) {
+  x_optimal <- policy_table[s_current + 1, t + 2]
+  extraction_path$stock[t + 1] <- s_current
+  extraction_path$extraction[t + 1] <- x_optimal
+  s_current <- s_current - x_optimal
+}
+ggplot(extraction_path, aes(x = time)) +
+  geom_line(aes(y = stock, color = "Stock Level")) +
+  geom_point(aes(y = stock, color = "Stock Level")) +
+  geom_bar(aes(y = extraction, fill = "Extraction"), stat = "identity", alpha = 0.5) +
+  labs(title = "Optimal Extraction Path Over Time",
+       y = "Quantity",
+       color = "Legend",
+       fill = "Legend") +
+  scale_color_manual(values = c("Stock Level" = "blue")) +
+  scale_fill_manual(values = c("Extraction" = "orange")) +
+  theme_minimal()
 
-p
+# Create a plot showing the optimal decisions over time using the value function. Highlight the path x0=2, x1=1, and x2=1 starting from s=4.
+value_df <- data.frame(
+  stock = rep(S, times = T + 1),
+  time = rep(0:T, each = length(S)),
+  value = unlist(lapply(V, function(v) v))
+)
 
-ggsave("mine_tree_s4_left_right.pdf", p, width = 9, height = 5)
+ggplot(value_df, aes(x = stock, y = value, color = factor(time))) +
+  geom_line() +
+  geom_point() +
+  geom_line(data = data.frame(stock = c(4, 2, 1), time = c(0, 1, 2),
+                                       value = c(V[[1]][5], V[[2]][3], V[[3]][2])),
+             aes(x = stock, y = value), color = "purple", size = 2,alpha=.5) +
+  labs(title = "Value Function Over Time",
+       x = "Stock Level",
+       y = "Value",
+       color = "Time Period") +
+  theme_minimal()
+# The plot shows that the value of having 1 is the same regardless of time because you extract it asap. The value of having 4 is much higher at t=0 than at t=1 or t=2 because you have more time to extract and earn profits from it.
+
+

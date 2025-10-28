@@ -241,16 +241,7 @@ $$
 V_t(s)=\max_{x\in\{0,\dots,s\}}\{\pi(x)+\beta V_{t+1}(s-x)\},\quad V_3(s)\equiv 0.
 $$
 
-### Parameters (chosen for clean mental math)
-
-- Horizon: $T=3$ (decisions at $t=0,1,2$, terminal at $t=3$)  
-- Initial stock: $s_0=4$  
-- Discount factor: $\beta=0.9$  
-- Price per unit: $p=10$  
-- Cost: $c(x)=2x+x^2$  
-- Per-period profit: $\pi(x)=px-c(x)=10x-(2x+x^2)=8x-x^2$
-
-This gives the handy lookup:
+Lookup:
 - $\pi(0)=0$, $\pi(1)=7$, $\pi(2)=12$, $\pi(3)=15$, $\pi(4)=16$.
 
 We solve by **backward induction**:
@@ -321,11 +312,13 @@ $\Rightarrow$ **Optimal** $x_0^*(4)=2$ and $V_0(4)=23.97$.
 ### Optimal path and value
 
 Starting at $s_0=4$:
+
 - $t=0$: extract $x_0=2$ $\Rightarrow s_1=2$
 - $t=1$: with $s_1=2$, optimal $x_1=1$ $\Rightarrow s_2=1$
 - $t=2$: with $s_2=1$, extract all $x_2=1$ $\Rightarrow s_3=0$
 
 **Discounted payoff**:
+
 - $t=0$: $\pi(2)=12$
 - $t=1$: $\beta\pi(1)=0.9\cdot7=6.3$
 - $t=2$: $\beta^2\pi(1)=0.81\cdot7=5.67$
@@ -334,6 +327,12 @@ Total $=12+6.3+5.67=23.97=V_0(4)$.
 Thus, the optimal extraction policy is to extract 2 units at $t=0$, 1 unit at $t=1$, and 1 unit at $t=2$, yielding a total discounted profit of 23.97.
 
 ![](mine_tree_with_values.pdf)
+
+See excel example for full table.
+
+\newpage 
+
+
 
 
 ## The Curse of Dimensionality
@@ -389,134 +388,497 @@ Instead, we rely on:
 
 These methods trade accuracy for tractability.
 
-## Introducing Stochastic Transitions: A Random Ore Price
 
-So far, our mine problem was **deterministic**: the ore stock $s_t$ evolved predictably according to 
-$$
-s_{t+1} = s_t - x_t,
-$$
-and the price of ore was constant across periods.
+\newpage
 
-Now suppose the **ore price fluctuates randomly** over time.
-We introduce a stochastic state variable $p_t$ representing the market price.
+## Forest Harvest Problem
+
+We consider a simple **finite-horizon dynamic programming** problem for forest management. At each decision date, the forest is characterized by its *age*, and the decision is whether to **cut** or **wait**.
+
+### Model Elements
+
+- **State variable**: $x_t$ = forest age at the beginning of period $t$
+- **Decision variable**: $u_t \in \{0, 1\}$  
+  - $u_t = 0$ means *wait*  
+  - $u_t = 1$ means *harvest*
+- **Payoff**:
+  - Depends on age: $x_t=0$: payoff $=0$; $x_t=50$: payoff $=8$; $x_t=100$: payoff $=10$
+- **Transition**:
+  - If not harvested: $x_{t+1} = \min(x_t + 50, 100)$  
+  - If harvested: $x_{t+1} = 0$
+- **Terminal value**: $V_T(x_T) = \max\{\text{salv}(x_T), \text{pay}(x_T)\}$ where 
+  - $\text{salv}(x_T)$ = salvage value if not harvested at end (0, 20, 60)  
+- **Discount factor**: $\beta = (1/1.04)^{50}$  (discounting 50 years at 4%)
+
+### Bellman Equation
+
+The Bellman equation for this problem is:
+
+$$
+V_t(x_t) = \max_{u_t \in \{0,1\}} \left[ r(x_t,u_t) + \beta \, V_{t+1}(x_{t+1}) \right],
+$$
+
+where  
+
+- $r(x_t,u_t)$ is the **immediate payoff**, and
+- $x_{t+1}= \min(x_t + 50, 100)$ follows the **transition rule**.
+
+We can solve this problem by **backward induction** starting from the terminal period $T$ and moving backward to $t=0$ without defining initial conditions.
+
+### Intuition
+
+- What is the intuition behind the optimal policy? At each age $x_t$, we compare the value of harvesting now versus waiting for future growth. 
+
+
+- Even though the payoff function is discrete, we can still solve via backward induction by simulating outcomes at each state.
+
+
+
+
+### Implementation in R
+
+Go to the R script `forest_harvest.R`
+
+
+\newpage
+
+# Infinite Horizon Problems
+
+- In many economic applications, we consider **infinite-horizon** dynamic programming problems where the decision-maker optimizes over an infinite sequence of periods. Intuitively, the solution to infinite horizon problems often converges to a **steady-state policy** that does not depend on time.
+
+- The general infinite-horizon problem is to choose a sequence $\{x_t\}_{t=0}^\infty$ to maximize the expected discounted sum of single-period payoffs:
+$$
+\max_{x_t} \sum_{t=0}^{\infty} \beta^t \pi(s_t, x_t)
+$$
+subject to the deterministic transition dynamics:
+$$
+s_{t+1} = f(s_t, x_t),
+$$
+with an initial state $s_0$ given.
+
+- The Bellman equation for an infinite-horizon problem is:
+$$
+V(s) = \max_{x \in X(s)} \left\{ \pi(s, x) + \beta V(f(s, x)) \right\}
+$$
+where we note that there is no time index on $V(s)$ since the value function is stationary (time autonomous).
+
+- The key difference from finite-horizon problems is the absence of a terminal condition. Instead, we look for a fixed point of the Bellman operator. We can find a solution using **value function iteration** or **policy iteration** methods. Today, we focus on value function iteration.
+
+## Fishery Problem
+
+We study a single-stock fishery with:
+
+- discrete state $s \in \{0,1,2,\dots,S_{\max}\}$ (biomass), 
+- control (harvest) $h\in=\{0,1,\dots,s\}$
+- next period’s stock is $s^\prime=G(s-h)$. 
+- Per-period payoff is $\pi(s,h)=p\,h-c\,h$ (constant net price for simplicity).
+
+The infinite-horizon Bellman equation (time-stationary) is
+$$
+V(s)=\max_h \{\pi(s,h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
+$$
+where $s^\prime=G(s-h)$ where we assume a logistic growth function
+$$G(s)=s+r s\left(1-\frac{s}{S_{\max }}\right)$$
+with intrinsic growth rate $r$ and carrying capacity $S_{\max}$.
+
+### Building Intuition
+
+If we relax to continuous $s$ and $h$ and interior choices (we’ll still solve numerically on a grid), the maximizer $h^*(s)$ satisfies the KKT system:
+
+-	Feasibility: $0\le h\le s$.
+-	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime),G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
+-	Complementary slackness for the bounds $h\ge 0$ and $h\le s$.
+
+With $\pi_h(s,h)=p-c$ and $G^\prime(s-h) = 1 + r(1-2c/s_{max})$, the interior FOC is
+$$
+p-c - \beta V^\prime(s^\prime)\,G^\prime(s-h)=0
+$$
+
+We derive the envelope condition by differentiating the Bellman wrt to $s$ (no direct dependence of $\pi$ on $s$ here) gives
+$$
+V^\prime(s)= 0 + \beta V^\prime(s^\prime)\,G^\prime(s-h^*(s)).
+$$
+Note that the second term of the envelope condition is the same as in the stationary condition above. 
+Combining the two (interior) yields a classic shadow-value condition:
+$$
+p-c=V^\prime(s)\quad\text{(if interior)}.
+$$
+Interpretation: harvest up to the point where the marginal net revenue equals the marginal value of stock - the additional future discounted revenue from the growth of the stock (the shadow price or “user cost”). With bounds, policies tilt to no-harvest at very low $s$ (stock rebuilding) and binding-harvest (take most of the stock) when $s$ is very high.
+
+### Numerical Solution via Value Function Iteration
+
+We’ll solve by value function iteration on a coarse grid—this is the standard workhorse for discrete-time, discrete-state models.
+
+Grid, dynamics, and payoffs
+
+-	State grid: $s\in{0,1,2,\dots,20}$.
+-	Actions: $h\in{0,1,\dots,s}$.
+-	Discount: $\beta=0.95$.
+-	Logistic growth: $G(s)=s+r s (1-s/K)$ with $r=0.5$, $K=20$. After computing $G$, round to the nearest state in ${0,\dots,20}$.
+-	Payoff: $\pi(s,h)=p\,h-c\,h$, with $p=1$, $c=0$ (net price $=1$).
+
+For each $s$,
+$$
+(\mathcal{T}V)(s)=\max_{0\le h\le s}\left\{h+\beta V\left(\text{round}\big(G(s-h)\big)\right)\right\}.
+$$
+Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $|V^{(k+1)}-V^{(k)}|_\infty<10^{-8}$. The greedy action at convergence is the optimal policy $h^*(s)$.
+
+See R script `fishery.R` for implementation details.
+
+
+
+\newpage
+
+
+# Functional Equations and Value Function Properties
+
+Dynamic programming problems often lead to **functional equations**—equations in which the *unknown* is a function rather than a scalar. The **Bellman equation** is the most important example in economics. Instead of solving for a scalar like $x$, we are solving for an entire function $V(\cdot)$ that satisfies a relationship involving itself.
 
 ---
 
-### The stochastic model
+## What Is a Functional Equation?
 
-At each time $t$, the manager observes the current state $(s_t, p_t)$ and chooses extraction $x_t$.
-Profits in period $t$ are given by
-$$
-\pi(s_t, p_t, x_t) = p_t x_t - c(x_t),
-$$
-where $c(x_t)$ is the cost of extraction.
+- A **functional equation** relates the value of a function at one point to its value at another point.  
 
-The state evolves according to:
+- In its simplest form, it can look like:
+$$
+V(s) = F(s, V(g(s)))
+$$
+- where the function $V$ appears on both sides.  
+- We are not trying to find a single number, but rather a function $V(\cdot)$ that makes this equation true for every $s$.
+
+- Functional equations appear whenever we describe **recursive behavior** — situations where "the value of something today depends on the value of something tomorrow." 
+
+Think of **compound interest**:
+$$
+A_{t+1} = (1+r)A_t
+$$
+The future value depends on today's value through a simple rule.  
+
+
+A functional equation specifies a relationship between a function and its transformed version.
+
+In dynamic optimization:
+$$
+V(s) = \max_{x \in X(s)} \{ \pi(s,x) + \beta V(f(s,x)) \}
+$$
+where:
+
+- $V(s)$ is the **value function**, giving the maximum attainable value from state $s$.
+- $\pi(s,x)$ is the **current payoff** (or profit, utility).
+- $f(s,x)$ gives the **next-period state**.
+- $\beta \in (0,1)$ is the **discount factor**.
+
+The equation says: *The value of being in state $s$ today equals the current payoff plus the discounted value of the next state, assuming optimal choice $x$.*
+
+------
+
+### Functional Equations in Economics
+
+**Example: A Simple Savings Problem**
+
+Suppose an agent chooses consumption $c_t$ and next-period assets $a_{t+1}$.
+
 $$
 \begin{aligned}
-s_{t+1} &= s_t - x_t, \\
-p_{t+1} &\sim \Pr(p' \mid p_t),
-\end{aligned}
-$$
-where $\Pr(p' \mid p_t)$ describes the **transition probability** from the current price $p_t$ to the next price $p_{t+1}$.
-
-This is a **Markov process**:  future prices depend only on the current price, not on the full past history.
-
----
-
-### Bellman equation under uncertainty
-
-With stochastic prices, the decision problem becomes:
-
-$$
-V_t(s_t, p_t) =
-\max_{x_t \in [0, s_t]}
-\Big[
-\pi(s_t, p_t, x_t)
-+ \beta \, \mathbb{E}_{p_{t+1} \mid p_t}
-\big[V_{t+1}(s_t - x_t, p_{t+1})\big]
-\Big].
-$$
-
-The expectation operator $\mathbb{E}_{p_{t+1} \mid p_t}$ averages future value across all possible next-period prices, weighted by their probabilities.
-
-The terminal condition remains:
-$$
-V_T(s_T, p_T) = 0.
-$$
-
-### Discrete-state example
-
-To make this concrete, suppose the ore price can take **two values**:
-
-| Price state | Value | Label |
-|--------------|--------|--------|
-| Low | $p_L = 8$ | state 1 |
-| High | $p_H = 12$ | state 2 |
-
-and transitions follow a **Markov matrix**:
-$$
-P =
-\begin{pmatrix}
-0.8 & 0.2 \\
-0.3 & 0.7
-\end{pmatrix},
-$$
-where $P_{ij} = \Pr(p_{t+1} = j \mid p_t = i)$.
-
-This means:
-
-- When price is **low** ($p_L$), it stays low with 80% probability, rises to high with 20%.
-- When price is **high** ($p_H$), it stays high with 70% probability, falls to low with 30%.
-
-The Markov transition matrix $P$ captures **price persistence** or **volatility**.  
-- If diagonal elements are close to 1, prices are persistent and predictable.
-- If off-diagonals are large, the price fluctuates more frequently.
-
-These transition probabilities summarize *all relevant uncertainty* about future prices — 
-no additional information about earlier prices is needed.
-That is the **Markov property**.
-
----
-
-### Bellman recursion with discrete price states
-
-At each period $t$ and ore stock $s_t$, we solve for both price states:
-
-$$
-\begin{aligned}
-V_t(s_t, p_L)
-&= \max_{x_t \in [0,s_t]} 
-\Big[
-p_L x_t - c(x_t)
-+ \beta \big(
-0.8\, V_{t+1}(s_t - x_t, p_L)
-+ 0.2\, V_{t+1}(s_t - x_t, p_H)
-\big)
-\Big], \\[1em]
-V_t(s_t, p_H)
-&= \max_{x_t \in [0,s_t]} 
-\Big[
-p_H x_t - c(x_t)
-+ \beta \big(
-0.3\, V_{t+1}(s_t - x_t, p_L)
-+ 0.7\, V_{t+1}(s_t - x_t, p_H)
-\big)
-\Big].
+&\max_{\{c_t,a_{t+1}\}_{t=0}^\infty} \sum_{t=0}^\infty \beta^t u(c_t) \\
+&\text{s.t. } c_t + a_{t+1} = (1+r)a_t + y_t, \quad a_t \ge 0
 \end{aligned}
 $$
 
-The manager now faces **two dimensions of state**:
+where:
 
-1. **Physical stock** ($s_t$): determines extraction feasibility.
-2. **Price state** ($p_t$): determines current revenue and expected continuation value.
+- $u(c)$ is the utility function (e.g., $u(c)=\log(c)$),
+- $r$ is the interest rate,
+- $y_t$ is income,
+- $\beta \in (0,1)$ is the discount factor.
 
-The decision rule $x_t^*(s_t, p_t)$ will generally satisfy:
 
-- Extract more when price is high ($p_H$)  
-- Conserve when price is low ($p_L$)
+Then the Bellman equation is
+$$
+V(a_t) = \max_{a_{t+1}\ge0} \{ u((1+r)a_t + y - a_{t+1}) + \beta V(a_{t+1}) \}.
+$$
+FOC (interior) with respect to $a_{t+1}$
 
-The trade-off is now between:
+Let $c_t=(1+r)a_t+y-a_{t+1}$. Then
+$$
+\frac{\partial}{\partial a_{t+1}}\Big[u((1+r)a_t + y - a_{t+1})+\beta V(a_{t+1})\Big]
+=-u'(c_t)+\beta V'(a_{t+1})=0,
+$$
 
-- Exploiting the resource when prices are favorable
-- Saving for the future when low prices make extraction less profitable
+The agent trades off **current utility** $u(c)$ versus the **future value** $\beta V(a')$.
+
+-----
+
+**Firm Investment Problem**
+
+A firm with capital stock $k_t$ chooses investment $i_t$:
+
+
+
+$$
+\max_{i_t} \sum_{t=0}^\infty \beta^t \pi(k_t, i_t)
+\quad \text{s.t.} \quad
+k_{t+1} = (1-\delta)k_t + i_t, \quad k_t \ge 0.
+$$
+
+The recursive form:
+$$
+V(k_t) = \max_{i_t\ge0} \{ \pi(k_t, i_t) + \beta V((1-\delta)k_t + i_t) \}.
+$$
+
+The function $V(k_t)$ gives the value of capital $k_t$ as current profit plus discounted future (optimal) value of next-period capital. Again, the value function appears on both sides.
+
+FOC with respect to $i_t$:
+$$
+\frac{\partial}{\partial i_t}\Big[\pi(k_t, i_t) + \beta V((1-\delta)k_t + i_t)\Big]
+= \pi_{i}(k_t, i_t) + \beta V'((1-\delta)k_t + i_t) = 0.
+$$
+
+
+--------
+
+
+**Resource Extraction Problem**
+
+A resource owner decides how much to extract $x_t$ from stock $s_t$:
+$$
+V(s_t) = \max_{0\le x_t\le s_t} \{ p x_t - c(x_t) + \beta V(s_t - x_t) \}.
+$$
+
+Here:
+
+- The **state** is remaining stock $s_t$.
+- The **control** is extraction $x_t$.
+- The **transition** is $s_{t+1} = s_t - x_t$.
+
+The functional equation states that the value of the resource today equals profit from extraction plus the discounted value of what remains for tomorrow.
+
+
+------
+
+## The Bellman Operator
+
+The Bellman equation tells us that the value of being in a given state today, $V(s)$, equals the best possible current payoff plus the discounted value of what happens next.
+
+We can think of this process as an **operator** — a kind of "machine" that takes a guess about the value function and produces a new, updated guess.
+
+
+### How it works
+
+Start with any function $V(s)$ that tells you what the value might be for each state.  
+Then define a new function:
+$$
+(\mathcal{T}V)(s) = \max_{x \in X(s)} \big\{ \pi(s,x) + \beta V(f(s,x)) \big\}.
+$$
+
+What this says in words:
+
+> “Given my current guess about how valuable future states are (that’s $V$), what would be the total value of making the best decision today?”
+
+So $\mathcal{T}$ takes the *old* value function and gives you a *new* one that’s a little closer to the truth.  
+It’s a way to **think one step ahead**.
+
+
+### The Fixed Point Idea
+
+The true value function, $V^*(s)$, is the one that **doesn’t change** when we apply this operation again:
+
+$$
+V^*(s) = (\mathcal{T}V^*)(s).
+$$
+
+In other words, if you already know the correct $V^*$, thinking one step ahead doesn’t change your beliefs because you are already correct about the future.
+
+Why this matters
+
+- The operator gives us a **recipe for computing** $V^*$: 
+    - start with a guess and keep applying $\mathcal{T}$ repeatedly.
+    - Each time, you’re improving your estimate of the value of being in each state.
+- Economically, this process mirrors **learning or planning**:  
+    - we evaluate today’s decisions using our expectations of tomorrow, adjust, and repeat until everything is internally consistent.
+
+Visual Intuition
+
+- If you plotted $V_0(s)$ (your first guess) and then $V_1(s) = \mathcal{T}V_0(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.  
+
+- That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
+
+In the context of economics
+
+- For a **consumer**, $\mathcal{T}$ means re-evaluating how much future consumption is worth.  
+- For a **firm**, it means updating the expected profitability of holding or investing capital.  
+- For a **resource owner**, it means revising how valuable it is to leave part of the stock for tomorrow.
+
+In all cases, the Bellman operator captures the logic of **forward-looking behavior**:  
+today’s value depends on how optimally we plan for tomorrow.
+
+Each application of $\mathcal{T}$ corresponds to "thinking one step further ahead."
+
+- Starting with any initial guess $V_0(s)$,
+- Repeatedly applying $\mathcal{T}$, $V_{k+1} = \mathcal{T}V_k$,
+- Converges to the true value function $V^*$ under mild conditions.
+
+This is **Value Function Iteration (VFI)**.
+
+-----
+
+## Existence and Uniqueness: Why the Bellman Equation Has a Single Solution
+
+Once we define the Bellman operator $\mathcal{T}$ - the rule that takes a guess about future value and updates it - we can ask two key questions:
+
+1. Does this process always lead to a stable value function?
+2. Will it always settle on the **same** function, no matter where we start?
+
+The answer is yes — as long as future payoffs are **discounted** (so $\beta < 1$).  
+
+The reason is the **contraction mapping property**.
+
+A **contraction mapping** is a transformation that *pulls things closer together* every time you apply it.  
+
+$$
+|| \mathcal{T}V_1 - \mathcal{T}V_2 || \leq \gamma \, || V_1 - V_2 ||
+$$
+
+Imagine taking two different guesses about the value function, say $V_1(s)$ and $V_2(s)$. When we apply the Bellman operator to both, the resulting functions $\mathcal{T}V_1$ and $\mathcal{T}V_2$ are **closer to each other** than the originals.
+
+Each round of updating reduces the distance between our guesses — eventually, all sequences converge to the same point, the **true value function** $V^*$.
+
+Discounting is what makes this work. Because future rewards are multiplied by $\beta < 1$, any disagreement about the future is automatically **shrunk** when we think one step ahead.
+
+Small differences in how we value the future can’t explode backward into large differences today — they fade over time.
+
+This gives the Bellman operator its *gravitational pull* toward a single stable value function.
+
+If applying $\mathcal{T}$ repeatedly always pulls guesses closer together, there must be one and only one function that can’t be improved upon —  that’s the **fixed point**:
+$$
+V^*(s) = \mathcal{T}V^*(s).
+$$
+
+Mathematically, this follows from the **Contraction Mapping Theorem**, but economically, you can think of it as saying:
+
+There is one internally consistent way to value the future that agrees with itself when we plan forward.
+
+### How this helps us in practice
+
+Because $\mathcal{T}$ is a contraction, we can find $V^*$ by **value function iteration**:
+
+1. Start with any initial guess $V_0(s)$ — even something crude.
+2. Apply $\mathcal{T}$ to get an updated guess $V_1 = \mathcal{T}V_0$.
+3. Keep repeating: $V_{n+1} = \mathcal{T}V_n$.
+
+Each iteration gets us closer to the truth.  
+No calculus tricks, no global search — just forward iteration guided by economic logic.
+
+### The big takeaway
+
+- Discounting and diminishing returns make the future “well-behaved.”  
+- Together they guarantee that the Bellman equation has **one** solution, and that repeated forward-looking reasoning will find it.
+- This is why we can compute dynamic equilibria with confidence: as long as the problem is discounted and well-behaved, there is a single, stable value function waiting to be found.
+
+## The Envelope Theorem in Dynamic Programming
+
+Consider a general Bellman equation:
+$$
+V(s) = \max_{x\in X(s)} \big\{ \pi(s,x) + \beta V(f(s,x)) \big\}.
+$$
+
+Let $x^*(s)$ be the optimal policy function.  
+We often need the derivative $V'(s)$ to derive first-order conditions or Euler equations.
+
+
+### The Problem
+
+- The right-hand side depends on $s$ **both directly** (through $\pi$ and $f$) and **indirectly** through the optimal choice $x^*(s)$.  
+
+- If we differentiate $V(s)$ directly, we would in principle need to differentiate through $x^*(s)$, which is messy.
+
+- The envelope theorem tells us we can ignore that part.
+
+
+
+### The Envelope Condition
+
+At the optimum $x^*(s)$,
+$$
+V'(s) = \frac{\partial \pi(s,x)}{\partial s}\bigg|_{x=x^*(s)}
+       + \beta\, V'(f(s,x^*(s)))\,\frac{\partial f(s,x)}{\partial s}\bigg|_{x=x^*(s)}.
+$$
+
+**Intuition:**  
+
+- Because the first-order condition for $x^*$ holds, the indirect effect of changing $s$ through a change in $x^*(s)$ is *zero*.  
+
+- We only need to consider the **direct** effects of $s$ on the current payoff and next-period state.
+
+
+
+### Dynamic Envelope Condition (Benveniste–Scheinkman Theorem)
+
+In discrete time, the theorem states:
+
+- If the Bellman equation is differentiable and the policy function $x^*(s)$ is interior and continuous, then
+$$
+V'(s) = \frac{\partial}{\partial s}\Big[\pi(s,x^*(s)) + \beta V(f(s,x^*(s)))\Big].
+$$
+
+- You can interpret $V'(s)$ as the **shadow value of the state variable** - the marginal increase in lifetime value from a marginal increase in the current state.
+
+------
+
+### Example: Consumption–Savings Problem
+
+Bellman equation:
+$$
+V(a_t)=\max_{a_{t+1}}\{u((1+r)a_t+y-a_{t+1})+\beta V(a_{t+1})\}.
+$$
+
+FOC w.r.t. $a_{t+1}$:
+$$
+-u'(c_t)+\beta V'(a_{t+1})=0 \quad \rightarrow \quad u'(c_t)=\beta V'(a_{t+1}).
+$$
+
+Envelope condition:
+$$
+V'(a_t)=u'(c_t)\cdot(1+r).
+$$
+
+
+Differentiate the Bellman RHS w.r.t. $a_t$ holding the optimizer fixed:
+$$
+V'(a_t)=u'(c_t)\cdot(1+r).
+$$
+
+Euler equation
+
+Apply the envelope condition at $t+1$:
+$$
+V'(a_{t+1})=(1+r)u'(c_{t+1}).
+$$
+
+Substitute into the FOC:
+$$
+u'(c_t)=\beta(1+r)u'(c_{t+1}).
+$$
+
+
+**Interpretation:**  
+
+- An extra dollar of wealth today raises lifetime value by $(1+r)u'(c_t)$ - it can either be consumed now (worth $u'(c_t)$) or saved to yield $(1+r)u'(c_{t+1})$ next period. The household is indifferent between consuming today and saving for tomorrow when the Euler equation holds.
+
+------
+
+### Why This Matters
+
+- The envelope theorem allows us to link **marginal value** ($V'(s)$) to **marginal utility** or **marginal profit**, depending on context.
+- It simplifies derivations of **Euler equations**, **costate equations**, and **first-order necessary conditions**.
+- It provides a recursive way to compute derivatives of value functions in both analytical and numerical work.
+
+
+
+
+
+
+
+
+
