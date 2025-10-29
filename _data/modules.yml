@@ -58,6 +58,16 @@
   readings:
     - title: "Miranda & Fackler Ch. 7"
       url: "course-materials/"
+  ps:
+    - title: "Problem Set 3"
+      url: "problem_set.pdf"
+  materials:
+    - title: "Mine Example"
+      url: "mine_example.xlsx"
+    - title: "Forest Example"
+      url: "forest_harvest.R"
+    - title: "Fishery Example"
+      url: "fishery.R"
   # ps:
   #   - title: "Problem Set 2"
   #     url: "problem_set.pdf"

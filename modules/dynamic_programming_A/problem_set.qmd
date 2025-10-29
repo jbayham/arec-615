@@ -1,0 +1,133 @@
+---
+title: "Problem Set: Dynamic Programming Discrete Time"
+execute: 
+  echo: true
+  warning: false
+  message: false
+---
+
+
+## Problem 1
+
+Consider a firm facing deterministic demand $\{D_t\}_{t=0}^{T-1}$ over a finite horizon $T$. Let $i_t$ be the inventory at the start of period $t$ and $y_t$ the production decision in period $t$. Inventory evolves as
+$$
+i_{t+1}=i_t+y_t-D_t,\quad i_0\ \text{given},\quad i_T=0.
+$$
+
+The firm can produce any nonnegative amount $y_t \geq 0$ in each period with a production cost:
+$$
+C_t(y_t) = \frac{c_2}{2}y_t^2 + c_1 y_t
+$$
+where $c_2>0$ and $c_1 \geq 0$. Holding inventory incurs a cost:
+$$
+H_t(i_t) = \frac{h}{2}i_t^2
+$$
+where $h>0$. The firm discounts future costs by a factor $\beta \in (0,1]$.
+
+
+
+
+
+a. Formulate the firm's problem as a dynamic program. Clearly define the state and action variables, the transition equation, the per-period cost function, and the Bellman equation.
+
+
+b. Derive the first-order condition for the firm's optimization problem in period $t$ given state $i_t$. What is the optimal production decision $y_t^*$ as a function of the value function $V_{t+1}(i_{t+1})$?
+
+c. What happens to the optimal production decision $y_t^*$ as the inventory holding cost $h$ increases? Provide an economic intuition for this result.
+
+
+
+
+
+## Problem 2
+
+A firm supplies a homogeneous material to a deterministic market over horizon $T$ (finite or infinite). The firm controls:
+
+-	extraction of primary material $x_t\ge 0$ from an exhaustible ore stock $s_t$
+-	processing of recyclable scrap $u_t\ge 0$ collected from past sales
+
+Let total sales be $y_t=x_t+q_t$, where $q_t=\eta u_t$ is secondary output from recycling with yield $\eta\in(0,1]$.
+
+Technology and stocks
+
+-	Ore stock dynamics:
+$$
+s_{t+1}=s_t-x_t,\quad s_0>0,\quad s_t\ge 0.
+$$
+-	Scrap availability: A fraction $\theta\in[0,1]$ of last period’s sales becomes recoverable scrap at the start of period $t$. Let $a_t$ denote available scrap in period $t$. $u_t$ is the amount of scrap used in production in period $t$. The stock of recycled input evolves as,
+$$
+a_{t+1}= a_t-u_t + \theta y_t,\qquad a_0\ge 0
+$$
+
+
+Demand and prices
+
+-	Inverse demand is linear:
+$$
+P(y_t)=\alpha-\beta y_t \qquad \alpha>0, \beta>0.
+$$
+
+Costs
+
+-	Primary extraction cost (convex):
+$$
+C_p(x_t)=\kappa_p x_t+\frac{\gamma_p}{2}x_t^2,\qquad \gamma_p>0,\ \kappa_p\ge 0.
+$$
+-	Recycling cost (convex and strictly higher marginal intercept):
+$$
+C_r(u_t)=\kappa_r u_t+\frac{\gamma_r}{2}u_t^2,\qquad \gamma_r>0,\ \kappa_r>\kappa_p.
+$$
+Thus, recycling is technologically feasible but (weakly) more expensive than using raw ore at the margin.
+-	The firm discounts with factor $\beta\in(0,1]$.
+
+1.	Formulate the dynamic program including:
+	-	State variables, control variables, transition equations.
+	-	One-period profit $\pi_t(\cdot)$ and the Bellman equation.
+	-	Specify natural nonnegativity and capacity constraints (e.g., $x_t\le s_t$, $u_t\le a_t$).
+
+2.	Derive first-order (KKT) conditions for $x_t$ and $u_t$ in period $t$ (assume interior solution).
+	-	Express the conditions using the shadow values $V_{t+1}^{(s)}$ and $V_{t+1}^{(a)}$ of the ore and scrap states.
+	-	Provide the pricing rules equating marginal revenue to marginal costs plus shadow values.
+
+3.	Interpretation.
+	-	Explain when the firm will substitute toward recycling (high ore shadow value, large $\theta$, high $\eta$) despite higher direct processing cost.
+	-	Discuss how increasing $h\equiv 0$ here (no inventory cost) vs. introducing storage costs for scrap (set $\delta<1$ or add a holding cost on $a_t$) would affect the recycling decision.
+
+4.	Numerical solution (finite horizon).
+	-	Implement a numerical solution of the dynamic program for $T=10$ periods using value function iteration.
+	-	Use parameter values: 
+	    - $\alpha=100$, 
+	    - $\beta=0.95$, 
+	    - $\kappa_p=10$, 
+	    - $\kappa_r=20$, 
+	    - $\gamma_p=1$, 
+	    - $\gamma_r=2$, 
+	    - $\eta=0.8$, 
+	    - $\theta=0.5$, 
+	    - $s_0=100$, 
+	    - $a_0=0$.
+	-	Plot optimal paths of $x_t,u_t,y_t,s_t,a_t$ over time.
+
+
+5.	Steady state (infinite horizon, optional).
+	-	Assume one-period scrap lag, $u_t\le \theta y_{t-1}$ and consider a stationary policy with constant $y,x,u$.
+	-	Derive conditions under which a mixed supply steady state ($x>0$, $u>0$) is optimal vs. corner solutions ($x>0,u=0$ or $x=0,u>0$).
+	-	Characterize how the steady state shifts with $\theta,\eta,\kappa_r-\kappa_p$, and $\beta$.
+	
+Hints
+
+- Write one-period profit as
+$$
+\pi_t=P(y_t) \, y_t - C_p(x_t) - C_r(u_t),\quad y_t=x_t+\eta u_t.
+$$
+
+-	With state $X_t=(s_t,a_t)$, your Bellman equation (finite horizon) is
+$$
+V_t(X_t)=\max_{x,u\ge 0} \Big\{ \pi_t + \beta V_{t+1}(s_t - x, a_t - u_t + \theta y_t) \Big\}
+$$
+subject to $x\le s_t$, $u\le a_t$.
+
+- In the FOCs, note $\partial y_t/\partial x_t=1$ and $\partial y_t/\partial u_t=\eta$. Marginal revenue is $MR_t(y_t)=P(y_t)+P’(y_t)y_t=\alpha-2\beta y_t$ for the linear demand given.
+
+
+- The ore stock’s shadow value acts like an opportunity cost added to extraction’s direct marginal cost; similarly for scrap.
