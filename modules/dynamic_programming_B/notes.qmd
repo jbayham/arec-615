@@ -333,6 +333,8 @@ $$
 V'(a_t) = u'(c_t)(1+r). 
 $$
 
+Intuitively: a marginal increase in assets $a_t$ raises consumption by $(1+r)$, increasing utility by $u'(c_t)(1+r)$.
+
 ::: {.callout-note}
 
 # Why We Can “Treat $a_{t+1}$ as Constant”
@@ -360,19 +362,283 @@ V'(a_t) = u'(c_t)(1+r).
 $$
 :::
 
-Intuitively: a marginal increase in assets $a_t$ raises consumption by $(1+r)$, increasing utility by $u'(c_t)(1+r)$.
+We can use the envelope condition one period ahead
+$$
+V'(a_{t+1}) = u'(c_{t+1})(1+r).
+$$
+
+Then substitute it into the original FOC wrt $a_{t+1}$
+
+$$
+u'(c_t) = \beta (1+r) u'(c_{t+1}).
+$$
+
+This is the **standard consumption Euler equation**, expressing intertemporal optimality purely in terms of marginal utilities and the return $1+r$.
+
+**Economic interpretation**
+
+The Euler equation equates the *marginal benefit* and *marginal cost* of saving.
+
+- The left-hand side, $u'(c_t)$, is the **marginal utility cost** of giving up one unit of consumption today.
+- The right-hand side, $\beta(1+r)u'(c_{t+1})$, is the **discounted marginal utility benefit** of the extra consumption made possible tomorrow by saving that unit and earning the return $(1+r)$.
+
+In equilibrium, these two must be equal — meaning that the household is indifferent (at the margin) between consuming one more unit today or saving it to consume tomorrow.
+
+**Interpreting the ratio of marginal utilities**
+
+Rearranging gives
+$$
+\frac{u'(c_{t+1})}{u'(c_t)} = \frac{1}{\beta(1+r)}.
+$$
+
+- The **left-hand side** is the *intertemporal marginal rate of substitution* (IMRS) — the rate at which the household is willing to trade future consumption for current consumption.
+- The **right-hand side** is the *intertemporal price ratio* implied by markets — the relative price of tomorrow’s consumption in terms of today’s, discounted by $\beta$ and adjusted for the gross interest rate $(1+r)$.
+
+In equilibrium, these two ratios are equal: the household’s willingness to substitute consumption across periods equals the market’s rate of return on savings.
+
+**Intuition**
+
+- If the interest rate $r$ rises, the right-hand side decreases.  
+  To restore equality, the ratio $u'(c_{t+1})/u'(c_t)$ must fall — meaning $c_{t+1}/c_t$ rises.  
+  → **Higher interest rates encourage saving and future consumption.**
+
+- If $\beta$ falls (the agent becomes more impatient), the right-hand side decreases.  
+  → **The household consumes more today and less tomorrow.**
+
+This condition captures the **core intertemporal tradeoff** at the heart of dynamic economic behavior:  
+balancing impatience, returns, and the curvature of utility (risk aversion or diminishing marginal utility).
+
+Let's assume constant relative risk aversion
+$$
+u(c) = \frac{c^{1-\sigma}}{1-\sigma}, \quad \sigma > 0,
+$$
+where $\sigma$ is the **coefficient of relative risk aversion** (and $1/\sigma$ is the **intertemporal elasticity of substitution**).
+
+Then
+$$
+u'(c) = c^{-\sigma}.
+$$
+
+Plug this into the Euler equation:
+$$
+u'(c_t) = \beta (1+r) u'(c_{t+1})
+\quad \Rightarrow \quad
+c_t^{-\sigma} = \beta (1+r) c_{t+1}^{-\sigma}.
+$$
+
+Rearrange for the **growth rate of consumption**:
+$$
+\frac{c_{t+1}}{c_t}
+= \big[\,\beta(1+r)\,\big]^{1/\sigma}.
+$$
+
+
+
+**Interpretation**
+
+- If $\beta(1+r)=1$, then $c_{t+1}=c_t$: consumption is *constant* over time.
+- If $\beta(1+r)>1$, the household values future consumption relatively more → **consumption grows** over time.
+- If $\beta(1+r)<1$, the household is relatively impatient → **consumption declines** over time.
+
+**Economic parameters:**
+- $\beta$ captures *patience*: higher $\beta$ → slower consumption decline (more saving).
+- $\sigma$ governs *willingness to smooth consumption*: higher $\sigma$ (more curvature) → less sensitivity of growth to interest rates.
+
+This simple form makes the Euler condition directly testable and provides a foundation for empirical work in both **macroeconomics** and **household finance**.
+
+#### Renewable Resource (fishery; matches your notes)
+
+Bellman: $V(s)=\max_{0\le h\le s}\{p\,h-c\,h+\beta V(G(s-h))\}$ with $s'=G(s-h)$.
+
+- **Euler (interior):**
+$$
+(p-c)-\beta\,V'(s')\,G'(s-h)=0.
+$$
+
+- **Envelope:**
+$$
+V'(s)=\beta\,V'(s')\,G'(s-h).
+$$
+
+Combine them to eliminate $V'(s')$:
+$$
+p-c=V'(s).
+$$
+
+**Interpretation:** harvest until marginal net revenue equals the **shadow value** of the stock (the user cost). With bounds, you get the usual “escapement” logic: at low $s$, $h^*=0$ (rebuilding); at high $s$, $h^*$ hits the upper bound $h=s$ (if profitable).
 
 
 ------
 
-### Why This Matters
+## Analytical Example: Hotelling Resource Extraction
 
-- The envelope theorem allows us to link **marginal value** ($V'(s)$) to **marginal utility** or **marginal profit**, depending on context.
-- It simplifies derivations of **Euler equations**, **costate equations**, and **first-order necessary conditions**.
-- It provides a recursive way to compute derivatives of value functions in both analytical and numerical work.
+We now work through a fully analytical example that ties together the **Euler equation** and the **Envelope (shadow value)** condition.
+
+### Setup
+
+A social planner (or resource owner) chooses extraction $\{q_t\}$ to maximize the discounted value of profits from a nonrenewable resource.
+
+$$
+\max_{\{q_t\}_{t=0}^\infty} \sum_{t=0}^\infty \beta^t \big[p\,q_t - c(q_t)\big]
+$$
+
+subject to the **resource stock constraint**
+$$
+S_{t+1} = S_t - q_t, \qquad S_t \ge 0,
+$$
+with given $S_0$ and discount factor $0<\beta<1$.
 
 
 
+### Bellman Equation
+
+Let $V(S)$ be the value of having $S$ units of the resource left:
+
+$$
+V(S) = \max_{0\le q\le S} \left\{ p\,q - c(q) + \beta\,V(S-q) \right\}.
+$$
+
+
+
+### First-Order and Envelope Conditions
+
+#### (a) Euler (stationarity in $q$)
+
+$$
+p - c'(q_t) = \beta\,V'(S_{t+1}).
+$$
+
+The planner extracts up to the point where the **current net price** equals the **discounted shadow value of remaining stock**.
+
+#### (b) Envelope (marginal value of the stock)
+
+Differentiating the Bellman equation with respect to $S$ and using the envelope theorem:
+
+$$
+V'(S_t) = \beta\,V'(S_{t+1}).
+$$
+
+
+
+### Combine Euler and Envelope
+
+Shift the envelope one period forward:
+$$
+V'(S_{t+1}) = \beta\,V'(S_{t+2}).
+$$
+
+Substitute into the Euler:
+$$
+p - c'(q_t) = \beta\,V'(S_{t+1}) = \beta^2 V'(S_{t+2}) = \cdots
+$$
+so $V'(S_t)$ grows at the rate $1/\beta$.
+
+Define $\lambda_t \equiv V'(S_t)$ as the **shadow price** or **resource rent**. Then:
+$$
+\lambda_{t+1} = \frac{\lambda_t}{\beta}.
+$$
+
+If $\beta = (1+r)^{-1}$, this gives the classic **Hotelling rule**:
+$$
+\lambda_{t+1} = (1+r)\lambda_t.
+$$
+
+That is, the *resource rent* (or in equilibrium, the **net price**) must grow at the rate of interest.
+
+---
+
+### Linear-Cost Example
+
+Let $c(q)=\tfrac{1}{2}\gamma q^2$ with $\gamma>0$.  
+Then the FOC is
+$$
+p - \gamma q_t = \beta V'(S_{t+1}).
+$$
+
+Using the envelope $V'(S_t)=\beta V'(S_{t+1})$, we can eliminate $V'$:
+
+$$
+p - \gamma q_t = V'(S_t).
+$$
+
+Differentiate over time to get the *Euler equation in observable variables*:
+$$
+(p - \gamma q_{t+1}) = \frac{1}{\beta}(p - \gamma q_t).
+$$
+
+If $\beta=(1+r)^{-1}$,
+$$
+p - \gamma q_{t+1} = (1+r)(p - \gamma q_t),
+$$
+so the **net price (marginal rent)** rises at the interest rate.
+
+---
+
+### 6. Economic Interpretation
+
+| Condition | Meaning | Intuition |
+|------------|----------|-----------|
+| $p - c'(q_t) = \beta V'(S_{t+1})$ | *Euler:* marginal profit = discounted shadow value | Extract until current profit = opportunity cost of future scarcity |
+| $V'(S_t)=\beta V'(S_{t+1})$ | *Envelope:* shadow price grows at $1/\beta$ | Keeping one more unit today increases lifetime value by the discounted rent |
+| $\lambda_{t+1}=(1+r)\lambda_t$ | *Hotelling rule* | In equilibrium, the resource rent (or net price) grows at the interest rate |
+
+---
+
+### Policy Intuition
+
+- When the interest rate $r$ is **high**, future rents are heavily discounted → faster extraction.  
+- When $r$ is **low** or $\beta$ high, future rents matter more → slower extraction.  
+- The rule does *not* depend on the level of stock $S_t$; it is purely an **arbitrage condition** between leaving the resource in the ground vs. extracting and investing the proceeds.
+
+
+:::{.callout-note}
+Why Must Rents Grow at the Interest Rate?
+
+The Hotelling rule says that in equilibrium,
+$$
+\lambda_{t+1} = (1+r)\lambda_t,
+$$
+or equivalently that the **net price (resource rent)** grows at the rate of interest.
+
+Let’s unpack *why* this must be true.
+
+
+**The Resource as an Asset**
+
+Think of the remaining stock $S_t$ as an **asset**: each unit in the ground is a claim on a future profit when extracted.
+
+- If you **extract one more unit now**, you earn today’s net revenue  
+  $\text{current rent} = p - c'(q_t) = \lambda_t$.
+
+- If you **leave it in the ground**, you keep the option to sell it in the future, when scarcity will be higher and rent will be larger.
+
+Thus, each unit of resource is an asset that yields **capital gains** (through rising rent) but **no dividends** (unless extracted).
+
+
+**No-Arbitrage Condition**
+
+An owner can hold wealth in two forms:
+
+1. **Financial asset** yielding interest rate $r$.  
+2. **Resource asset** whose value (the rent $\lambda_t$) appreciates over time.
+
+If both are riskless, **arbitrage** implies they must yield the same return.
+
+Otherwise:
+
+- If $\lambda_{t+1}/\lambda_t > 1+r$:  
+  holding the resource yields higher return → everyone hoards → no extraction.
+- If $\lambda_{t+1}/\lambda_t < 1+r$:  
+  financial assets dominate → everyone extracts and invests proceeds.
+
+Only when $\lambda_{t+1}/\lambda_t = 1+r$ can both be held in equilibrium.
+
+That is exactly the **Hotelling condition**:
+$$
+\frac{\lambda_{t+1}-\lambda_t}{\lambda_t} = r.
+$$
+
+:::
 
 
 
