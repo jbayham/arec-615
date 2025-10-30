@@ -51,7 +51,7 @@
       url: "bootstrap_example.R"
 
   
-- title: "Dynamic Programming: Finite Horizon"
+- title: "Dynamic Programming: Part A"
   filename: "notes" 
   dirname: modules/dynamic_programming_A
   desc: "This unit introduces dynamic programming. Submit problem set on Canvas."
@@ -68,24 +68,11 @@
       url: "forest_harvest.R"
     - title: "Fishery Example"
       url: "fishery.R"
-  # ps:
-  #   - title: "Problem Set 2"
-  #     url: "problem_set.pdf"
-  # materials:
-  #   - title: "MLE Surface"
-  #     url: "mle_example.r"
   
-# - title: "Course overview and introduction to optimization concepts"
-#   filename: "intro/intro" 
-#   dirname: lectures
-#   desc: "Course overview and introduction to optimization concepts"
-#   readings:
-#     - title: "McCarl & Spreen Ch. 1–2"
-#       url: "course-materials/"
-#     - title: "LP Example"
-#       url: "lectures/week_01/lp_example.html"
-#   code:
-#     - title: "simplex_example.R"
-#       url: "code/simplex_example.R"
-#     - title: "LP-GAMS.gms"
-#       url: "code/LP-GAMS.gms"
+- title: "Dynamic Programming: Part B"
+  filename: "notes" 
+  dirname: modules/dynamic_programming_B
+  desc: "This unit introduces dynamic programming. Submit problem set on Canvas."
+  readings:
+    - title: "Miranda & Fackler Ch. 8"
+      url: "course-materials/"
