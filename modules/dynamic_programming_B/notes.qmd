@@ -644,9 +644,7 @@ $$
 
 # Continuous Time and State
 
-Like in many other contexts, continuous processes can simplify or allow the use of other math. By moving to continuous time, we can use calculus.
-
-Instead of difference equations, we use differential equations to describe evolution of the state variable.
+Like in many other contexts, continuous processes can simplify or allow the use of calculus. Instead of difference equations, we use differential equations to describe evolution of the state variable. The flows, $\pi$, are instantaneous. The continuous discounting is exponential, $e^{-\rho t}$.
 
 $$
 V(s)=\max_x  \int_0^\infty e^{−\rho t}π(s(t),x(t)) dt
@@ -654,10 +652,12 @@ $$
 $$
 \text{s.t.} ~ \dot s(t)=f(s(t),x(t))
 $$
+and terminal condition $\lim_{t\rightarrow \infty} e^{-\rho t} V(s(t))=0$.
+
 
 ## Current Value Hamiltonian
 
-The current value hamiltonian is the dynamic analog to the Lagrangian in static optimization. It combines current payoffs and the value of changing the state.
+The current value Hamiltonian is the dynamic analog to the Lagrangian in static optimization. It combines current payoffs and the value of changing the state. We will drop the time arguments for clarity.
 
 $$ 
 H(s,x,\lambda) = \pi (s,x) + \lambda f(s,x)
@@ -687,9 +687,9 @@ This condition equates the marginal benefit and marginal cost of adjusting the c
 
 So at the optimum the immediate gain from changing $x$ must equal the value of the induced change in the future state.
 
-**Co-state equation**
+**Co-state equation** (dynamic law of motion of the shadow price)
 
-The condition $\dot\lambda = \rho\lambda - H_s$ says that shadow values evolve like an asset price — their rate of appreciation equals the interest rate minus the marginal productivity of the state.
+The condition $\dot\lambda = \rho\lambda - H_s$ says that shadow values evolve like an asset price - their rate of appreciation equals the interest rate minus the marginal effect of the state
 
 $$
 \dot \lambda = \rho \lambda - \frac{\partial H}{\partial s} = \rho \lambda - \left( \frac{\partial \pi}{\partial s} + \lambda \frac{\partial f}{\partial s} \right)
@@ -699,9 +699,9 @@ This is a law of motion for the shadow price — it tells us how the value of th
 
 - The term $\rho \lambda$ is the “required return” on the shadow asset (the discounting effect).
 
-- $\frac{\partial \pi}{\partial s}$ is the direct marginal effect of more $s$ on current profit.
+- $\frac{\partial \pi}{\partial s}$ is the direct marginal effect of more $s$ on current profit. For example, in a growth model, more capital $s$ raises output today. If more capital already raises current profits, its shadow value doesn't need to grow as quickly.
 
-- $\lambda \frac{\partial f}{\partial s}$ is the indirect effect through how $s$ changes its own future growth.
+- $\lambda \frac{\partial f}{\partial s}$ is the indirect effect through how $s$ changes its own future growth. If a larger state today leads to faster growth tomorrow, larger future states are easier to read, so the current shadow value falls (lowering the rate of growth)
 
 **State equation**
 
@@ -709,11 +709,21 @@ This describes the evolution of the physical or economic state.
 $$\dot{s} = f(s,x)$$
 The chosen control policy $x(t)$ determines how the system transitions through states — e.g. how capital accumulates, resources deplete, or pollution stock evolves. This is the link between short-run choices and long-run consequences.
 
+**Transversality condition**
+
+This condition ensures that the present value of the shadow price times the state variable vanishes at infinity:
+$$\lim_{t\rightarrow \infty} e^{-\rho t} \lambda(t) s(t) = 0$$
+This rules out “Ponzi schemes” where the shadow price grows so fast that its discounted value remains positive indefinitely. It ensures that the optimization problem is well-posed and that the agent cannot exploit infinite future value.
+
+**Summary**
+
 The FOCs of the current-value Hamiltonian are the continuous-time counterpart of the Euler equation and envelope condition in discrete-time dynamic programming:
 
 - The control equation parallels the Euler condition: it characterizes optimal intertemporal allocation.
 
 - The co-state equation mirrors the envelope theorem: it tells how the value function changes with the state.
+
+- The transversality condition ensures well-behaved solutions.
 
 - Together, they describe how current actions balance immediate payoffs and discounted future consequences.
 
@@ -787,7 +797,7 @@ $$
 $$
 :::
 
-Note that $V(s(t))$ is the maximum value, so the derivative must be zero at the optimum:
+Note that $V(s(t))$ is the maximum value, so the derivative wrt to time must be zero at the optimum:
 $$0 = \rho V(s(t)) - \pi(s(t), x(t)) - V'(s(t)) \dot s(t)$$
 Rearranging gives the HJB equation:
 $$\rho V(s) = \pi(s,x) + V'(s) f(s,x)$$
@@ -798,6 +808,11 @@ $$\rho V(s) = \max_x \left\{ \pi(s,x) + V'(s) f(s,x) \right\}$$
 
 The value function is linked to the co-state variable by:
 $$\lambda(s) = V'(s)$$
+
+Substituting into the HJB gives:
+$$\rho V(s) = \max_x \left\{ \pi(s,x) + \lambda(s) f(s,x) \right\} = \max_x H(s,x,\lambda)$$
+
+Thus, the Hamiltonian is the maximand in the HJB equation. The intuition is the same: $\lambda$ captures the shadow value of the state, which evolves based on the effects of $s$ on current and future payoffs. This is the same intuition as $V'(s)$.
 
 ## Hotelling Resource Extraction in Continuous Time
 
