@@ -640,6 +640,265 @@ $$
 
 :::
 
+\newpage
+
+# Continuous Time and State
+
+Like in many other contexts, continuous processes can simplify or allow the use of other math. By moving to continuous time, we can use calculus.
+
+Instead of difference equations, we use differential equations to describe evolution of the state variable.
+
+$$
+V(s)=\max_x  \int_0^\infty e^{−\rho t}π(s(t),x(t)) dt
+$$
+$$
+\text{s.t.} ~ \dot s(t)=f(s(t),x(t))
+$$
+
+## Current Value Hamiltonian
+
+The current value hamiltonian is the dynamic analog to the Lagrangian in static optimization. It combines current payoffs and the value of changing the state.
+
+$$ 
+H(s,x,\lambda) = \pi (s,x) + \lambda f(s,x)
+$$
+
+where $\lambda(t)$ is the co-state variable or shadow price associated with the state $s(t)$ in current value terms.
+
+### FOC (Pontryagin maximum principle)
+
+The necessary first order conditions are
+
+- Control equation: $\frac{\partial H}{\partial x} = 0$
+- Co-state equation: $\dot \lambda = \rho \lambda - \frac{\partial H}{\partial s}$
+- State equation: $\dot s = f(s,x)$
+- Transversality condition: $\lim_{t\rightarrow \infty} e^{-\rho t} \lambda(t) s(t) = 0$
+
+**Control Condition**
+
+$$
+\frac{\partial H}{\partial x} = \frac{\partial \pi(s,x)}{\partial x} + \lambda \frac{\partial f(s,x)}{\partial x} = 0
+$$
+This condition equates the marginal benefit and marginal cost of adjusting the control variable $x$.
+
+- $\frac{\partial \pi}{\partial x}$ is the direct marginal profit from increasing $x$.
+
+- $\lambda \frac{\partial f}{\partial x}$ is the indirect effect through how $x$ changes the state variable — multiplied by the shadow value of the state.
+
+So at the optimum the immediate gain from changing $x$ must equal the value of the induced change in the future state.
+
+**Co-state equation**
+
+The condition $\dot\lambda = \rho\lambda - H_s$ says that shadow values evolve like an asset price — their rate of appreciation equals the interest rate minus the marginal productivity of the state.
+
+$$
+\dot \lambda = \rho \lambda - \frac{\partial H}{\partial s} = \rho \lambda - \left( \frac{\partial \pi}{\partial s} + \lambda \frac{\partial f}{\partial s} \right)
+$$
+
+This is a law of motion for the shadow price — it tells us how the value of the state evolves over time.
+
+- The term $\rho \lambda$ is the “required return” on the shadow asset (the discounting effect).
+
+- $\frac{\partial \pi}{\partial s}$ is the direct marginal effect of more $s$ on current profit.
+
+- $\lambda \frac{\partial f}{\partial s}$ is the indirect effect through how $s$ changes its own future growth.
+
+**State equation**
+
+This describes the evolution of the physical or economic state.
+$$\dot{s} = f(s,x)$$
+The chosen control policy $x(t)$ determines how the system transitions through states — e.g. how capital accumulates, resources deplete, or pollution stock evolves. This is the link between short-run choices and long-run consequences.
+
+The FOCs of the current-value Hamiltonian are the continuous-time counterpart of the Euler equation and envelope condition in discrete-time dynamic programming:
+
+- The control equation parallels the Euler condition: it characterizes optimal intertemporal allocation.
+
+- The co-state equation mirrors the envelope theorem: it tells how the value function changes with the state.
+
+- Together, they describe how current actions balance immediate payoffs and discounted future consequences.
+
+:::{.callout-note}
+# Where does the Co-state equation come from
+
+1. We introduce a Lagrange multiplier $\mu(t)$ for the constraint $\dot{s} - f(s,x)=0$.
+
+The present-value Lagrangian is:
+$$
+\mathcal{L} = \int_0^\infty e^{-\rho t} \left[ \pi(s,x) + \mu(t) (\dot{s} - f(s,x)) \right] dt
+$$
+2. Integrate the term with $\dot{s}$ by parts:
+To get the first-order conditions, we want all terms multiplied by $s$ (not $\dot{s}$).
+$$
+\int_0^\infty e^{-\rho t} -\mu(t) \dot s(t) dt = \left[ e^{-\rho t} \mu(t) s(t) \right]_0^\infty + 
+\int_0^\infty e^{-\rho t} s(t) \left( \dot \mu(t) - \rho \mu(t) \right) dt
+$$
+Assuming the boundary term vanishes at infinity, we have:
+$$\mathcal{L} = \int_0^\infty e^{-\rho t} \left[ \pi(s,x) - \mu(t) f(s,x) + s(t) \left( \dot{\mu}(t) - \rho \mu(t) \right) \right] dt$$
+
+3. Define the current-value co-state variable:
+$$\lambda(t) = \frac{\mu(t)}{e^{-\rho t}} = e^{\rho t} \mu(t)$$
+This rescales the multiplier to account for discounting.
+
+Differentiating $\lambda(t)$ and rearranging gives:
+$$\dot \mu(t) = e^{-\rho t} ( \dot \lambda(t) - \rho \lambda(t))$$
+When we plug this back into the FOCs, the necessary condition for $s(t)$ (the “state variable”) gives:
+$$\dot \lambda(t) = \rho \lambda(t) - \left( \frac{\partial \pi}{\partial s} + \lambda(t) \frac{\partial f}{\partial s} \right)$$
+This is the **co-state equation** we wanted to derive
+
+:::
+
+## Connecting the Hamiltonian to the HJB Equation
+
+The Hamilton-Jacobi-Bellman (HJB) equation is the continuous-time analog of the Bellman equation in discrete time. It characterizes the value function $V(s)$ as the solution to a differential equation.
+
+The HJB equation states that at each instant in time, the value of being in state $s$ equals the maximum of current payoffs plus the expected change in value from moving to a new state.
+
+$$\rho V(s) = \max_x \left\{ \pi(s,x) + V'(s) f(s,x) \right\}$$
+
+### Define the value function
+
+$$
+V(s) = \max_{x} \int_0^\infty e^{-\rho t} \pi(s(t), x(t)) dt
+$$
+At any time $t$, define the remaining value of the program:
+$$V(s(t)) = \max_{x(\cdot)} \int_t^\infty e^{-\rho (u-t)} \pi(s(u), x(u)) du$$
+Differentiating with respect to time $t$ gives:
+$$\frac{dV(s(t))}{dt} = \rho V(s(t)) - \pi(s(t), x(t)) - V'(s(t)) \dot s(t)$$
+
+:::{.callout-note}
+# Leibniz Rule for Differentiation Under the Integral Sign
+
+If you have an integral with variable limits:
+$$
+I(t) = \int_{a(t)}^{b(t)} g(u,t) du
+$$
+The derivative with respect to $t$ is:
+$$\frac{dI(t)}{dt} = g(b(t),t)  b'(t) - g(a(t),t) \cdot a'(t) + \int_{a(t)}^{b(t)} \frac{\partial g(u,t)}{\partial t} du$$
+In our case, the lower limit is $t$ and the upper limit is $\infty$. The derivative becomes:
+$$\frac{d}{dt} \int_t^\infty e^{-\rho (u-t)} \pi(s(u), x(u)) du
+= - e^{-\rho (t-t)} \pi(s(t), x(t)) + \int_t^\infty \frac{\partial}{\partial t} \left( e^{-\rho (u-t)} \pi(s(u), x(u)) \right) du$$
+
+Note that $t-t=0$ so $e^{-\rho (t-t)}=1$ and
+
+$$
+\frac{\partial}{\partial t} \left( e^{-\rho (u-t)} \pi(s(u), x(u)) \right)
+= \rho e^{-\rho (u-t)} \pi(s(u), x(u)) 
+= \rho V(s(t))
+$$
+:::
+
+Note that $V(s(t))$ is the maximum value, so the derivative must be zero at the optimum:
+$$0 = \rho V(s(t)) - \pi(s(t), x(t)) - V'(s(t)) \dot s(t)$$
+Rearranging gives the HJB equation:
+$$\rho V(s) = \pi(s,x) + V'(s) f(s,x)$$
+Maximizing over $x$ gives the full HJB:
+$$\rho V(s) = \max_x \left\{ \pi(s,x) + V'(s) f(s,x) \right\}$$
+
+### Link to the Hamiltonian
+
+The value function is linked to the co-state variable by:
+$$\lambda(s) = V'(s)$$
+
+## Hotelling Resource Extraction in Continuous Time
+
+Consider a resource owner extracting a nonrenewable resource over time to maximize discounted profits:
+$$
+\max_{\{q(t)\}_{t=0}^\infty} \int_0^\infty e^{-\rho t} \left[ p q(t) - c(q(t)) \right] dt
+$$
+
+subject to the resource stock constraint:
+$$
+\dot S(t) = - q(t), \quad S(t) \ge 0, \quad S(0) = S_0
+$$
+
+### Current-Value Hamiltonian
+
+The current-value Hamiltonian is:
+$$H(S,q,\lambda) = p q - c(q) + \lambda (-q) = (p - \lambda) q - c(q)$$
+
+### First-Order Conditions  
+
+- **Control (optimal extraction):**
+$$\frac{\partial H}{\partial q} = p - c'(q) - \lambda = 0 \quad \Rightarrow \quad p - c'(q) = \lambda$$
+This condition states that the marginal profit from extraction equals the shadow price of the resource.
+- **Co-state (shadow price evolution):**
+$$\dot \lambda = \rho \lambda - \frac{\partial H}{\partial S} = \rho \lambda - 0 = \rho \lambda$$
+Since $H$ does not depend on $S$, the shadow price grows at the rate $\rho$.    
+$\lambda$ is the shadow value of the resource in situ, i.e. the resource rent.    
+It must grow at the rate of interest $\rho$.    
+Thus, resource rents rise at the interest rate — the Hotelling rule.    
+If $\dot{\lambda} = \rho \lambda$, rents increase exponentially — extraction slows as the resource becomes scarcer.
+
+
+## Numeric Example
+
+
+### Hotelling extraction with quadratic costs (continuous time)
+
+We consider the nonrenewable resource problem in continuous time with constant price and quadratic extraction costs:
+
+- Objective: maximize discounted profits
+$$
+\max_{\{x(t)\}_{t\ge0}} \int_0^\infty e^{-\rho t} \big[ p\,x(t) - C(x(t)) \big] dt,
+\qquad C(x)=\tfrac{1}{2} c x^2
+$$
+
+- State dynamics and initial stock
+$$
+\dot S(t) = -x(t),\quad S(t)\ge0,\quad S(0)=S_0
+$$
+
+With price $p$ constant and $C'(x)=c x$, the current-value Hamiltonian is
+$$
+H(S,x,\lambda) = p\,x - \tfrac{1}{2} c x^2 + \lambda (-x) = (p-\lambda)x - \tfrac{1}{2} c x^2.
+$$
+
+FOCs (Pontryagin) give
+$$
+\begin{aligned}
+&\text{Control: } &&\frac{\partial H}{\partial x} = p - c x - \lambda = 0 \;\Rightarrow\; x(t) = \frac{p-\lambda(t)}{c} \;\; (\ge 0) \\
+&\text{Co-state: } &&\dot\lambda(t) = \rho\,\lambda(t) \Rightarrow \lambda(t) = \lambda_0 e^{\rho t} \\
+&\text{State: } &&\dot S(t) = -x(t)
+\end{aligned}
+$$
+
+Because $H$ does not depend on $S$, the rent (shadow price) grows at the interest rate: $\dot\lambda/\lambda = \rho$. The optimal extraction policy is therefore
+$$
+\boxed{\;x(t) = \max\Big\{\frac{p - \lambda_0 e^{\rho t}}{c},\,0\Big\}\;}
+$$
+Extraction continues until $\lambda$ reaches $p$ (see the numerator of the optimal policy); denote the stopping time $T^*$, defined by $\lambda(T^*)=p$. This yields
+$$
+\boxed{\;T^* = \frac{1}{\rho}\,\log\Big(\frac{p}{\lambda_0}\Big)\;}
+$$
+
+
+
+### Numerical calibration (the script and figure)
+
+Using the parameters $p=1$, $\rho=0.05$, $S_0=10$ and setting $c=0.5$ for the quadratic cost slope (so $C(x)=\tfrac{1}{2} c x^2$ and $MC=c x$), the implied values are
+$$
+\lambda_0 \approx 0.4488,\qquad T^* \approx 16.02\,\text{time units}.
+$$
+The trajectories are
+$$
+\lambda(t) = \lambda_0 e^{\rho t},\qquad x(t)=\frac{p-\lambda(t)}{c}\;\;\text{for }t\le T^*,\qquad S(t)=S_0-\int_0^t x(u)\,du.
+$$
+The Hotelling rule is visible directly as a constant growth rate
+$$
+\frac{\dot\lambda(t)}{\lambda(t)} = \rho.
+$$
+
+Below is the numerically generated figure from `extraction_sim.R` (saved alongside this file) illustrating $x(t)$, $S(t)$, $\lambda(t)$, and the constant rent growth $\dot\lambda/\lambda=\rho$:
+
+![](extraction_sim.png)
+
+Key takeaways:
+
+- The optimal policy extracts while $\lambda(t)<p$, with $x(t)$ declining to zero at $T^*$ as rents rise exponentially.
+- Rents $\lambda$ grow at the interest rate $\rho$ (Hotelling), so the net price equals the scarcity rent and appreciates like a riskless asset.
+- Choosing $\lambda_0$ to satisfy the stock constraint ensures complete exhaustion at $T^*$.
+
+
 
 
 
