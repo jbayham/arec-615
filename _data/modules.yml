@@ -76,3 +76,11 @@
   readings:
     - title: "Miranda & Fackler Ch. 8"
       url: "course-materials/"
+  ps:
+    - title: "Problem Set 4"
+      url: "problem_set.pdf"
+  materials:
+    - title: "Consumption-Savings Example"
+      url: "consumption_savings_sim.R"
+    - title: "Hotelling Extraction"
+      url: "extraction_sim.R"

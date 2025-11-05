@@ -1,0 +1,54 @@
+---
+title: "Problem Set: Dynamic Programming Continuous Time"
+execute: 
+  echo: true
+  warning: false
+  message: false
+---
+
+
+## Problem 1
+
+Backstop technology and optimal switching (continuous time)
+
+Consider a planner who must meet a constant flow demand D using either: 
+
+i. extraction from an exhaustible stock $S(t)$ at rate $x(t) ≥ 0$ with convex extraction cost, or 
+ii. an unlimited “backstop” technology $y(t) ≥ 0$ with constant unit cost B. 
+
+The planner minimizes the present value of total costs with discount rate $\rho > 0$.
+
+- State: $S(t) ≥ 0$ with $S(0) = S0$.
+- Controls: extraction $x(t) ≥ 0$ and backstop use $y(t) ≥ 0$.
+- Flow constraint: $x(t) + y(t) = D$ for all $t ≥ 0$.
+- Stock dynamics: $\dot S(t) = −x(t)$.
+- Extraction cost: $C(x) = 1/2 c x^2$ with $c > 0$.
+- Backstop cost: $B y(t)$ with $B > 0$.
+
+Thus the planner’s problem is
+$$
+\min_{\{x(t),y(t)\}_{t\ge0}} \int_0^{\infty} e^{-\rho t} \Big[ \tfrac{1}{2}c\,x(t)^2 + B\,y(t) \Big] dt
+\quad \text{s.t.}\quad
+\dot S(t) = -x(t),\; S(0)=S_0,\; x(t)+y(t)=D,\; x(t),y(t)\ge 0.
+$$
+
+a) Eliminate $y(t)$ using the flow constraint and write the problem with one control $x(t) \in [0, D]$. Write the current-value Hamiltonian $H(S,x,\lambda)$. Clearly state the state equation, control bounds, and the transversality condition.
+
+b) Derive the first-order necessary conditions (Pontryagin):
+  - control condition $∂H/∂x = 0$ for an interior solution,
+  - co-state equation $\dot \lambda = ρ λ − ∂H/∂S$,
+  - state equation $\dot S = −x$,
+
+Show that (for interior $x$) the optimal policy satisfies
+$$
+x(t) = \frac{B - \lambda(t)}{c},\qquad \dot\lambda(t) = \rho\,\lambda(t).
+$$
+
+c) Solve the co-state ODE and show that $\lambda(t) = \lambda_0 e^{\rho t}$.
+
+Argue that $0 < x(t) < D$ followed by a switching time $T^*$ at which $x(T^*) = 0$ and the backstop fully supplies demand thereafter ($y(t) = D$ for $t \geq T^*$).
+
+d) Assuming the interior $0 < x(t) < D$ until the switch, derive closed-form expressions for the switching time $T^*$ defined by $\lambda(T^*) = B$.
+
+e) Comparative statics. For the pre-switch phase ($t < T^*$), characterize how $x(t)$ and $T^*$ change with each parameter $c$, $B$, $\rho$, and $S_0$. Provide economic intuition for each sign.
+
