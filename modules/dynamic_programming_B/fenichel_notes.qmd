@@ -317,7 +317,7 @@ From the trigonometric form $T_n(x) = \cos(n\theta)$ with $x = \cos\theta$, we c
 
 
 
-# 8. Application: Gulf of Mexico Reef Fish
+# Application: Gulf of Mexico Reef Fish
 
 - **Stock:** Gulf reef fish biomass.  
 - **Dynamics:** Estimated using ecological models for $G(s)$ and harvest functions for $f(s, x)$.  
@@ -326,9 +326,25 @@ From the trigonometric form $T_n(x) = \cos(n\theta)$ with $x = \cos\theta$, we c
 
 The example demonstrates the feasibility of integrating ecological data and economic dynamics to recover the value of natural capital assets.
 
----
+Shadow price figure:
 
-# 9. Broader Implications
+- The shadow price of Gulf reef fish declines with stock size, reflecting scarcity.
+- The annuity based approximation (marginal benefit divided by discount rate) overestimates the shadow price at high stock levels, highlighting the importance of accounting for growth and extraction dynamics.
+
+Effort and catch depend positively on $s$:
+
+Effort: $E(s) = y s^\gamma$
+
+Catch: $H(s) = q E(s)^\alpha s = q y^\alpha s^{\alpha\gamma + 1}$
+
+Thus, as the stock grows:
+
+- The fish population regenerates faster (biological productivity rises up to a point).
+- Harvest efficiency increases — a larger stock is easier to find and catch.
+- Profits rise faster than linearly in $s$, so $W_s(s) = \partial W/\partial s$ is increasing in $s$.
+
+
+# Broader Implications
 
 - Moves the concept of *natural capital* from metaphor to **operational measurement**.
 - Integrates **economic welfare theory** with **biophysical models**.
@@ -337,9 +353,8 @@ The example demonstrates the feasibility of integrating ecological data and econ
 
 Ignoring the adjustment terms in the denominator of equation (10) can lead to serious misvaluation—analogous to mispricing a durable asset by ignoring depreciation or appreciation.
 
----
 
-# 10. Key Equations Summary
+# Key Equations Summary
 
 $$
 \begin{aligned}
@@ -351,23 +366,30 @@ p &= \frac{W_s + \dot{p}}{\delta - (G_s - f_s)}
 \end{aligned}
 $$
 
----
 
-# 11. Discussion Questions
 
-1. What is the difference between an **accounting price** and a **market price** of natural capital?  
-2. Why is the method robust to *non-optimal* institutional settings?  
-3. How does the term $(G_s - f_s)$ modify the effective discount rate?  
-4. In what sense is $p_t$ a *shadow value* of natural capital?  
-5. How would you apply this method to a renewable groundwater basin or a forest ecosystem?
+# Discussion Questions
 
----
+1. Fenichel and Abbott argue that treating nature as “capital” is often metaphorical.  
+   - What does it mean to “measure” natural capital rather than just describe it metaphorically
+   - Why has progress on *measurement* lagged behind the conceptual development of ecosystem service valuation?
 
-# References
+2. The authors emphasize that real-world institutions are often inefficient or “kakotopic” (Dasgupta, 2001).  
+   - Why is it important that their method still applies under such conditions? 
+   - What does this imply about how we should interpret the resulting “accounting prices”?
 
-- Fenichel, E. P., & Abbott, J. K. (2014). *Natural Capital: From Metaphor to Measurement.*  
-  *Journal of the Association of Environmental and Resource Economists*, 1(1/2), 1–27.  
-- Jorgenson, D. W. (1963). *Capital Theory and Investment Behavior.* *American Economic Review*, 53(2), 247–259.  
-- Miranda, M. J., & Fackler, P. L. (2002). *Applied Computational Economics and Finance.* MIT Press.  
-- Clark, C. W. (2005). *Mathematical Bioeconomics: The Optimal Management of Renewable Resources.* Wiley.
+3. The accounting price of natural capital is defined as $p_t = \partial V(s_t)/\partial s_t$.  
+   - In your own words, what does this derivative mean economically?
+   - How is this different from a *market price* for the resource?
+   
+4. The authors highlight that credible valuation requires integrating economics, ecology, and behavior.  
+   - Can you think of an example (other than fisheries) where this kind of feedback between ecological dynamics and human behavior is essential?
+   - What kinds of data would be needed to estimate $W_s$, $G_s$, and $f_s$ in that example?
+
+5. Suppose a policymaker asked you for “the value of the forest” in their region.  
+    - Based on this paper, how would you explain why a single number might be misleading? 
+    - How would you communicate the idea of *accounting prices* to a non-economist audience?
+
+
+
 

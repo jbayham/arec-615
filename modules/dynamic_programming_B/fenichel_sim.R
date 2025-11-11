@@ -221,7 +221,7 @@ ggplot() +
             color = "black", linetype = "dotted") +
   geom_line(data = cal.data, aes(x = stock, y = sp),
             color = "black", linetype = "dotted") +
-  annotate("text", label = "Shadow price", x = 300, y = 2.7, size = 3) +
+  annotate("text", label = "Accounting price", x = 300, y = 2.7, size = 3) +
   annotate("text", label = "Annuity-based\naccounting price\n(in $10 units)",
            x = 300, y = 9.6, size = 3) +
   annotate("text", label = "MSY stock level", x = 225, y = 12, size = 3) +
