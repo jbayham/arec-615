@@ -91,15 +91,15 @@
   reading: ''
   due: ''
 - date: '2025-11-13'
-  topic: Hotelling - Exhaustible Resources
-  reading: ''
-  due: Problem Set 4
-- date: '2025-11-18'
-  topic: Knapp Olson - Stochastic Water
+  topic: Burt - Optimal Resource Use
   reading: ''
   due: ''
-- date: '2025-11-20'
+- date: '2025-11-18'
   topic: How to present
+  reading: ''
+  due: Problem Set 4
+- date: '2025-11-20'
+  topic: Project workshop
   reading: ''
   due: ''
 - date: '2025-11-25'

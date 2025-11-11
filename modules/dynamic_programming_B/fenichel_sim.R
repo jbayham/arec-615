@@ -157,21 +157,20 @@ GOMSimPdot <- pdotsim(pdotC, simuDataPdot[, 1], simuDataPdot[, 2],
 #------------------------------------------------------------------------------
 # 8. Plot Shadow Prices from the Three Approximations
 #------------------------------------------------------------------------------
+library(tidyverse)
 library(tibble)
 tibble(nodes = nodes,
-          shadow_price_value_based       = GOMSimV$shadowp,
-          shadow_price_price_based       = GOMSimP$shadowp,
-          shadow_price_price_derivative  = GOMSimPdot$shadowp) %>%
-  ggplot(aes(x = nodes / 1e6)) +
-  geom_line(aes(y = shadow_price_value_based, color = "Value-based"), size = 1) +
-  #geom_line(aes(y = shadow_price_price_based, color = "Price-based"), size = 1) +
-  #geom_line(aes(y = shadow_price_price_derivative, color = "Price-derivative-based"), size = 1) +
+          shadow_price_value_based       = as.numeric(GOMSimV$shadowp),
+          shadow_price_price_based       = as.numeric(GOMSimP$shadowp),
+          shadow_price_price_derivative  = as.numeric(GOMSimPdot$shadowp)) %>%
+  pivot_longer(cols = starts_with("shadow_price"),
+               names_to = "method",
+               values_to = "shadow_price") %>%
+  ggplot(aes(x = nodes / 1e6,y = shadow_price, color = method)) +
+  geom_line(size = 1,alpha=.4) +
   labs(x = "Stock size (million lbs)",
        y = "Shadow price (USD/lb)",
        color = "Approximation Method") +
-  scale_color_manual(values = c("Value-based" = "blue",
-                                 "Price-based" = "red",
-                                 "Price-derivative-based" = "green")) +
   theme_minimal() +
   theme(legend.position = "top")
 
@@ -191,7 +190,7 @@ legend("topright", legend = c("Value-based", "Price-based", "Price-derivative-ba
 
 # Load required visualization packages
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(ggplot2, cowplot)
+pacman::p_load(ggplot2)
 
 # Prepare data for plotting
 gom.out <- tibble(
