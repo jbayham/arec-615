@@ -1,0 +1,373 @@
+---
+title: "Natural Capital: From Metaphor to Measurement"
+---
+
+# Introduction
+
+Fenichel and Abbott (2014) address the challenge of moving from the *metaphor* of natural capital to its *measurement*.  
+
+While economists and ecologists agree that natural resources function as forms of capital, they note that practical valuation methods lag far behind theory.
+
+Their contribution is to provide a **capital-theoretic approach** to valuing natural capital that:
+
+- Links to **Jorgenson’s theory of capital** in private markets.
+- Applies under **imperfect or non-optimizing institutions**.
+- Yields **accounting prices** consistent with welfare economics.
+
+
+
+# Conceptual Foundation
+
+## What is Natural Capital?
+
+Natural capital is the stock of natural resources that yields flows of ecosystem services and welfare benefits over time.  Examples include fish stocks, forests, wetlands, and groundwater.
+
+Like produced capital, natural capital:
+
+- Stores wealth.
+- Generates productive flows.
+- Has an intertemporal trade-off between use today and conservation for tomorrow.
+
+However, markets for many forms of natural capital are missing or incomplete, making their valuation difficult.
+
+# Theoretical Framework
+
+## State Dynamics
+
+Let $s(t)$ denote the natural capital stock, and $x(t)$ represent human behavior or extraction effort.  
+The stock evolves as
+
+$$
+\dot{s} = G(s) - f(s, x(s))
+$$
+
+where:
+
+- $G(s)$ is the ecological growth function,
+- $f(s, x)$ represents human extraction or degradation of the stock,
+- $x(s)$ is a behavioral *feedback rule* determined by institutions $\Omega$.
+
+The feedback rule $x(s)$ captures the *economic program*—society’s behavior conditional on its institutions, not necessarily the socially optimal policy. Dasgupta calls this "kakotopia".
+
+Drop the time argument because we assume time autonomy.
+
+
+
+## Welfare and the Value Function
+
+Let $W(s, x)$ represent instantaneous social welfare (the flow of net benefits derived from the stock). The present value of welfare is
+
+$$
+V(s_t) = \int_t^\infty e^{-\delta (\tau - t)} W(s(\tau), x(s(\tau))) \, d\tau
+$$
+
+where $\delta$ is the social discount rate. 
+
+Assume an economic program $x(s)$ is given, so $V$ depends only on the stock $s$ and the system is time autonomous. Then $W^*(s) = W(s, x(s))$.
+
+The **accounting price** or shadow price of natural capital is defined as
+
+$$
+p_t = \frac{\partial V(s_t)}{\partial s_t}
+$$
+
+which measures the change in welfare from a marginal increase in the stock of natural capital in situ - the benefit to society of having a little more stock.
+
+Differentiating $V(s_t)$ with respect to time gives two equivalent forms.
+
+
+:::{.callout-note}
+# Dynamics of Natural Capital Value
+
+
+To obtain the time derivative $\dot V = \frac{dV}{dt}$, we must differentiate this *integral with a time-dependent lower limit* and with $t$ also appearing in the integrand through the exponential term and the state variable $s(t)$.
+
+Using **Leibniz’s rule** for differentiation under the integral sign:
+
+$$
+\frac{d}{dt} \int_{a(t)}^{b(t)} F(\tau, t) \, d\tau
+= F(b(t), t) \frac{db}{dt}
+ - F(a(t), t) \frac{da}{dt}
+ + \int_{a(t)}^{b(t)} \frac{\partial F(\tau, t)}{\partial t} \, d\tau
+$$
+
+we set
+
+$$
+F(\tau, t) = e^{-\delta (\tau - t)} W(s(\tau), x(s(\tau))),
+\quad a(t) = t, \quad b(t) = \infty.
+$$
+
+Then $\frac{db}{dt}=0$ (upper limit fixed) and $\frac{da}{dt}=1$ (lower limit moves with $t$).
+
+
+
+**Step 1: Evaluate the boundary term**
+
+At the lower limit $\tau = t$,
+
+$$
+F(a(t), t) = e^{-\delta (t-t)} W(s(t), x(s(t))) = W(s(t), x(s(t))).
+$$
+
+Therefore the first boundary contribution is
+
+$$
+- F(a(t), t) \frac{da}{dt} = - W(s(t), x(s(t))).
+$$
+
+
+
+**Step 2: Differentiate the integrand with respect to $t$**
+
+Since the exponential term depends on $t$, we have
+
+$$
+\frac{\partial F(\tau, t)}{\partial t}
+= \frac{\partial}{\partial t} \Big( e^{-\delta (\tau - t)} \Big) W(s(\tau), x(s(\tau)))
+= \delta e^{-\delta (\tau - t)} W(s(\tau), x(s(\tau))).
+$$
+
+
+**Step 3: Substitute into Leibniz’s rule**
+
+Combining the pieces:
+
+$$
+\frac{dV}{dt}
+= - W(s(t), x(s(t)))
++ \int_t^{\infty} \delta e^{-\delta (\tau - t)} W(s(\tau), x(s(\tau))) \, d\tau.
+$$
+
+Recognizing the integral term as $\delta V(s_t)$ from equation (2), we obtain
+
+$$
+\boxed{
+\frac{dV}{dt} = \delta V - W(s, x)
+}
+$$
+
+which is **equation (4)** in the paper.
+
+
+
+**Intuition**
+
+- The first term, $-W(s, x)$, represents the *dividend* or current flow of welfare being “paid out” at time $t$.  
+- The second term, $\delta V$, represents the *required return* on the total value of capital, analogous to an interest rate on wealth.  
+
+Thus the change in total capital value equals the “required return” minus the current flow — exactly as in standard capital theory, but now applied to natural capital.
+
+:::
+
+
+From the definition of $V$:
+
+$$
+\dot{V} = \delta V - W(s, x)
+$$
+
+Although $V$ is defined as an integral, it ultimately depends on the *current state* $s(t)$.
+That is, $V = V(s(t))$.
+
+So by the **chain rule** for a composite function:
+
+$$
+\frac{dV}{dt} = \frac{\partial V}{\partial s} \frac{ds}{dt}= p_t \dot{s}
+$$
+
+using equation (3) in the paper. Note that equation (3) just shows the shadow price definition.
+
+
+Setting these equal yields the **current-value Hamiltonian**:
+
+$$
+\delta V = W(s, x) + p(s) \dot{s} = H(s, p)
+$$
+
+This expression defines the current return on total capital value.
+
+Rearranging terms,
+
+$$
+V(s) = \frac{W(s, x) + p(s) \dot{s}}{\delta}
+$$
+Differentiating wrt to the stock $s$,
+$$
+p(s) = \frac{\partial}{\partial s} \left( \frac{W(s, x) + p(s) \dot{s}}{\delta} \right) = \frac{W_s(s, x) + p(s) \frac{\partial \dot{s}}{\partial s} + \dot{s} \frac{\partial p(s)}{\partial s}}{\delta}
+$$
+
+note that $\dot p = \frac{\partial p(s(t))}{\partial s(t)} \dot s$, so
+
+$$
+\delta p = W_s(s, x) + p(s) \frac{\partial \dot{s}}{\partial s} + \dot{p}
+$$
+
+and substituting $\dot{s} = G(s) - f(s, x)$ and rearranging in terms of $p(s)$ 
+$$
+p = \frac{W_s(s, x) + \dot{p}}{\delta - \frac{\partial \dot{s}}{\partial s}} = \frac{W_s(s, x) + \dot{p}}{\delta - [G_s(s) - f_s(s, x)]}
+$$
+
+
+This mirrors Jorgenson’s (1963) model for produced capital:
+
+- $W_s(s, x)$: marginal benefit (marginal ecosystem service flow)
+- $\dot{p}$: capital gain or loss (price appreciation)
+- $\delta$: discount rate
+- $G_s(s) - f_s(s, x)$: net rate of natural capital productivity
+
+Hence, the **price of natural capital** equals the adjusted marginal benefit divided by an *effective* discount rate that accounts for natural growth and extraction.
+
+---
+
+# Economic Interpretation
+
+| Symbol | Meaning | Economic Interpretation |
+|:-------:|:---------|:------------------------|
+| $W_s$ | Marginal ecosystem service flow | Incremental welfare from a unit increase in stock |
+| $G_s$ | Marginal natural growth | Productivity of the stock |
+| $f_s$ | Marginal human impact | How stock size affects extraction |
+| $\dot{p}$ | Price appreciation | Scarcity change or capital gain |
+| $\delta$ | Discount rate | Social rate of time preference |
+| $p$ | Accounting price | Shadow value of natural capital |
+
+If $G_s > 0$, the stock reproduces itself, lowering the effective discount rate and increasing $p$.  
+If $f_s > 0$, a larger stock encourages more extraction, reducing $p$.
+
+---
+
+# From Theory to Measurement
+
+Equation (10) provides a measurement strategy:
+
+$$
+p = \frac{W_s + \dot{p}}{\delta - (G_s - f_s)}
+$$
+
+Most components are measurable or estimable:
+
+- $W_s$: from market data or nonmarket valuation.
+- $G(s)$ and $G_s(s)$: from ecological production models.
+- $f(s, x)$: from harvest or degradation data.
+- $\delta$: from social or public accounting rates.
+
+The challenge is that $\dot{p}$ (price change) is not directly observable.
+
+---
+
+# 7. Numerical Approximation
+
+Fenichel and Abbott employ **function approximation methods** from computational economics (Miranda and Fackler, 2002).
+
+They approximate the natural capital price function $p(s)$ using basis functions:
+
+$$
+p(s) \approx \sum_{n=0}^{N-1} \beta_n \phi_n(s)
+$$
+
+where $\phi_n(s)$ are **Chebyshev polynomials**.
+
+Then
+
+$$
+\dot{p}(s) = \sum_{n=0}^{N-1} \beta_n \phi_n'(s)
+$$
+
+They select a set of collocation points $\{s_i\}$ and solve for coefficients $\beta$ such that equation (10) holds at each point.  
+This numerical *collocation method* recovers a continuous approximation for the accounting price function.
+
+:::{.callout-note}
+# Chebyshev Polynomial Derivative
+
+From the trigonometric form $T_n(x) = \cos(n\theta)$ with $x = \cos\theta$, we can use the chain rule to find the derivative.
+
+1. Differentiate $T_n(x)$ with respect to $x$:
+
+   $$
+   \frac{dT_n(x)}{dx}
+   = \frac{d}{dx} \big[\cos(n\theta)\big]
+   = -n\sin(n\theta)\frac{d\theta}{dx}.
+   $$
+
+   Since $\frac{d\theta}{dx} = -\frac{1}{\sqrt{1-x^2}}$ (from $x=\cos(\theta) \rightarrow \theta = \cos^{-1}(x)$), this gives
+
+   $$
+   \boxed{
+   T_n'(x) = n\,\frac{\sin(n\theta)}{\sqrt{1-x^2}}
+   }.
+   $$
+
+   Substituting $\sin(n\theta) = \sqrt{1-x^2}\,U_{n-1}(x)$ (a trigonometric identity) gives a more compact polynomial expression.
+
+2. Therefore, the derivative can be written in terms of **Chebyshev polynomials of the second kind**, $U_{n-1}(x)$:
+
+   $$
+   \boxed{
+   T_n'(x) = n\,U_{n-1}(x),
+   }
+   $$
+
+   where $U_n(x)$ satisfies the recurrence:
+   $$
+   U_0(x) = 1, \qquad U_1(x) = 2x, \qquad U_{n+1}(x) = 2x\,U_n(x) - U_{n-1}(x).
+   $$
+:::
+
+
+
+
+
+# 8. Application: Gulf of Mexico Reef Fish
+
+- **Stock:** Gulf reef fish biomass.  
+- **Dynamics:** Estimated using ecological models for $G(s)$ and harvest functions for $f(s, x)$.  
+- **Institutions:** Real-world fishery management with quotas and enforcement.  
+- **Result:** An estimated accounting price (shadow value) per pound of fish biomass under actual management, not an idealized optimum.
+
+The example demonstrates the feasibility of integrating ecological data and economic dynamics to recover the value of natural capital assets.
+
+---
+
+# 9. Broader Implications
+
+- Moves the concept of *natural capital* from metaphor to **operational measurement**.
+- Integrates **economic welfare theory** with **biophysical models**.
+- Works even when institutions are **inefficient** or management is **non-optimal**.
+- Enables **wealth accounting** that includes both produced and natural assets.
+
+Ignoring the adjustment terms in the denominator of equation (10) can lead to serious misvaluation—analogous to mispricing a durable asset by ignoring depreciation or appreciation.
+
+---
+
+# 10. Key Equations Summary
+
+$$
+\begin{aligned}
+\dot{s} &= G(s) - f(s, x) \\
+V(s) &= \int_0^\infty e^{-\delta t} W(s, x) \, dt \\
+p &= \frac{\partial V}{\partial s} \\
+\dot{p} &= \delta p - W_s - p(G_s - f_s) \\
+p &= \frac{W_s + \dot{p}}{\delta - (G_s - f_s)}
+\end{aligned}
+$$
+
+---
+
+# 11. Discussion Questions
+
+1. What is the difference between an **accounting price** and a **market price** of natural capital?  
+2. Why is the method robust to *non-optimal* institutional settings?  
+3. How does the term $(G_s - f_s)$ modify the effective discount rate?  
+4. In what sense is $p_t$ a *shadow value* of natural capital?  
+5. How would you apply this method to a renewable groundwater basin or a forest ecosystem?
+
+---
+
+# References
+
+- Fenichel, E. P., & Abbott, J. K. (2014). *Natural Capital: From Metaphor to Measurement.*  
+  *Journal of the Association of Environmental and Resource Economists*, 1(1/2), 1–27.  
+- Jorgenson, D. W. (1963). *Capital Theory and Investment Behavior.* *American Economic Review*, 53(2), 247–259.  
+- Miranda, M. J., & Fackler, P. L. (2002). *Applied Computational Economics and Finance.* MIT Press.  
+- Clark, C. W. (2005). *Mathematical Bioeconomics: The Optimal Management of Renewable Resources.* Wiley.
+

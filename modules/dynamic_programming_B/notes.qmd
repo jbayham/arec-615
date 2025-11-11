@@ -915,7 +915,506 @@ Key takeaways:
 
 
 
+\newpage
+
+# Projection and Collocation Methods
+
+In many economic models, especially dynamic ones, the optimality conditions or value functions are expressed as functional equations. Analytical solutions are rare, so we must approximate functions numerically.
+
+When the state space is continuous and the model has no closed-form solution, the Bellman equation
+$$
+V(s)=\max_{x\in X(s)}\{\pi(s,x)+\beta V(f(s,x))\}
+$$
+defines infinitely many conditions — one for every possible value of $s$. Solving it exactly would mean finding a function $V(\cdot)$ that satisfies this equality everywhere, which is an infinite-dimensional problem.
+
+Projection and collocation methods make this problem computationally tractable:
+
+- We restrict attention to a family of approximate functions $\hat V(s;\theta)$ described by finitely many parameters $\theta$.
+- We then anchor the functional equation to hold exactly (collocation) or approximately (projection) at a finite set of representative states ${s_i}$.
+
+A special and widely used case of projection methods is **collocation**, where the approximation is made to satisfy the equation exactly at selected nodes (the collocation points).
+
+## Collocation Method
+
+1. **Choose Basis Functions:** Select a set of basis functions $\{\phi_j(s)\}_{j=1}^N$ to represent the value function. Common choices include polynomials, splines, or Chebyshev polynomials.
+
+2. **Approximate the Value Function:** Represent the value function as a linear combination of the basis functions:
+$$\hat V(s;\theta) = \sum_{j=1}^N \theta_j \phi_j(s)$$
+where $\theta = (\theta_1, \ldots, \theta_N)$ are the coefficients to be determined.
+
+3. Define the residual function that measures the deviation from the Bellman equation:
+$$R(s;\theta) = \hat V(s;\theta) - \max_{x \in X(s)} \{\pi(s,x) + \beta \hat V(f(s,x);\theta)\}$$
+The goal of the collocation method is to make this residual as close to zero as possible.
+
+4. **Select Collocation Points:** Choose a finite set of collocation points $\{s_i\}_{i=1}^M$
+within the state space where the Bellman equation will be enforced exactly.
+
+- For smooth problems, Chebyshev nodes are common.
+- For economic models with kinks or bounds, uniform or adaptive grids are often used.
+
+5. **Enforce the Bellman Equation:** 
+At each collocation point, require the residual to vanish:
+$$R(s_i;\theta) = 0, \quad i=1,\ldots,M,$$
+or equivalently,
+$$\hat V(s_i;\theta) = \max_{x \in X(s_i)} \{\pi(s_i,x) + \beta \hat V(f(s_i,x);\theta)\}$$
+This yields a system of $M$ equations in the $N$ unknowns $\theta$.
+
+6. **Solve for Coefficients:** Solve the resulting system of equations for the coefficients $\theta$ using numerical methods (e.g., nonlinear solvers).
+
+## Example: Hotelling Resource Extraction via Collocation
+
+A resource owner extracts $x_t$ units from a finite stock $s_t$.
+
+State dynamics:
+$$s_{t+1} = s_t - x_t, \quad s_t \ge 0$$
+
+Profit function:
+$$\pi(s_t,x_t) = p x_t - \frac{1}{2} c x_t^2$$
+
+Bellman equation:
+$$V(s_t) = \max_{0 \le x_t \le s_t} \left\{ p x_t - \frac{1}{2} c x_t^2 + \beta V(s_t - x_t) \right\}$$
+
+We’ll approximate $V(s)$ using Chebyshev polynomials and enforce this equality at collocation nodes.
+
+```{r}
+# Collocation for Hotelling extraction problem
+library(pracma)   # for chebfun, chebpts
+library(rootSolve) # for multiroot
+
+# Parameters
+beta <- 0.95
+Smax <- 10           # maximum stock
+N <- 3               # number of basis functions
+M <- N               # collocation points
+
+# ---- Step 1: Chebyshev nodes on [0, Smax] ----
+# Chebyshev nodes cluster near the endpoints of the interval.
+# That’s crucial for avoiding oscillations (Runge’s phenomenon) when approximating functions with global polynomials.
+# Generate N Chebyshev points on [-1, 1]
+chebpts <- function(N) {
+  k <- 0:(N-1)
+  x <- cos(pi * (2*k + 1) / (2*N))
+  return(rev(x))  # optional: reverse so they go from -1 to 1
+}
+
+
+s_nodes <- 0.5 * (Smax * (1 + chebpts(M)))  # map from [-1,1] to [0,Smax]
+
+# ---- Step 2: Chebyshev basis function ----
+cheb_basis <- function(s) {
+  # Map s ∈ [0, Smax] to z ∈ [-1,1]
+  z <- 2 * s / Smax - 1
+  T0 <- rep(1, length(z))
+  T1 <- z
+  T2 <- 2*z^2 - 1
+  T3 <- 4*z^3 - 3*z
+  cbind(T0, T1, T2)[, 1:N]   # truncate to N basis functions
+}
+
+# ---- Step 3: Approximate value function ----
+V_hat <- function(s, theta) {
+  phi <- cheb_basis(s)
+  as.numeric(phi %*% theta)
+}
+
+# ---- Step 4: Define residual function R(s; θ) ----
+residuals_fun <- function(theta) {
+  R <- numeric(M)
+  for (i in 1:M) {
+    s <- s_nodes[i]
+    # maximize over x in [0, s]
+    objective <- function(x) {
+      profit <- x - 0.5 * x^2 + beta * V_hat(s - x, theta)
+      return(-profit)  # negative for minimization
+    }
+    opt <- optimize(objective, c(0, s))
+    R[i] <- V_hat(s, theta) - (-opt$objective)
+  }
+  R
+}
+
+# ---- Step 5: Solve for coefficients θ ----
+theta_init <- rep(0, N)
+sol <- multiroot(f = residuals_fun, start = theta_init)
+theta_star <- sol$root
+
+# ---- Step 6: Evaluate results ----
+s_grid <- seq(0, Smax, length.out = 100)
+V_approx <- V_hat(s_grid, theta_star)
+
+plot(s_grid, V_approx, type = "l", lwd = 2, col = "blue",
+     xlab = "Resource stock s", ylab = "Value function V(s)",
+     main = "Value Function Approximation via Collocation")
+points(s_nodes, V_hat(s_nodes, theta_star), pch = 19)
+text(s_nodes, V_hat(s_nodes, theta_star), labels = paste0("s", 1:M), pos = 3)
+
+```
+
+## Chebyshev Polynomials and Their Role in Collocation
+
+**1. Motivation**
+
+When we approximate a value function $\hat V(s)$ with global polynomials, we want an approximation that is:
+
+- Accurate across the entire domain, not just locally;
+- Stable, avoiding oscillations near the boundaries; and
+- Numerically well-behaved when we increase the number of basis functions.
+
+Standard power polynomials ($1, s, s^2, s^3, \dots$) often perform poorly because they can oscillate wildly at the edges — a phenomenon known as Runge’s phenomenon.
+
+Chebyshev polynomials solve this problem. They are special orthogonal polynomials that minimize the maximum approximation error on $[-1,1]$, providing near-optimal stability and accuracy for smooth functions.
+
+**2. Definition**
+
+The Chebyshev polynomials of the first kind, ${T_n(z)}$, are defined recursively:
+$$T_0(z) = 1, \quad T_1(z) = z, \quad T_{n+1}(z) = 2z T_n(z) - T_{n-1}(z).$$
+or equivalently,$$T_n(z) = \cos(n \arccos(z)), \quad z \in [-1,1].$$
+Because they’re expressed in terms of cosine, they oscillate evenly over $[-1,1]$, with minimal distortion near the boundaries.
+
+**3. Orthogonality and Stability**
+
+When two functions are orthogonal under an inner product, it means they do not “overlap” in the space of functions.
+
+- In Euclidean geometry, vectors are orthogonal if their dot product is zero.
+- In function space, functions are orthogonal if their weighted integral of the product is zero.
+
+So here: 
+
+- $T_0(z)$, $T_1(z)$, $T_2(z)$, … form a set of “directions” in function space.
+- Each $T_n$ captures a distinct pattern of oscillation — like basis vectors pointing in different directions.
+
+That means you can represent any smooth function $V(z)$ as a unique weighted combination of these basis shapes:
+$$V(z) \approx \sum_{n=0}^{N-1} \theta_n T_n(z).$$
+
+Each coefficient $\theta_n$ controls one independent component of the shape, just like coordinates along orthogonal axes in $\mathbb{R}^N$.
+
+Orthogonality is what allows the approximation $\hat V(s;\theta)$ to “separate” the different sources of curvature or slope in the value function.
+
+- The first basis term ($T_0$) captures the average level of the value function.
+- $T_1$ captures the linear slope.
+- $T_2$, $T_3$, … capture higher-order curvature and oscillation.
+
+Because of orthogonality, changes in one coefficient $\theta_i$ don’t distort the others — just as changing one coordinate of a vector doesn’t affect the others.
+This is why polynomial approximations using Chebyshev bases converge much faster and are numerically stable.
+
+**4. Chebyshev Nodes**
+
+When using Chebyshev polynomials for collocation, we select collocation points (nodes) at the roots of the highest-degree Chebyshev polynomial used.
+
+
+your state variable — say the stock of a resource, capital, or wealth — usually lives on some finite interval
+$s \in [a, b]$. 
+
+But Chebyshev polynomials are defined only on the standard interval:
+$z \in [-1, 1]$.
+
+To use Chebyshev bases to approximate functions of $s$, we need to rescale or map between the two intervals.
+
+That’s where the $s \leftrightarrow z$ transformation comes in.
+$$z_k = \cos\left(\frac{(2k-1)\pi}{2N}\right), \quad k=1,2,\ldots,N.$$
+
+To go back from $z$ to $s$, we just invert that linear transformation:
+$$s = \frac{b-a}{2} z + \frac{a+b}{2}.$$
+
+That means you can move back and forth between:
+
+- The physical state $s$ (used in your model, e.g. the stock of a resource)
+- The Chebyshev coordinate $z$ (used in numerical approximation).
+
+**5. Approximating a Function**
+
+We represent the value function using a truncated Chebyshev series:
+$$\hat V(z;\theta) = \sum_{n=0}^{N-1} \theta_n T_n(z).$$
+
+This means we are expressing $V(s)$ as a weighted combination of orthogonal basis shapes that oscillate at increasing frequency as $j$ grows.
+
+- $T_0(z)$ gives the average level (constant term).
+- $T_1(z)$ gives the slope (linear component).
+- Higher-order terms add curvature and oscillations.
+
+**6. Why Economists Like Chebyshev Polynomials**
+
+They offer:
+
+- Global accuracy: A small number of terms often gives a close approximation to smooth value functions.
+- Good behavior near boundaries: Avoids oscillations in regions with low curvature.
+- Simple derivatives: Derivatives can be computed recursively, which is useful for Euler or HJB equations.
+- Efficient computation: Fast polynomial evaluation
 
 
 
 
+
+```{r}
+#| echo: false
+
+# ---- Libraries ----
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+
+# ---- Chebyshev Basis Functions ----
+cheb_basis <- function(z, N = 4) {
+  # Returns matrix of T0,...,T_{N-1} evaluated at z
+  T <- matrix(NA, nrow = length(z), ncol = N)
+  T[,1] <- 1
+  if (N > 1) T[,2] <- z
+  for (j in 3:N) {
+    T[,j] <- 2 * z * T[,j-1] - T[,j-2]
+  }
+  colnames(T) <- paste0("T", 0:(N-1))
+  as.data.frame(T)
+}
+
+# ---- Generate Data ----
+z <- seq(-1, 1, length.out = 400)
+Tmat <- cheb_basis(z, N = 4)
+df <- cbind(z = z, Tmat) |>
+  pivot_longer(cols = starts_with("T"), names_to = "Polynomial", values_to = "Value")
+
+# ---- Plot ----
+ggplot(df, aes(x = z, y = Value, color = Polynomial,linetype = Polynomial)) +
+  geom_line(linewidth=1) +
+  theme_minimal(base_size = 14) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = "Chebyshev Polynomials of the First Kind",
+    #x = expression(z ~in~ [-1,1]),
+    y = expression(T[n](z)),
+    caption = "T0 = 1, T1 = z, T2 = 2z² - 1, T3 = 4z³ - 3z"
+  ) +
+  geom_hline(yintercept = 0, color = "black", linewidth = 0.4) +
+  theme(
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    legend.title = element_blank(),
+    legend.position = "top"
+  )
+```
+
+## From value approximation to policy and simulation
+
+Once we have an approximate value function $\hat V(s;\theta)$ from collocation, we can recover the optimal extraction policy $x^*(s)$ either by:
+
+- direct one-dimensional maximization of the Bellman RHS for each $s$, or
+- solving the Euler/FOC using the derivative $\hat V'(\cdot)$ from the Chebyshev approximation:
+  $$
+  p - c\,x^*(s) - \beta\,\hat V'\big(s - x^*(s);\theta\big) = 0,\quad x^*(s)\in[0,s].
+  $$
+
+Below we implement both, leveraging that Chebyshev bases provide a closed-form derivative via the chain rule from the affine map $z=2s/S_{\max}-1$.
+
+```{r}
+#| message: false
+# Recover policy from Chebyshev-approximated value function
+library(rootSolve)
+
+# ---- Parameters (discrete time Hotelling) ----
+beta  <- 0.95
+p     <- 1.0
+c_mc  <- 1.0           # marginal cost slope so C(x) = 1/2 c_mc x^2
+Smax  <- 10            # domain for approximation of V(s)
+N     <- 4             # number of Chebyshev basis terms
+M     <- N             # collocation points
+
+# ---- Chebyshev nodes on [0, Smax] ----
+chebpts <- function(N) {
+  k <- 0:(N-1)
+  x <- cos(pi * (2*k + 1) / (2*N))
+  rev(x) # from -1 to 1
+}
+s_nodes <- 0.5 * (Smax * (1 + chebpts(M)))
+
+# ---- Chebyshev basis and its derivative wrt s ----
+cheb_basis <- function(s, N = 4, Smax = 10) {
+  z <- 2 * s / Smax - 1
+  # Recurrence for T_n(z)
+  T <- matrix(NA, nrow = length(z), ncol = N)
+  T[,1] <- 1
+  if (N > 1) T[,2] <- z
+  if (N > 2) {
+    for (j in 3:N) T[,j] <- 2 * z * T[,j-1] - T[,j-2]
+  }
+  colnames(T) <- paste0("T", 0:(N-1))
+  as.matrix(T)
+}
+
+cheb_basis_deriv <- function(s, N = 4, Smax = 10) {
+  z <- 2 * s / Smax - 1
+  dzds <- 2 / Smax
+  # Compute T_n(z) and dT_n/dz via stable recurrence
+  # Initialize
+  T <- matrix(0, nrow = length(z), ncol = N)
+  dTdz <- matrix(0, nrow = length(z), ncol = N)
+  T[,1] <- 1
+  if (N > 1) {
+    T[,2] <- z
+    dTdz[,2] <- 1
+  }
+  if (N > 2) {
+    for (n in 3:N) {
+      # T_n = 2 z T_{n-1} - T_{n-2}
+      T[,n] <- 2 * z * T[,n-1] - T[,n-2]
+      # dT_n/dz = 2 T_{n-1} + 2 z dT_{n-1}/dz - dT_{n-2}/dz
+      dTdz[,n] <- 2 * T[,n-1] + 2 * z * dTdz[,n-1] - dTdz[,n-2]
+    }
+  }
+  # dT_n/ds = dT_n/dz * dz/ds -- chain rule
+  dTds <- dTdz * dzds
+  colnames(dTds) <- paste0("dT", 0:(N-1), "ds")
+  as.matrix(dTds)
+}
+
+V_hat <- function(s, theta) {
+  # Uses global N and Smax from the chunk scope
+  Phi <- cheb_basis(s, N, Smax)
+  as.numeric(Phi %*% theta)
+}
+
+V_hat_prime <- function(s, theta) {
+  # Uses global N and Smax from the chunk scope
+  Phi_d <- cheb_basis_deriv(s, N, Smax)
+  as.numeric(Phi_d %*% theta)
+}
+
+# ---- Collocation residuals with parameters (p, c_mc, beta) ----
+residuals_fun <- function(theta) {
+  R <- numeric(M)
+  for (i in 1:M) {
+    s <- s_nodes[i]
+    # Maximize Bellman RHS over x in [0, s]
+    objective <- function(x) {
+      prof <- p * x - 0.5 * c_mc * x^2 + beta * V_hat(s - x, theta)
+      return(-prof) # minimize negative profit
+    }
+    opt <- optimize(objective, c(0, s)) 
+    R[i] <- V_hat(s, theta) - (-opt$objective)
+  }
+  R
+}
+
+# ---- Solve for Chebyshev coefficients theta* ----
+theta_init <- rep(0, N)
+theta_star <- multiroot(f = residuals_fun, start = theta_init)$root
+
+# ---- Policy from FOC (Euler) using V' ----
+policy_x <- function(s) {
+  if (s <= 0) return(0)
+  f <- function(x) p - c_mc * x - beta * V_hat_prime(s - x, theta_star)
+  # Try bracketing in [0, s]
+  f0 <- f(0); fs <- f(s)
+  if (is.finite(f0) && is.finite(fs) && f0 * fs < 0) {
+    return(uniroot(f, c(0, s))$root)
+  }
+  # Fall back to direct 1D optimization on the Bellman RHS
+  obj <- function(x) p * x - 0.5 * c_mc * x^2 + beta * V_hat(s - x, theta_star)
+  vals <- c(obj(0), obj(s))
+  if (is.finite(vals[1]) && is.finite(vals[2])) {
+    return(c(0, s)[which.max(vals)])
+  }
+  # Robust final fallback
+  optimize(function(x) -obj(x), c(0, s))$minimum
+}
+
+# ---- Evaluate policy on a grid and compare with direct maximization ----
+s_grid <- seq(0, Smax, length.out = 101)
+x_policy <- vapply(s_grid, policy_x, numeric(1))
+
+x_direct <- vapply(s_grid, function(s) {
+  if (s <= 0) return(0)
+  objective <- function(x) -(p * x - 0.5 * c_mc * x^2 + beta * V_hat(s - x, theta_star))
+  optimize(objective, c(0, s))$minimum
+}, numeric(1))
+
+par(mfrow = c(1, 2), mar = c(4.2, 4.5, 2.5, 1.2))
+plot(s_grid, x_policy, type = "l", lwd = 2, col = "#2C7BB6",
+     xlab = "Stock s", ylab = "Policy x*(s)", main = "Policy via Euler (V')")
+lines(s_grid, x_direct, lty = 2, lwd = 2, col = "#D95F02")
+legend("topleft", c("Euler/FOC", "Direct maximize"), lty = c(1, 2), lwd = 2,
+       col = c("#2C7BB6", "#D95F02"), bty = "n")
+
+plot(s_grid, V_hat(s_grid, theta_star), type = "l", lwd = 2, col = "#1A9641",
+     xlab = "Stock s", ylab = "V(s)", main = "Approximated Value Function")
+
+# ---- Simulate a path using the policy until depletion ----
+simulate_path <- function(S0, T = 50) {
+  s <- S0
+  S <- numeric(T + 1); X <- numeric(T)
+  S[1] <- s
+  t_last <- T
+  for (t in 1:T) {
+    x <- policy_x(s)
+    X[t] <- x
+    s <- max(s - x, 0)
+    S[t + 1] <- s
+    if (s <= 1e-8) { t_last <- t; break }
+  }
+  list(S = S[1:(t_last + 1)], X = X[1:t_last])
+}
+
+path <- simulate_path(S0 = 8, T = 60)
+t_idx <- seq_along(path$X)
+
+par(mfrow = c(1, 2), mar = c(4.2, 4.5, 2.5, 1.2))
+plot(t_idx, path$X, type = "l", lwd = 2, col = "#2C7BB6",
+     xlab = "t", ylab = "x_t", main = "Extraction over time")
+plot(0:(length(path$S) - 1), path$S, type = "l", lwd = 2, col = "#1A9641",
+     xlab = "t", ylab = "S_t", main = "Stock over time")
+```
+
+### Why the kink in the policy function
+
+The kink occurs at the point where the constraint stops binding — i.e., where the optimum switches from:
+- extracting the entire stock ($x^*(s)=s$) when the stock is low, to
+- extracting less than the full stock ($x^*(s)<s$) when the stock is high enough that the marginal value of leaving some in the ground exceeds the marginal profit from extracting it. 
+
+At this transition:
+
+The slope of the policy function changes discontinuously. $x^*(s)$ is continuous but not differentiable at this point, leading to the visible kink.
+
+
+
+### What we did
+
+- Approximated $V(s)$ on $[0,S_{\max}]$ with $N$ Chebyshev polynomials by collocation (re-solving for $\theta^*$).
+- Computed $\hat V'(s)$ analytically from the basis to use the Euler condition $p - c x - \beta\,\hat V'(s-x)=0$.
+- Built the optimal policy $x^*(s)$ by root-finding with safe fallbacks to bound checks or direct 1D maximization.
+- Simulated optimal paths $(x_t, S_t)$ using the recovered policy.
+
+The Euler-based policy and direct maximization coincide numerically, validating the use of the Chebyshev approximation and its derivative to recover decisions efficiently.
+
+## Summary
+
+### Purpose and Intuition
+
+- Collocation turns an infinite-dimensional functional equation (like the Bellman equation) into a finite system of algebraic equations.
+- Instead of finding $V(s)$ for all $s$, we find an approximation $\hat V(s;\theta)$ that satisfies the Bellman equation exactly at a finite number of nodes.
+- This makes solving dynamic programming problems with continuous state variables computationally tractable.
+
+### Core Ideas
+
+Approximate the value function with Chebyshev basis functions
+$$\hat V(s;\theta) = \sum_{j=0}^{N-1} \theta_j T_j(z), \quad z = \frac{2s}{S_{\max}} - 1.$$
+
+Enforce the Bellman equation at collocation points $s_i$:
+$$\hat V(s_i;\theta) = \max_{x \in X(s_i)} \{\pi(s_i,x) + \beta \hat V(f(s_i,x);\theta)\}, \quad i=1,\ldots,M.$$
+
+This yields $M$ equations in the unknown coefficients $\theta$.
+
+### Computational Steps
+
+1. Choose a basis — e.g., Chebyshev polynomials or splines.
+2. Select collocation nodes — where the Bellman equation will be enforced.
+3. Construct residuals — the deviation between LHS and RHS of the Bellman equation.
+4. Solve for $\theta$ — using nonlinear solvers until residuals vanish.
+
+### Why Chebyshev Polynomials Work Well 
+
+- They provide global accuracy and numerical stability.
+- Nodes are chosen to minimize oscillations (Runge’s phenomenon).
+- Orthogonality makes coefficients independent and accelerates convergence.
+- Derivatives can be computed easily, allowing direct solution of Euler or HJB equations.
+
+### Key conceptual takeaway
+
+Collocation transforms dynamic optimization from solving for functions to solving for coefficients.
+Once $\theta^*$ is found, the entire policy and value functions are easily computed, differentiated, and simulated.
