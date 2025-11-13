@@ -1,0 +1,137 @@
+---
+title: "Burt (1964) groundwater as a dynamic program: Value Function Iteration in R"
+---
+
+## Context
+
+- Burt generalizes Hotelling (1931) by formulating resource extraction as a dynamic programming problem with some uncertainty.
+- Applies to both exhaustible and partially renewable resources (e.g., groundwater, fisheries, petroleum).
+- The goal: derive approximate decision rules for optimal extraction when analytical solutions to the Bellman equation are intractable.
+
+## Model
+
+- $s_t$ = stock of the resource
+- $x_t$ = amount extracted in the period
+- $w_t$ = stochastic natural recharge
+- $G(x_t,s_t)$ = expected net output per period (benefit minus cost)
+- $\beta = (1 + r)^{-1}$ = discount factor
+- $h(w_t,s_t)$ = probability density of recharge given stock
+- $omega(s)$ = expectation of $w$ for a given stock level
+- the stock evolves as $s_{t+1} = s_t + w_t - x_t$
+
+The infinite time Bellman equation is
+$$ V(s) = \max_{x \in [0,s]} \left\{ G(x,s) + \beta \int V(s + w - x)\,h(w,s)\,dw \right\} $$
+where the integral over $w$ captures the expectation over stochastic recharge.
+
+The goal is to characterize an equilibrium condition that relates the marginal benefit of extraction to the marginal value of the resource in situ. The decision satisfies,
+$$
+G_x(x^*,s) = \frac{1}{r-\omega'(s)} G_s(x^*,s)
+$$
+
+where $G_x$ and $G_s$ are the partial derivatives of $G$ with respect to extraction and stock, respectively, and $\omega'(s)$ is the derivative of the expected recharge with respect to stock. Expand extraction until the marginal gain from using one more unit now equals the capitalized value of the marginal benefit of having it in storage.
+
+- The right-hand side $\frac{1}{r}\frac{\partial G}{\partial s}$ is the present value of a perpetual annuity equal to $\frac{\partial G}{\partial s}$ per period.
+
+- That is, if holding one more unit in the ground yields a cost saving of $\frac{\partial G}{\partial s}$ each period forever, its total present value is $\frac{1}{r}\frac{\partial G}{\partial s}$.
+
+- At the optimum, you are indifferent between:
+
+    - extracting and earning $\frac{\partial G}{\partial x}$ today, or
+    - leaving it in the ground and earning the discounted stream of future benefits from lower costs (the annuity value on the right-hand side).
+
+### Derivation of the condition
+
+- Burt argues that in many cases, the problem is analytically intractable (and computers weren't powerful enough in 1964), so he proposes Taylor series approximation methods to solve for $V(s)$ and the optimal extraction policy.
+
+$$
+V(s+w-x) \approx V(s) + V'(s)(w - x) 
+$$
+
+- In the neighborhood of $s$, the change in the value function due to stochastic recharge and extraction can be approximated linearly. This seems to simplify the stochastic recharge component.
+
+- Then substituting this approximation in the Bellman equation,.
+$$
+V(s) = max_{x \in [0,s]} \left\{ G(x,s) + \beta \int [ V(s) + V'(s)(w - x) ] h(w,s) dw \right\}
+$$
+
+- Since $V(s)$ is not a function of $w$ or $x$, we can pull it out of the integral. The integral of $h(w,s)$ over $w$ is 1 (since it's a probability density function), and the integral of $w h(w,s)$ over $w$ is just the expectation of $w$ given $s$, which we denote as $\omega(s)$. Thus, we have:
+$$
+V(s) = \frac{1}{1-\beta } \max_{x \in [0,s]} \left\{ G(x,s) + \beta V'(s)(\omega(s) - x) \right\}
+$$
+
+- We want a closed form expression for $V(s)$.
+
+- Taking the FOC with respect to $x$ gives us an implicit equation for the optimal extraction, $x^*$:
+$$
+G_x(x^*,s) - \beta V'(s) = 0
+$$
+
+- This equation relates the familiar marginal benefit of extraction to the discounted marginal value of the resource in situ.
+
+- Next, we differentiate the Bellman equation with respect to $s$ to get an expression for $V'(s)$:
+$$
+V'(s) = \frac{1}{1-\beta} \left\{ G_s(x^*,s) + G_x(x^*,s) x_s + \beta V''(s)(\omega(s) - x^*) + \beta V'(s) \omega'(s) + \beta V'(s)x_s \right\}
+$$
+- note that 
+  1. Burt ignores second-order terms like $V''(s)$ for tractability.
+  2. from the FOC, we have $G_x(x^*,s) = \beta V'(s)$, so the terms with $x_s$ cancel out.
+  
+- Collecting terms and rearranging yields the equilibrium condition:
+$$
+V'(s) = \frac{1}{1- \beta (1+  \omega'(s))} G_s(x^*,s)
+$$  
+
+- Substituting this back into the FOC and noting that $\beta = \frac{1}{1+r}$ gives:
+$$
+G_x(x^*,s) = \frac{1}{r - \omega'(s)} G_s(x^*,s)
+$$
+Interpretation from Burt: Expand production to the point where marginal net output with respect to current
+consumption of the resource is equal to present value of a perpetual annuity equal
+in value to marginal net output with respect to quantity of resource in stock.
+
+:::{.callout-note}
+#Annuity
+
+An annuity is a stream of equal payments that continue for a certain length of time — or, in some cases, forever.
+
+The present value of a perpetual annuity paying $A$ per period with discount rate $r$ is $\frac{A}{r}$. This is derived from the formula for the present value of a perpetuity, which sums the infinite series of discounted payments:
+$$ PV = \sum_{t=0}^{\infty} \frac{A}{(1+r)^t} = \frac{A}{r} $$
+
+:::
+
+
+## Application to groundwater storage
+
+Define per-period profit as revenue minus pumping cost that increases as the water table falls:
+$$ G(x,s) = R(x) - c(s) x $$
+where
+- $R(x)$ = revenue from selling water extracted
+- $c(s)$ = cost per unit of pumping when stock is $s$
+
+We can express the equilibrium condition in terms of these functions:
+$$\frac{R'(x^*) - c(s)}{x} = \frac{-c'(s)}{r - \omega'(s)}  $$
+
+- Burt quote: Production for the basin is expanded to the point where marginal net output per
+unit of water is equal to the negative of capitalized marginal pumping costs with
+respect to water in storage (c'(s) being negative)
+
+The right-hand side of (28) is 
+the opportunity cost of ground water in the sense that if the water is not used
+in current production its next best use is as storage which implies a saving in all
+future pumping costs. The future savings in pumping costs resulting from an
+increment to storage is in the form of a perpetual annuity reduced to present
+value.
+Use the resource until the gain from using one more now equals the present value of the stream of future benefits you’d get by saving it.
+
+
+
+## Simulation
+
+Given the parameters, there is no extraction at low–mid stocks because, with the parameters we used, the marginal private benefit of the first unit is negative until the stock gets pretty high—and even after it turns positive, the optimal interior $x^*(s)$ is tiny, so a coarse control grid rounds it down to zero.
+
+No extraction region (corner): when $p - c(s) \leq 0 \Rightarrow x^*(s) = 0$
+
+The stock threshold where extraction just starts is $s^{\text{thresh}} = \bar s - \frac{p - c_0}{c_1}$.
+
+Why you don’t see extraction near 8.5: for $s>8.5$ the interior optimum exists but is very small because the denominator, $b+c_1/r$ is large. At $s=9$, $x^* \approx 0.026$ which is below the smallest value and so it gets rounded down.
+
