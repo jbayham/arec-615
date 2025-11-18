@@ -1,0 +1,232 @@
+---
+title: "Presenting Economics Research"
+format: revealjs
+---
+
+## Why Presentations Matter
+- Presentations are *not* papers. Your goal is to **communicate, not document**. 
+- You must **persuade listeners you’ve done something valuable**—and do it quickly. 
+- Audiences remember only a few key points. Make sure they're the right ones. 
+
+---
+
+## The Three Core Questions
+Every good economics talk answers three things clearly:
+
+1. **What are you asking?**  
+2. **Why should we care?**  
+3. **What are you doing about it?**  
+
+>Jackson emphasizes being explicit about the question
+>Shapiro stresses motivating the “why.”
+
+---
+
+## Start Strong
+- Motivate the problem in 1–2 slides.
+- State your **research questions** in one concise slide  
+- Explain *why it matters*—policy relevance, theoretical gap, empirical importance.
+
+> Kehoe: *“Start fast. Tell them exactly what you are doing.”*  
+
+
+
+---
+
+## A Common Failure Mode
+### Presenting the *paper* instead of the *ideas*
+- Avoid long literature reviews.
+- Don’t walk through every estimation detail.
+- Don’t show tables that **look like journal tables**.
+
+> Jackson: “Your audience is not reading. They are listening.”  
+
+---
+
+## 3 Types of Presentation
+
+1. Brown bag (work in progress)  
+   - Focus on identification strategy and preliminary results.  
+2. Conference talk (15–20 min)  
+   - Focus on motivation, identification, and main results.  
+3. Job market talk (45 min)  
+   - Tell a complete story with motivation, methods, results, and conclusion.
+
+
+---
+
+## Visual Design Principles
+### (Schwabish’s “Better Figures” Rules)
+
+1. **Clarity:** remove chart junk.  
+2. **Consistency:** use the same colors, shapes, scales.  
+3. **Efficiency:** highlight only the message-carrying elements.  
+4. **Interpretation matters:** labels > legends; direct labeling > mental decoding.  
+
+
+---
+
+## Not great chart
+
+![](https://image.slidesharecdn.com/schwabishifiveguidelinesforbetterdatavisualizations-221114215104-7117deca/75/Five-Guidelines-for-Better-Data-Visualizations-Schwabish-9-2048.jpg)
+
+---
+
+
+
+![](https://image.slidesharecdn.com/schwabishifiveguidelinesforbetterdatavisualizations-221114215104-7117deca/75/Five-Guidelines-for-Better-Data-Visualizations-Schwabish-10-2048.jpg)
+
+---
+
+
+![](https://image.slidesharecdn.com/schwabishifiveguidelinesforbetterdatavisualizations-221114215104-7117deca/75/Five-Guidelines-for-Better-Data-Visualizations-Schwabish-11-2048.jpg)
+
+
+---
+
+
+![](https://image.slidesharecdn.com/schwabishifiveguidelinesforbetterdatavisualizations-221114215104-7117deca/75/Five-Guidelines-for-Better-Data-Visualizations-Schwabish-23-2048.jpg)
+
+
+
+
+---
+
+## Designing Figures for Talks
+### Good figures *show the point* without explanation
+- Titles should contain the finding (“Treatment increases adoption by 20%”).  
+- Annotate directly on the graph (arrows, circles, emphasis).  
+- Use color sparingly and purposefully.  
+
+> Schwabish: Visuals must “carry the message even if the speaker stopped talking.”  
+
+---
+
+## Avoid These Figure Problems
+- Overlapping confidence intervals without explanation  
+- Too many lines on one plot  
+- Tables with >10 numbers  
+- 12-variable regression tables  
+- Dense axis labels  
+
+<br>
+(Schwabish offers multiple before/after examples.)  
+
+
+---
+
+## Presenting Empirical Methods
+### Keep Identification Simple
+Shapiro stresses: 
+
+- Focus on the **intuition** of identification.
+- Use plots to show assumptions (parallel trends, discontinuities, first stage).  
+- Only introduce equations if they move the audience’s understanding forward.  
+
+
+---
+
+## Presenting Equations
+- Show **only** the key equation.  
+- Highlight (color/bold) the coefficient of interest.  
+- State the estimation target: “$\beta$ captures the causal effect of ….”  
+- Move quickly to a visual before showing results.
+
+> Kehoe warns against “math for its own sake.”  
+
+
+---
+
+## Showing Results
+### Use Visual Summaries
+- Replace large coefficient tables with:
+  - Effect plots  
+  - Event studies  
+  - Coefficient plots  
+  - Difference-in-differences visualizations
+
+> Shapiro: people understand pictures; tables are for appendices.  
+
+---
+
+## Interpreting Results
+- Put magnitudes in real-world units (“equivalent to 5 extra days of work”).  
+- Link back to original motivation.  
+- Acknowledge limitations transparently.  
+- Avoid overstating external validity.
+
+> Jackson: *“Economists trust honesty more than polish.”*  
+
+
+---
+
+## Avoid Jargon Walls
+- Define specialized terms quickly.  
+- Replace buzzwords with plainer language.  
+- Use economic intuition before econometrics.  
+
+
+---
+
+## Slide Design Rules
+
+- One idea per slide.  
+- 6–8 lines max.  
+- 20pt font minimum.  
+- Large margins, whitespace.  
+- Use consistent color palette.  
+- Never read from the slides.  
+
+> Schwabish strongly emphasizes typography and spacing for readability.  
+
+
+---
+
+## Practice & Delivery
+
+- Rehearse transitions; avoid verbal fillers.  
+- Maintain eye contact.  
+- Speak slower than you think you need to.  
+- Time yourself: target **about 2 min per slide**.
+
+> Kehoe: most talks are too slow and too detailed.  
+
+
+---
+
+## Handling Questions
+- Questions help you — they reveal audience misunderstandings.  
+- Don’t get defensive.  
+- Restate the question for the room.  
+- Admit when you don’t know.  
+
+> Jackson: “Grace under fire is remembered more than results.”  
+
+
+---
+
+## Ending Strongly
+- Summarize your **three main takeaways**.  
+- Reconnect to policy relevance or theory.  
+- Invite collaboration or feedback.  
+- End with your conclusion slide visible.
+
+> Shapiro: the last 30 seconds heavily influences perceived quality.  
+
+
+---
+
+## Final Thoughts
+Presentations succeed when:
+
+- the ideas are clear,  
+- the visuals are simple,  
+- the audience understands the identification,  
+- and the results answer an interesting question.
+
+Your job is to *teach* your paper in 15 minutes.
+
+---
+
+
+

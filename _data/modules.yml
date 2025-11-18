@@ -84,3 +84,11 @@
       url: "consumption_savings_sim.R"
     - title: "Hotelling Extraction"
       url: "extraction_sim.R"
+      
+- title: "Presentation"
+  #filename: "notes" 
+  dirname: modules/presentation
+  desc: "Notes on presentation"
+  materials:
+    - title: "Presentation Slides"
+      url: "presentation.html"
