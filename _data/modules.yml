@@ -92,3 +92,7 @@
   materials:
     - title: "Presentation Slides"
       url: "presentation.html"
+    - title: "Presentation Workshop"
+      url: "presentation_workshop.html"
+    - title: "Storyboard Exercise"
+      url: "storyboard_exercise.pdf"

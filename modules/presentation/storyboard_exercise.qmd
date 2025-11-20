@@ -1,0 +1,40 @@
+---
+title: "Storyboarding Exercise"
+---
+
+Storyboarding is extremely effective because it forces you to think structurally rather than trying to create slides.
+
+## Instructions
+
+### Define the Story Arc (3–4 minutes)
+Write down the core storyline using your narrative spine:
+
+- Problem
+- Gap
+- Contribution
+- Data
+- Method
+- Key results
+- Implications
+
+### Storyboard the Slides (15 minutes)
+
+- Create a linear sequence of 10–14 slides.
+- Each slide must contain:
+    - Slide title (e.g., Motivation: Urban wildfire risk)
+    - Purpose (e.g., why the audience should care)
+    - One visual idea (table, map, graph, figure)
+
+### Peer Review (10 minutes)
+Pair up and give feedback on each other’s storyboards:
+
+- Where is the logic unclear?
+- Are there too many results?
+- Is identification explained?
+- Are visuals doing the work?
+- What could be cut?
+
+### Revision
+Revise your storyboard based on peer feedback.
+
+

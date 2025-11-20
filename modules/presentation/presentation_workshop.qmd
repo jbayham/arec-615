@@ -1,0 +1,112 @@
+---
+title: "Presentation Workshop"
+format: revealjs
+---
+
+## What the presentation is
+
+A research presentation is not a paper on slides. 
+
+It’s an argument - visual, narrative, and selective - designed to help your audience understand: 
+
+- why your question matters, 
+- what you did, 
+- what we should take away
+
+
+---
+
+## The 3 Jobs of a Research Presentation
+
+1. Persuade the audience that the question matters
+2. Demonstrate methodological credibility
+3. Deliver an intelligible and memorable result 
+
+
+---
+
+## Job 1: Convince us the question matters
+
+- Why should anyone care about this question?
+- What economic intuition makes the relationship interesting or ambiguous?
+- What is the real-world motivation (policy, behavior, inefficiency)?
+
+
+
+
+---
+
+## Job 2: Demonstrate methodological credibility
+Audience is asking: “Can I trust your analysis?”
+
+- Present the logic of your design simply.
+- Use a diagram, timeline, or conceptual picture rather than blocks of text.
+- Show the intuition visually
+
+Explain why alternative explanations are unlikely.
+
+---
+
+## Job 3: Deliver intelligible, memorable results
+
+Your audience will remember 1–3 main findings, not 12 regression tables.
+
+- Use figures over tables
+- Highlight only key pieces of information
+- Summarize direction, magnitude, and economic significance
+- Put your policy-relevant takeaway in plain language
+
+
+---
+
+## The Research Narrative Spine {.scrollable}
+
+A simple template for storyboarding - like a screenplay for empirical work.
+
+**The Narrative Spine**
+
+1. Problem / Puzzle (rely on the paper)
+2. Gap in prior literature (rely on the paper)
+3. Your contribution / extension
+4. Data
+5. Methods
+6. Results
+7. Implications / Limitations
+
+
+---
+
+## Common Presentation Pitfalls
+
+- Too much text, causing the audience to read instead of listen
+- Overloaded methods slide that no one can follow
+- Regression tables copied from Stata
+- Burying the lead (“Here are 12 robustness checks before the main finding…”)
+- Telling the story chronologically (“First I cleaned the data…”) instead of logically
+- Talking to the screen rather than the audience
+- Ending abruptly without a takeaway
+
+---
+
+## Warm up: the 60-second sell
+
+Students partner up and have 60 seconds to explain:
+
+- The question they address
+- Why it matters
+- Main finding
+
+Then partners give feedback on clarity.
+
+
+
+---
+
+## Storyboarding Your Talk
+
+Now that we know the jobs of a research presentation and the structure of a good narrative, we’re going to storyboard your talk. 
+
+Think of this as designing the flow of ideas rather than the slides themselves
+
+
+
