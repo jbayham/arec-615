@@ -84,6 +84,8 @@
       url: "consumption_savings_sim.R"
     - title: "Hotelling Extraction"
       url: "extraction_sim.R"
+    - title: "Final Review"
+      url: "final_review.pdf"
       
 - title: "Presentation"
   #filename: "notes" 
