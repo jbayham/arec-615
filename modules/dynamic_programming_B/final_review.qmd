@@ -1,0 +1,216 @@
+---
+title: "Final Review"
+---
+
+## Overview
+This module has covered a variety of dynamic programming methods and applications. The final review will cover key concepts and techniques from the module, including:
+
+- Formulating dynamic programming problems
+- Understanding the components of the dynamic program: state and control variables, transition functions, and payoff/reward functions, salvaging value functions
+- Interpreting policy functions and value functions
+- Types of dynamic programming problems: finite vs infinite horizon, discrete vs continuous state and control spaces
+- Karush-Kuhn-Tucker (KKT) conditions for unconstrained optimization in dynamic programming: feasibility, stationarity, complementary slackness
+- Envelope conditions and their role in characterizing optimal policies
+- Solving Bellman equations using value function iteration (conceptual)
+
+
+## Discrete time: Fishery Problem
+
+We study a single-stock fishery with:
+
+- continuous state $s$ (biomass), 
+- control (harvest) $h$
+- next period’s stock is $s^\prime=G(s-h)$. 
+- Per-period payoff is $\pi(h)=p\,h-c\,h$ (constant net price for simplicity).
+- Discount factor $\beta\in(0,1)$.
+
+The planner’s problem is to choose a harvest policy $h(s)$ to maximize the present value of profits.
+$$\max_h \sum_{t=0}^\infty \beta^t \pi(h_t)$$
+subject to the stock transition equation $s_{t+1}=G(s_t - h_t)$.
+
+The infinite-horizon Bellman equation (time-stationary) is
+$$
+V(s)=\max_h \{\pi(h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
+$$
+where $s^\prime=G(s-h)$ and $G()$ is some twice differentiable growth function.
+
+### KKT system
+
+-	Feasibility: $0\le h\le s$.
+-	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime)\,G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
+-	Complementary slackness: 
+    - $h\ge0$, $\mu_1\ge0$, $\mu_1 h=0$ (no negative harvest)
+    - $h\le s$, $\mu_2\ge0$, $\mu_2 (s-h)=0$ (cannot harvest more than stock)
+
+With $\pi_h(h)=p-c$, the interior FOC is
+$$
+p-c - \beta V^\prime(s^\prime)\,G^\prime(s-h)=0
+$$
+
+### Envelope condition
+
+The envelope condition is not formally a KKT condition, but it has a clear economic interpretation and can help simplify the stationarity condition and solve for a policy function.
+We derive the envelope condition by differentiating the Bellman wrt to $s$. Importantly, a marginal change in the state has no direct effect on the optimal control, $\frac{\partial h^*}{\partial s}=0$. Mathematically, when you differentiate the Bellman wrt to $s$, you get a cluster of terms that contain the stationarity condition, which is equal to 0 at the optimim. Also, in this case,  $\pi$ does not depend directly on $s$:
+$$
+V^\prime(s)= 0 + \beta V^\prime(s^\prime)\,G^\prime(s-h^*(s)).
+$$
+Note that the second term of the envelope condition is the same as in the stationary condition above. 
+Combining the two (interior) yields a classic shadow-value condition:
+$$
+p-c=V^\prime(s)\quad\text{(if interior)}.
+$$
+
+Interpretation: harvest up to the point where the marginal net revenue equals the marginal value of stock - the additional future discounted revenue from the growth of the stock (the shadow price or “user cost”). With bounds, policies tilt to no-harvest at very low $s$ (stock rebuilding) and binding-harvest (take most of the stock) when $s$ is very high.
+
+What happens if we increase the price $p$? The marginal net revenue increases, so the optimal harvest $h^*(s)$ increases for each stock level $s$. This leads to lower stock levels in the long run, as higher harvests reduce the biomass available for future periods.
+
+What if we increase the cost $c$? The marginal net revenue decreases, leading to lower optimal harvests $h^*(s)$ for each stock level $s$. This results in higher stock levels in the long run, as reduced harvests allow the biomass to recover and grow over time.
+
+
+## Value function iteration
+
+We can solve the Bellman equation numerically using value function iteration:
+
+1. Initialize a guess for the value function $V_0(s)$ over a grid of stock levels $s$.
+2. For each stock level $s$ in the grid, solve the maximization problem to find the optimal harvest $h^*(s)$ and compute the updated value function:
+   $$
+   V_{n+1}(s) = \max_h \{p\,h - c\,h + \beta V_n(G(s-h))\}
+   $$
+3. Repeat step 2 until convergence, i.e., until $|V_{n+1}(s) - V_n(s)|$ is below a specified tolerance for all $s$
+
+
+## Problem set 4: Continuous Time Optimal Control
+
+Backstop technology and optimal switching (continuous time)
+
+Consider a planner who must meet a constant flow demand D using either: 
+
+i. extraction from an exhaustible stock $S(t)$ at rate $x(t) ≥ 0$ with convex extraction cost, or 
+ii. an unlimited “backstop” technology $y(t) ≥ 0$ with constant unit cost B. 
+
+The planner minimizes the present value of total costs with discount rate $\rho > 0$.
+
+- State: $S(t) ≥ 0$ with $S(0) = S0$.
+- Controls: extraction $x(t) ≥ 0$ and backstop use $y(t) ≥ 0$.
+- Flow constraint: $x(t) + y(t) = D$ for all $t ≥ 0$.
+- Stock dynamics: $\dot S(t) = −x(t)$.
+- Extraction cost: $C(x) = 1/2 c x^2$ with $c > 0$.
+- Backstop cost: $B y(t)$ with $B > 0$.
+
+Thus the planner’s problem is
+$$
+\min_{\{x(t),y(t)\}_{t\ge0}} \int_0^{\infty} e^{-\rho t} \Big[ \tfrac{1}{2}c\,x(t)^2 + B\,y(t) \Big] dt
+\quad \text{s.t.}\quad
+\dot S(t) = -x(t),\; S(0)=S_0,\; x(t)+y(t)=D,\; x(t),y(t)\ge 0.
+$$
+
+### a) 
+
+Eliminate $y(t)$ using the flow constraint and write the problem with one control $x(t) \in [0, D]$. Write the current-value Hamiltonian $H(S,x,\lambda)$. Clearly state the state equation, control bounds, and the transversality condition.
+
+The flow constraint $x(t) + y(t) = D$ allows us to express $y(t)$ in terms of $x(t)$:
+$$y(t) = D - x(t).$$
+Substituting this into the objective function, we get:
+$$
+\min_{\{x(t)\}_{t\ge0}} \int_0^{\infty} e^{-\rho t} \Big[ \tfrac{1}{2}c\,x(t)^2 + B(D - x(t)) \Big] dt
+$$
+The current-value Hamiltonian is given by:
+$$
+H(S,x,\lambda) = \tfrac{1}{2}c\,x^2 + B(D - x) + \lambda(-x)
+$$
+where $\lambda(t)$ is the co-state variable associated with the state equation $\dot S(t) = -x(t)$. 
+
+### b) 
+
+Derive the first-order necessary conditions (Pontryagin):
+  
+  - control condition $∂H/∂x = 0$ for an interior solution,
+  - co-state equation $\dot \lambda = ρ λ − ∂H/∂S$,
+  - state equation $\dot S = −x$,
+
+Show that (for interior $x$) the optimal policy satisfies
+$$
+x(t) = \frac{B - \lambda(t)}{c},\qquad \dot\lambda(t) = \rho\,\lambda(t).
+$$
+
+The first-order necessary conditions are:
+
+1. **Control condition**:
+   For an interior solution, we set the derivative of the Hamiltonian with respect to the control variable $x$ to zero:
+   $$
+   \frac{\partial H}{\partial x} = c\,x - B - \lambda = 0 \implies c\,x = B + \lambda \implies x(t) = \frac{B - \lambda(t)}{c}.
+   $$
+2. **Co-state equation**:
+   The co-state equation is given by:
+   $$
+   \dot \lambda = \rho \lambda - \frac{\partial H}{\partial S}.
+   $$
+   Since $H$ does not explicitly depend on $S$, we have $\frac{\partial H}{\partial S} = 0$, leading to:
+   $$
+   \dot \lambda = \rho \lambda.
+   $$
+3. **State equation**:
+   The state equation is given by:
+   $$
+   \dot S = -x.
+   $$
+
+
+### c) 
+
+Solve the co-state ODE and show that $\lambda(t) = \lambda_0 e^{\rho t}$.
+
+Argue that $0 < x(t) < D$ followed by a switching time $T^*$ at which $x(T^*) = 0$ and the backstop fully supplies demand thereafter ($y(t) = D$ for $t \geq T^*$).
+
+The co-state ODE is:
+$$
+\dot \lambda = \rho \lambda.
+$$
+This is a first-order linear ordinary differential equation, so rarranging terms and integrating both sides, we have:
+$$
+\int \frac{1}{\lambda} d\lambda = \int \rho dt.
+$$
+Integrating gives:
+$$
+\ln|\lambda| = \rho t + C,
+$$
+where $C$ is the constant of integration. Exponentiating both sides, we get:
+$$
+\lambda(t) = e^{C} e^{\rho t} = \lambda_0 e^{\rho t},
+$$
+where $\lambda_0 = e^{C}$ is the initial value of the co-state variable at time $t = 0$.
+
+- This means the shadow price of the resource grows exponentially over time at the rate $\rho$. 
+- $\lambda(t)$ represents the in situ value of the resource stock.
+- Because the resource is exhaustible, the scarcity value increases over time.
+- The discount rate $\rho$ reflects the planner's time preference, influencing how future costs are valued relative to present costs. Higher $\rho$ leads to a faster increase in $\lambda(t)$, so the costate must rise more quickly to justify delaying extraction. This is the Hotelling rule in resource economics.
+
+### d) 
+
+Assuming the interior $0 < x(t) < D$ until the switch, derive closed-form expressions for the switching time $T^*$ defined by $\lambda(T^*) = B$.
+
+From the expression for $\lambda(t)$, we have:
+$$
+\lambda(T^*) = \lambda_0 e^{\rho T^*} = B.
+$$
+Solving for $T^*$, we get:
+$$
+T^* = \frac{1}{\rho} \ln\left(\frac{B}{\lambda_0}\right).
+$$
+
+### e) 
+
+Comparative statics. For the pre-switch phase ($t < T^*$), characterize how $x(t)$ and $T^*$ change with each parameter $c$, $B$, $\rho$. Provide economic intuition for each sign.
+
+1. **Effect of $c$ (extraction cost coefficient)**:
+   - As $c$ increases, the optimal extraction rate $x(t) = \frac{B - \lambda(t)}{c}$ decreases for a given $\lambda(t)$. This is because higher extraction costs make it less attractive to extract the resource.
+   - The switching time $T^*$ increases with $c$ because higher costs delay the point at which it becomes optimal to switch to the backstop technology.
+   
+2. **Effect of $B$ (backstop cost)**:
+   - As $B$ increases, the optimal extraction rate $x(t)$ increases for a given $\lambda(t)$. A higher backstop cost makes extraction more attractive relative to using the backstop technology.
+   - The switching time $T^*$ decreases with $B$ because a higher backstop cost makes it optimal to switch to the backstop technology sooner since you are depleting the stock faster.
+   
+3. **Effect of $\rho$ (discount rate)**:
+   - As $\rho$ increases, the optimal extraction rate $x(t)$ increases since $\lambda(t) = \lambda_0 e^{\rho t}$. A higher discount rate places more weight on present costs, making extraction more attractive.
+   - The switching time $T^*$ decreases with $\rho$ because a higher discount rate increases the growth rate of $\lambda(t)$, leading to an earlier switch to the backstop technology.
+
