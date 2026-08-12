@@ -11,6 +11,8 @@ format:
 
 - **Location:** Eddy 106  
 - **Time:** Tuesday and Thursday, 9:30–10:45 AM  
+- **Term:** Fall 2026 (August 25–November 19)
+- **Final Exam:** Thursday, November 19, during the regularly scheduled class period
 - **Instructor:** Jude Bayham  
   - Office: Nutrien 203  
   - Email: [jbayham@colostate.edu](mailto:jbayham@colostate.edu)  
@@ -52,39 +54,36 @@ Supplemental readings and journal articles may be assigned.
 
 | Component                | Percentage |
 |--------------------------|------------:|
-| Problem sets (∼4)       | 20%        |
-| Midterm Exam            | 20%        |
+| Midterm Exam 1          | 25%        |
+| Midterm Exam 2          | 25%        |
 | Final Exam              | 30%        |
-| Modeling project        | 25%       |
-| Participation           | 5%         |
+| Model Labs               | 20%        |
 
 I will use the standard CSU grading scale including + and - where the thresholds are defined at 2 and 8 of each 10-point range.
 
-### Homework
+### Model Labs
 
-There will be about 4 problem sets covering the material and tools covered in class. The problem sets will constitute the majority of the work during the first part of the course. 
+Model Labs replace a traditional semester project with a series of short-turnaround, AI-assisted applied optimization exercises. The purpose is to investigate economic models more deeply than a conventional short assignment permits while remaining responsible for understanding, validating, and explaining the work. Evaluation will emphasize understanding of the optimization model; the quality of the question or experiment; correctness of the implementation and reasoning; economic and mathematical interpretation; the ability to explain and defend the work; and responsible, critical use of AI.
+
+On selected Thursdays, we will examine an applied economics paper built around an optimization model. Rather than treating the paper only as a conventional journal article, we will reconstruct the economic decision, decision variables, objective function, constraints, parameters, data, and endogenous outcomes. We will also consider the mathematical properties and solution concepts that matter for the model—including, as appropriate, first-order conditions, shadow prices, complementary slackness, and uniqueness—and the assumptions that make the model useful or restrictive. At the end of class, students will receive a short Model Lab challenge based on the paper and model.
+
+Between Thursday and Tuesday, each student will use AI and other computational tools to conduct a focused computational or conceptual experiment that produces one substantive insight. A lab may reproduce a simplified model or numerical result; perturb a parameter, constraint, or objective coefficient; identify a problematic parameterization or assumption; extend the model with an economically meaningful feature; reformulate the economic problem; or explain an important feature through a derivation, visualization, or numerical experiment. Labs will become progressively less structured: early exercises may use a supplied working model, while later exercises may provide a partial implementation, data, or the original paper and ask students to formulate and investigate a new question.
+
+AI tools may be used extensively for coding, derivations, debugging, interpretation, and brainstorming. Students remain responsible for their assumptions, formulation, code, results, and claims. Where appropriate, each lab should identify at least one substantive AI-generated claim, calculation, interpretation, derivation, or piece of code that the student independently checked or validated. Do not enter confidential, restricted, proprietary, or identifiable data into public AI systems.
+
+On designated Tuesdays, every student must arrive prepared to explain the investigation. At the beginning of class, approximately two or three students will be selected at random to give concise presentations organized around three questions: **What did you want to understand? What did you change, build, solve, or test? What did you learn, and why did the result occur?** Presenters should show enough of the formulation, computational result, figure, table, or solver output for the class to understand the experiment. The instructor may ask follow-up questions that require reasoning directly from the model, such as why a constraint binds, what a parameter change would imply, the economic meaning of a multiplier, whether a solution is unique, or which assumption drives a result.
+
+Students who are not selected to present are still expected to participate. The instructor may select respondents to predict another comparative static, explain an implication, suggest a useful modification, identify a driving assumption, connect the result to an optimization concept, or propose a next experiment. These discussions are intended to make Model Labs a class-wide model investigation rather than a sequence of passive presentations.
+
+Written submissions will be deliberately brief. A typical submission includes the question being investigated, the relevant modification or experiment, essential equations or code, one central result, a short economic and mathematical interpretation, and the required AI verification; it may also identify an unresolved question. The goal is a focused investigation, not a lengthy AI-generated report.
 
 ### Exams
 
-There will be a midterm and final in-class exam. The exams will be written and not require you to run code on a computer. The final exam will be cumulative. 
+There will be two midterm exams and a final exam. The exams will be written, in class, and will not require students to run code. They will assess formulation, interpretation, numerical judgment, and small transparent calculations. The final will be cumulative, with emphasis on applying and interpreting the course's linear, nonlinear, and discrete-time dynamic models.
 
-### Modeling Project
+### Formative Model Studio
 
-As part of this course, you will complete an applied modeling project that allows you to integrate the optimization techniques learned in class with your research interests. The project has three main components:
-
-- **Model Identification and Replication**: Select a peer-reviewed journal article or working paper that includes a mathematical programming model (linear, nonlinear, or dynamic). You will analyze the structure of the model, including its objective function, constraints, and underlying economic rationale. Then, replicate the model using R, using your own code and data where appropriate.
-
-- **Model Extension**: Propose and implement a meaningful extension to the original model. This could involve relaxing an assumption, adding a constraint, changing the objective function, introducing stochastic elements, or embedding the model in a dynamic framework. The goal is to demonstrate your ability to not only understand existing models but also contribute original insights.
-
-- **Written Report and Presentation**: Submit a short technical report (approximately 5–8 pages) describing the original model, your replication results, your extension, and the economic interpretation of your findings. The report should include code snippets and relevant figures or tables. You will also give a brief presentation of your project at the end of the semester.
-
-- **Deliverables**:
-
-    - Project Proposal: Submit a one-page proposal identifying your chosen article, model type, and intended extension.
-
-    - Final Report and Code: The code must be reproducible.
-
-    - Presentation: During the final two weeks of the course
+Students may develop an applied optimization model connected to their research interests during designated model-studio meetings. The studio is formative: it provides feedback and rehearsal for Model Labs, but it does not require a graded written report, repository, or standalone presentation.
 
 
 
@@ -95,17 +94,16 @@ As part of this course, you will complete an applied modeling project that allow
    - Introduction to R
 
 2. **Linear Programming**
-   - Solution methods and interpretation
-   - Duality and input-output models
+   - Formulation, solution audits, sensitivity, and duality interpretation
+   - Mixed-integer applications
 
 3. **Nonlinear Programming**
-   - Positive Mathematical Programming (PMP)
-   - Computable General Equilibrium (CGE)
-   - Risk and stochasticity
+   - Numerical foundations, constrained optimization, and solver diagnostics
+   - Risk, uncertainty, and scenario analysis
 
 4. **Dynamic Optimization**
-   - Dynamic programming
-   - Optimal control
+   - Finite-horizon dynamic programming and backward induction
+   - Infinite-horizon value function iteration and interpretation
 
 
 ## Principles of Community
