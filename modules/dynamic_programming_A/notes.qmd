@@ -471,11 +471,11 @@ We study a single-stock fishery with:
 - discrete state $s \in \{0,1,2,\dots,S_{\max}\}$ (biomass), 
 - control (harvest) $h\in=\{0,1,\dots,s\}$
 - next period’s stock is $s^\prime=G(s-h)$. 
-- Per-period payoff is $\pi(s,h)=p\,h-c\,h$ (constant net price for simplicity).
+- Per-period payoff is $\pi(h)=p\,h-c\,h$ (constant net price for simplicity).
 
 The infinite-horizon Bellman equation (time-stationary) is
 $$
-V(s)=\max_h \{\pi(s,h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
+V(s)=\max_h \{\pi(h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
 $$
 where $s^\prime=G(s-h)$ where we assume a logistic growth function
 $$G(s)=s+r s\left(1-\frac{s}{S_{\max }}\right)$$
@@ -486,10 +486,10 @@ with intrinsic growth rate $r$ and carrying capacity $S_{\max}$.
 If we relax to continuous $s$ and $h$ and interior choices (we’ll still solve numerically on a grid), the maximizer $h^*(s)$ satisfies the KKT system:
 
 -	Feasibility: $0\le h\le s$.
--	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime),G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
+-	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime)\,G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
 -	Complementary slackness for the bounds $h\ge 0$ and $h\le s$.
 
-With $\pi_h(s,h)=p-c$ and $G^\prime(s-h) = 1 + r(1-2c/s_{max})$, the interior FOC is
+With $\pi_h(h)=p-c$ and $G^\prime(s-h) = 1 + r(1-2c/s_{max})$, the interior FOC is
 $$
 p-c - \beta V^\prime(s^\prime)\,G^\prime(s-h)=0
 $$

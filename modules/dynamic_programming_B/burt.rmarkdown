@@ -1,0 +1,113 @@
+---
+title: "Burt (1964) groundwater as a dynamic program: Value Function Iteration in R"
+format: html
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+
+## Model
+
+We model an aquifer stock $s \in [0,\bar s]$. Each period:
+
+$ \quad s' = \min\{\max[s + w - x,\,0],\,\bar s\} $
+
+- $ x \in [0,\bar x(s)] $ is extraction chosen **before** recharge realizes.  
+- $ w \in \{w_1,\dots,w_J\} $ is stochastic recharge with $ \mathbb P(w=w_j)=\pi_j $ and $ \sum_j \pi_j=1 $.  
+- Discount factor $ \beta \in (0,1) $.
+
+Per-period profit is quadratic revenue minus pumping cost that increases as the water table falls:
+
+$ \quad \pi(s,x) = p\,x - \frac{b}{2}x^2 - \big(c_0 + c_1(\bar s - s)\big)\,x $
+
+- The $ c_1(\bar s - s) $ term makes pumping more expensive when the stock is low, capturing Burt’s idea that water in situ has a shadow value through avoided future costs.
+
+The Bellman equation is
+
+$ \quad V(s) = \max_{x \in [0,\bar x(s)]}\left\{ \pi(s,x) + \beta \sum_{j=1}^J \pi_j\,V\big(s'(s,x,w_j)\big) \right\} $
+
+with $ \bar x(s)=\min\{s + w_{\max},\,\bar s\} $ to prevent infeasible $ s' $ (you can also set $ \bar x(s)=s $ if you prefer to ignore contemporaneous recharge for feasibility; here we allow extraction up to current stock plus max possible recharge and clamp with the state transition).
+
+## R implementation
+
+
+```{r}
+# Parameters
+beta  <- 0.95        # discount factor
+p     <- 1.00        # output price
+b     <- 0.10        # curvature in revenue
+c0    <- 0.10        # baseline pumping cost
+Sbar  <- 100.0       # stock upper bound
+c1    <- 0.50 / Sbar # how fast pumping cost rises as stock falls
+
+# Recharge shocks (discrete)
+w_vals <- c(0.0, 1.0, 3.0)     # low, medium, high recharge
+pi_w   <- c(0.5, 0.35, 0.15)   # probabilities (sum to 1)
+stopifnot(abs(sum(pi_w) - 1) < 1e-12)
+
+# Grids
+Ns   <- 201
+S    <- seq(0, Sbar, length.out = Ns)
+
+# Control grid will depend on state; define a fine grid on [0, Sbar] and restrict per state
+Nx   <- 201
+Xall <- seq(0, Sbar, length.out = Nx)
+
+# Helper: per-period profit
+profit <- function(s, x) {
+  # pumping cost increases as s falls
+  pump_cost <- (c0 + c1*(Sbar - s)) * x
+  rev       <- p*x - 0.5*b*x^2
+  rev - pump_cost
+}
+
+# Project next state to the stock grid (nearest neighbor for simplicity; can use linear interp)
+project_to_grid <- function(s_next, grid) {
+  pmax(1, pmin(length(grid), round( (s_next / Sbar) * (length(grid)-1) + 1 )))
+}
+
+# Value Function Iteration
+V      <- rep(0.0, Ns)     # initial guess
+pol_x  <- rep(0.0, Ns)     # policy (to be filled)
+tol    <- 1e-6
+maxit  <- 2000
+iter   <- 0
+diff   <- Inf
+
+# Precompute for speed: for each s-index and each x-index, the vector of next-state indices per w
+# We'll build on the fly per state since feasible x depends on s.
+while (diff > tol && iter < maxit) {
+  Vnew  <- V
+  for (i in seq_len(Ns)) {
+    s   <- S[i]
+    # feasible control set: cannot push s' below zero after worst recharge
+    # We clamp s' inside [0, Sbar] in the law of motion, so allow all x in [0, s + max(w)]
+    xmax <- min(Sbar, s + max(w_vals))
+    # restrict Xall to feasible range
+    X_feas <- Xall[Xall <= xmax]
+    # For each candidate x, compute expected continuation value
+    # Build next states for each shock, clamp to [0, Sbar], then pick nearest grid index
+    cont_val <- sapply(X_feas, function(x) {
+      s_next_j <- pmin(Sbar, pmax(0, s + w_vals - x))
+      idx_j    <- project_to_grid(s_next_j, S)
+      sum(pi_w * V[idx_j])
+    })
+    # Current period profits for all feasible x
+    pr_now <- profit(s, X_feas)
+    # Bellman operator
+    obj    <- pr_now + beta * cont_val
+    kbest  <- which.max(obj)
+    Vnew[i] <- obj[kbest]
+    pol_x[i] <- X_feas[kbest]
+  }
+  diff <- max(abs(Vnew - V))
+  V    <- Vnew
+  iter <- iter + 1L
+  message(sprintf("Iteration %d: supnorm diff = %.8f", iter, diff))
+}
+
+list(iters = iter, supnorm = diff)
+
+```

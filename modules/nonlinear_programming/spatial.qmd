@@ -1,0 +1,66 @@
+---
+title: "Ammendment: A Simple Spatial Equilibrium Model (2 regions, 1 good)"
+execute: 
+  echo: true
+  warning: false
+  message: false
+---
+
+# A Simple Spatial Equilibrium Model (2 regions, 1 good)
+
+We have two regions, $A$ and $B$, that can produce and consume a single homogeneous commodity and trade with iceberg-like per-unit transport costs $c_{AB}$ from $A$ to $B$ and $c_{BA}$ from $B$ to $A$.
+
+## Primitives
+
+- Linear supply in region $i\in\{A,B\}$: $p_{s,i}=a_i+b_iQ_{s,i}$ with $b_i>0$  
+- Linear demand in region $i$: $p_{d,i}=e_i-f_iQ_{d,i}$ with $f_i>0$  
+- Trade flows $T_{ij}\ge 0$ for $i,j\in\{A,B\}$ (allow $i=j$ to represent internal, i.e., local use)  
+- Per-unit transport costs $c_{ij}\ge 0$
+
+Mass balance in each region requires
+$$Q_{s,i}=\sum_{j}T_{ij},\quad Q_{d,i}=\sum_{j}T_{ji}.$$
+
+A standard welfare formulation (Takayama–Judge/Samuelson) maximizes total surplus minus transport costs:
+$$\max_{Q_{s,\cdot},Q_{d,\cdot},T_{\cdot\cdot}}\;\sum_{i}\left(\int_0^{Q_{d,i}}p_{d,i}(q)\,dq-\int_0^{Q_{s,i}}p_{s,i}(q)\,dq\right)-\sum_{i}\sum_{j}c_{ij}T_{ij},$$
+subject to the two balance equations and $T_{ij}\ge 0$. With linear supply and demand, this objective is quadratic and the model is a convex QP . This class of models traces back to Samuelson (1952) and Takayama & Judge (1971).
+
+## KKT/equilibrium conditions (economic meaning)
+
+Let $p_i$ denote the (equilibrium) price in region $i$. Complementarity gives (i) if $T_{ij}>0$ then $p_j=p_i+c_{ij}$ (trade equalizes destination price to origin price plus transport cost); (ii) if $T_{ij}=0$ then $p_j\le p_i+c_{ij}$. When a region both supplies and consumes internally, $p_i$ also equals its local supply and demand prices, $p_{s,i}=p_{d,i}$.
+
+## Worked numeric example
+
+Choose parameters:
+
+- Supply: $p_{s,A}=10+0.5Q_{s,A}$, $p_{s,B}=20+0.5Q_{s,B}$  
+- Demand: $p_{d,A}=50-Q_{d,A}$, $p_{d,B}=60-Q_{d,B}$  
+- Transport costs: $c_{AB}=5$, $c_{BA}=7$
+
+Guess and verify the trading pattern $A\to B$ only (so $T_{AB}>0$, $T_{BA}=0$). Then the KKT conditions imply
+$$p_A=p_{s,A}=p_{d,A},\qquad p_B=p_A+c_{AB}.$$
+Hence
+
+- Region $A$: $p_A=10+0.5Q_{s,A}$ and $p_A=50-Q_{d,A}\Rightarrow Q_{s,A}=2(p_A-10),\;Q_{d,A}=50-p_A$.
+- Region $B$: $p_B= p_A+5 = 20+0.5Q_{s,B}\Rightarrow Q_{s,B}=2(p_A-15)$ and $Q_{d,B}=60-p_B=55-p_A$.
+- Market clearing: $Q_{s,A}+Q_{s,B}=Q_{d,A}+Q_{d,B}$.
+
+Solve for $p_A$:
+$$2(p_A-10)+2(p_A-15)=(50-p_A)+(55-p_A)\;\Rightarrow\;4p_A-50=105-2p_A\;\Rightarrow\;p_A=\frac{155}{6}\approx 25.833.$$
+Back out quantities:
+
+- $Q_{s,A}=2(25.833-10)=31.667$
+- $Q_{s,B}=2(25.833-15)=21.667$
+- $Q_{d,A}=50-25.833=24.167$
+- $Q_{d,B}=55-25.833=29.167$
+- Flow $A\to B$: $T_{AB}=Q_{s,A}-Q_{d,A}=7.5$ (matches $Q_{d,B}-Q_{s,B}=7.5$)
+
+Prices:
+
+- $p_A=25.833$, $p_B=p_A+5=30.833$, and indeed $p_{s,B}=20+0.5\cdot 21.667=30.833$.
+
+No backhaul is profitable: $p_A\le p_B+c_{BA}$ is $25.833\le 30.833+7$, which holds strictly, so $T_{BA}=0$ is consistent with complementarity. This solution satisfies the spatial equilibrium relationships and illustrates how transport costs wedge regional prices while equalizing them net of $c_{ij}$ where flows are positive.
+
+## Notes
+
+- You can equivalently write the model with trade balance variables $T_{ii}$ for internal use and treat $Q_{s,i},Q_{d,i}$ as sums of flows; the solver returns regional supplies, demands, and bilateral shipments, with regional prices in the duals.
+- In teaching, this two-region case is great for hand-solving by guessing the active trade arcs, imposing $p_j=p_i+c_{ij}$ on those arcs, and using market clearing to solve the linear system.
