@@ -56,4 +56,4 @@ Use AI as a computational and intellectual tool, not as a substitute for judgmen
 
 ## Questions?
 
-Please reach out during office hours or via email if you would like feedback on a Model Lab question or investigation.
+Please reach out during office hours or via email (before end of day Monday) if you would like feedback on a Model Lab question or investigation.

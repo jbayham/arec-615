@@ -7,3 +7,6 @@ _site
 Gemfile.lock
 #remove temp files
 ~* 
+
+references/
+FALL_2026*

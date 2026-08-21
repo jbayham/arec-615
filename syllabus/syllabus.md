@@ -21,7 +21,7 @@ format:
 
 ## Course Description
 
-This course provides graduate students in agricultural, environmental, and resource economics with a rigorous introduction to optimization methods used in economic modeling and policy analysis. Emphasizing both theory and computation, the course covers linear and nonlinear programming, dynamic optimization, and numerical methods essential for solving complex economic problems. Students will learn to formulate, solve, and interpret optimization models using R, with applications drawn from land use planning, natural resource management, agricultural production, and environmental policy design. The course equips students with practical modeling skills and analytical tools that support evidence-based research and decision-making in applied economics.
+This course provides graduate students in agricultural, environmental, and resource economics with an introduction to optimization methods used in economic modeling and policy analysis. Emphasizing both theory and computation, the course covers linear and nonlinear programming, dynamic optimization, and numerical methods essential for solving complex economic problems. Students will learn to formulate, solve, and interpret optimization models using R, with applications drawn from land use planning, natural resource management, agricultural production, and environmental policy design. The course equips students with practical modeling skills and analytical tools that support evidence-based research and decision-making in applied economics.
 
 
 ## Learning Objectives
@@ -31,6 +31,7 @@ By the end of this course, students should be able to:
 1. Formulate and solve numerical optimization models in economics.
 2. Use optimization software to solve economic optimization problems (with a focus on R).
 3. Interpret results from mathematical programming models in applied settings.
+4. Use optimization models to conduct independent research.
 
 ## Prerequisites
 
@@ -38,72 +39,75 @@ AREC 506 or equivalent. I assume students are familiar with basic microeconomic 
 
 ## Textbooks and Readings
 
-- **Required:**  
-  McCarl, Bruce & Spreen, Thomas. *Applied Mathematical Programming Using Algebraic Systems*.  
-  [Available online](https://agecoresearch.tamu.edu/mccarl/regbook/)
+I will post several texbooks on Canvas. These are references for the course content.
 
-- **Additional References:**  
-  - Judd, Kenneth. *Numerical Methods in Economics*. 1998. [Available online](https://www.business.uzh.ch/dam/jcr:ffffffff-cd5d-ce16-0000-000076c01f71/NumericalMethodsJuddPartIPP1-307.pdf) 
-  - Miranda & Fackler. *Applied Computational Economics and Finance*  
+- Hazell, Peter B. R., and Roger D. Norton. *Mathematical Programming for Economic Analysis in Agriculture*.
+- McCarl, Bruce A., and Thomas A. Spreen. *Applied Mathematical Programming Using Algebraic Systems*. [Available online](https://agecoresearch.tamu.edu/mccarl/regbook/)
+- Miranda, Mario J., and Paul L. Fackler. *Applied Computational Economics and Finance*.
 
-[Accessible via CSU Sharepoint](https://colostate-my.sharepoint.com/:f:/g/personal/jbayham_colostate_edu/EumEAvRXgA9AkUlVJo7OIgQBZbvJ-whH9woXobQ7vLWd4A?e=0rMz0D)
 
-Supplemental readings and journal articles may be assigned.
+Supplemental readings and journal articles will be assigned.
 
 ## Assignments and Grading
 
 | Component                | Percentage |
 |--------------------------|------------:|
-| Midterm Exam 1          | 25%        |
-| Midterm Exam 2          | 25%        |
-| Final Exam              | 30%        |
-| Model Labs               | 20%        |
+| Midterm Exam 1          | 20%        |
+| Midterm Exam 2          | 20%        |
+| Final Exam              | 20%        |
+| Model Labs               | 40%        |
 
 I will use the standard CSU grading scale including + and - where the thresholds are defined at 2 and 8 of each 10-point range.
-
-### Model Labs
-
-Model Labs replace a traditional semester project with a series of short-turnaround, AI-assisted applied optimization exercises. The purpose is to investigate economic models more deeply than a conventional short assignment permits while remaining responsible for understanding, validating, and explaining the work. Evaluation will emphasize understanding of the optimization model; the quality of the question or experiment; correctness of the implementation and reasoning; economic and mathematical interpretation; the ability to explain and defend the work; and responsible, critical use of AI.
-
-On selected Thursdays, we will examine an applied economics paper built around an optimization model. Rather than treating the paper only as a conventional journal article, we will reconstruct the economic decision, decision variables, objective function, constraints, parameters, data, and endogenous outcomes. We will also consider the mathematical properties and solution concepts that matter for the model—including, as appropriate, first-order conditions, shadow prices, complementary slackness, and uniqueness—and the assumptions that make the model useful or restrictive. At the end of class, students will receive a short Model Lab challenge based on the paper and model.
-
-Between Thursday and Tuesday, each student will use AI and other computational tools to conduct a focused computational or conceptual experiment that produces one substantive insight. A lab may reproduce a simplified model or numerical result; perturb a parameter, constraint, or objective coefficient; identify a problematic parameterization or assumption; extend the model with an economically meaningful feature; reformulate the economic problem; or explain an important feature through a derivation, visualization, or numerical experiment. Labs will become progressively less structured: early exercises may use a supplied working model, while later exercises may provide a partial implementation, data, or the original paper and ask students to formulate and investigate a new question.
-
-AI tools may be used extensively for coding, derivations, debugging, interpretation, and brainstorming. Students remain responsible for their assumptions, formulation, code, results, and claims. Where appropriate, each lab should identify at least one substantive AI-generated claim, calculation, interpretation, derivation, or piece of code that the student independently checked or validated. Do not enter confidential, restricted, proprietary, or identifiable data into public AI systems.
-
-On designated Tuesdays, every student must arrive prepared to explain the investigation. At the beginning of class, approximately two or three students will be selected at random to give concise presentations organized around three questions: **What did you want to understand? What did you change, build, solve, or test? What did you learn, and why did the result occur?** Presenters should show enough of the formulation, computational result, figure, table, or solver output for the class to understand the experiment. The instructor may ask follow-up questions that require reasoning directly from the model, such as why a constraint binds, what a parameter change would imply, the economic meaning of a multiplier, whether a solution is unique, or which assumption drives a result.
-
-Students who are not selected to present are still expected to participate. The instructor may select respondents to predict another comparative static, explain an implication, suggest a useful modification, identify a driving assumption, connect the result to an optimization concept, or propose a next experiment. These discussions are intended to make Model Labs a class-wide model investigation rather than a sequence of passive presentations.
-
-Written submissions will be deliberately brief. A typical submission includes the question being investigated, the relevant modification or experiment, essential equations or code, one central result, a short economic and mathematical interpretation, and the required AI verification; it may also identify an unresolved question. The goal is a focused investigation, not a lengthy AI-generated report.
 
 ### Exams
 
 There will be two midterm exams and a final exam. The exams will be written, in class, and will not require students to run code. They will assess formulation, interpretation, numerical judgment, and small transparent calculations. The final will be cumulative, with emphasis on applying and interpreting the course's linear, nonlinear, and discrete-time dynamic models.
 
-### Formative Model Studio
+### Model Labs
 
-Students may develop an applied optimization model connected to their research interests during designated model-studio meetings. The studio is formative: it provides feedback and rehearsal for Model Labs, but it does not require a graded written report, repository, or standalone presentation.
+Model Labs replace a traditional semester project with a series of short-turnaround, AI-assisted applied optimization exercises. The purpose is to investigate economic models more deeply than a conventional short assignment permits while remaining responsible for understanding, validating, and explaining the work. Evaluation will emphasize understanding of the optimization model; correctness of the implementation and reasoning; economic and mathematical interpretation; the ability to explain and defend the work.
+
+On selected Thursdays, we will examine an applied economics model or paper. Whether a model or paper, we will develop or identify the economic decision, decision variables, objective function, constraints, parameters, data, and endogenous outcomes. We will also consider the mathematical properties and solution concepts that matter for the model—including, as appropriate, first-order conditions, shadow prices, complementary slackness, and uniqueness—and the assumptions that make the model useful or restrictive. 
+
+Between Thursday and Tuesday, each student will use AI and other computational tools to conduct a focused computational or conceptual experiment that produces one substantive insight. A lab may reproduce a simplified model or numerical result; perturb a parameter, constraint, or objective coefficient; identify a problematic parameterization or assumption; extend the model with an economically meaningful feature; reformulate the economic problem; or explain an important feature through a derivation, visualization, or numerical experiment. Labs will become progressively less structured: early exercises may use a supplied working model, while later exercises may provide a partial implementation, data, or the original paper and ask students to formulate and investigate a new question.
+
+AI tools may be used extensively for coding, derivations, debugging, interpretation, and brainstorming. Students remain responsible for their assumptions, formulation, code, results, and claims. 
+
+On designated Tuesdays, every student must arrive prepared to explain the investigation. At the beginning of class, approximately two or three students will be selected at random to give concise presentations organized around three questions: **What did you want to understand? What did you change, build, solve, or test? What did you learn, and why did the result occur?** Presenters should briefly summarize the key change and teach the class how it affects the solution. The instructor will ask follow-up questions that require reasoning directly from the model, such as why a constraint binds, what a parameter change would imply, the economic meaning of a multiplier, whether a solution is unique, or which assumption drives a result.
+
+Students who are not selected to present are still expected to participate. The instructor may select respondents to predict another comparative static, explain an implication, suggest a useful modification, identify a driving assumption, connect the result to an optimization concept, or propose a next experiment. These discussions are intended to make Model Labs a class-wide model investigation rather than a sequence of passive presentations.
+
+You will submit your slides as the deliverable.
+
+
+
 
 
 
 ## Tentative Schedule of Topics
 
 1. **Modeling Basics**
-   - Problem setup and components
-   - Introduction to R
+   - Credible economic models, R, and AI-assisted model development
+   - Objectives, decision variables, constraints, units, and solution audits
 
-2. **Linear Programming**
-   - Formulation, solution audits, sensitivity, and duality interpretation
-   - Mixed-integer applications
+2. **Linear and Mixed-Integer Programming**
+   - Formulation, graphical intuition, and matrix representations
+   - Solving and interpreting applied linear programs
+   - Sensitivity analysis, shadow values, and duality
+   - Binary choices, fixed costs, and mixed-integer applications
 
-3. **Nonlinear Programming**
-   - Numerical foundations, constrained optimization, and solver diagnostics
+3. **Static Nonlinear Optimization**
+   - Numerical foundations: roots, diagnostics, and convergence
+   - Unconstrained optimization, derivatives, geometry, and local/global optima
+   - Constrained optimization, feasible sets, bounds, corners, and KKT conditions
+   - Solver initialization, scaling, feasibility, and interpretation of multipliers
    - Risk, uncertainty, and scenario analysis
 
 4. **Dynamic Optimization**
-   - Finite-horizon dynamic programming and backward induction
-   - Infinite-horizon value function iteration and interpretation
+   - States, controls, transitions, payoffs, and discounting
+   - Finite-horizon dynamic programming and backward induction in R
+   - Infinite-horizon Bellman equations and value function iteration
+   - Value and policy functions, diagnostics, and parameter sensitivity
 
 
 ## Principles of Community
@@ -139,19 +143,19 @@ Examples of academic misconduct include (but are not limited to):
 
 5.	Facilitation of any act of Academic Misconduct – Facilitation of any act of academic misconduct includes knowingly assisting another to commit an act of misconduct.
 
-## AI Tools Policy
+## AI Statement
 
-AI tools (e.g., ChatGPT) are powerful tools, and learning to use them is valuable. However, they can undermine efforts to learn economic concepts in this course. Please make every effort to understand the material. 
+This course treats generative AI as a working tool, and your ability to use it well is part of what is being assessed. 
 
-Be aware of the limits of ChatGPT:
+You are expected to use AI tools on the model labs. You will be evaluated not on whether you used them, but on how well you directed them, how accurately you judged their output, and how effectively you corrected what they got wrong. I won't ask you for your prompts, but I may ask you about your reasoning, your assumptions, and your interpretation of the results.
 
-- If you provide minimum effort prompts, you will get low-quality results. You will need to refine your prompts in order to get good outcomes. This will take work.
+During class, I expect that you don't use computers unless you are presenting. I urge you to take hand written notes whether on paper or a tablet.
 
-- Don’t trust anything it says. If it gives you a number or fact, assume it is wrong unless you either know the answer or can check in with another source. You will be responsible for any errors or omissions provided by the tool. It works best for topics you understand.
+You may also use AI tools to help you prepare for exams, but you will not be allowed to use them during the exams themselves.
 
-- AI is a tool, but one that you need to acknowledge using. Please include a paragraph at the end of any assignment that uses AI explaining what you used the AI for and what prompts you used to get the results. Failure to do so is in violation of the academic honesty policies.
+You remain responsible for the accuracy of everything you submit or present. "The model produced it" is not a defense here any more than it is anywhere else. 
 
-- Be thoughtful about when this tool is useful. Don’t use it if it isn’t appropriate for the case or circumstance.
+AI-enabled assistive technology authorized by a student's accommodation letter is permitted in this course. 
 
 
 ## Accommodations
