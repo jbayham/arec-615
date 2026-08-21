@@ -1,132 +1,105 @@
-- date: '2025-08-26'
-  topic: Intro & Start Linear Programming
-  reading: M&S 1
-  due: ''
-- date: '2025-08-28'
-  topic: LP Solution - Simplex Method
-  reading: M&S 2-3
-  due: ''
-- date: '2025-09-02'
-  topic: LP Sensitivity
-  reading: M&S 3
-  due: ''
-- date: '2025-09-04'
-  topic: LP Duality
+- date: '2026-08-25'
+  topic: Course orientation; R and AI setup
   reading: ''
   due: ''
-- date: '2025-09-09'
-  topic: Input-Output Modeling
-  reading: M&S 7
-  due: ''
-- date: '2025-09-11'
-  topic: Numerical Foundations
-  reading: M&F 3
-  due: ''
-- date: '2025-09-16'
-  topic: Unconstrained nonlinear optimization
-  reading: M&S 12
-  due: Problem Set 1
-- date: '2025-09-18'
-  topic: 'Regression applications: likelihood estimation'
+- date: '2026-08-27'
+  topic: Math/R refresh
   reading: ''
   due: ''
-- date: '2025-09-23'
-  topic: No Class
+- date: '2026-09-01'
+  topic: 'Linear Programming: formulation and graphical interpretation'
   reading: ''
   due: ''
-- date: '2025-09-25'
-  topic: Constrained nonlinear optimization
+- date: '2026-09-03'
+  topic: LP formulation from data
   reading: ''
   due: ''
-- date: '2025-09-30'
-  topic: 'Constrained nonlinear optimization: numerical methods'
+- date: '2026-09-08'
+  topic: 'Applied LP: solving and interpreting a model'
   reading: ''
   due: ''
-- date: '2025-10-02'
-  topic: 'Regression applications: generalized method of moments'
-  reading: ''
-  due: Select Project Paper
-- date: '2025-10-07'
-  topic: ''
+- date: '2026-09-10'
+  topic: LP sensitivity and shadow values
   reading: ''
   due: ''
-- date: '2025-10-09'
-  topic: Review
-  reading: ''
-  due: Problem Set 2
-- date: '2025-10-14'
-  topic: Exam 1
+- date: '2026-09-15'
+  topic: Presentation/discussion
   reading: ''
   due: ''
-- date: '2025-10-16'
-  topic: Foundations of dynamic programming
+- date: '2026-09-17'
+  topic: LP duality as economic interpretation
   reading: ''
   due: ''
-- date: '2025-10-21'
-  topic: Discrete-state DP with finite horizon
-  reading: M&F 7
-  due: ''
-- date: '2025-10-23'
-  topic: Infinite-horizon DP
+- date: '2026-09-22'
+  topic: Presentation/discussion
   reading: ''
   due: ''
-- date: '2025-10-28'
-  topic: Functional equations and value function properties
-  reading: ''
-  due: ''
-- date: '2025-10-30'
-  topic: Dynamic models with continuous state
-  reading: M&F 8
-  due: Problem Set 3
-- date: '2025-11-04'
-  topic: Value and policy functions in continuous spaces
-  reading: ''
-  due: Replication and Extension Proposal
-- date: '2025-11-06'
-  topic: Collocation and projection methods
-  reading: M&F 9
-  due: ''
-- date: '2025-11-11'
-  topic: Fenichel Abbott - Metaphor to measurement
-  reading: ''
-  due: ''
-- date: '2025-11-13'
-  topic: Burt - Optimal Resource Use
-  reading: ''
-  due: ''
-- date: '2025-11-18'
-  topic: How to present
-  reading: ''
-  due: Problem Set 4
-- date: '2025-11-20'
-  topic: Project workshop
-  reading: ''
-  due: ''
-- date: '2025-11-25'
-  topic: No Class
-  reading: ''
-  due: ''
-- date: '2025-11-27'
-  topic: No Class
-  reading: ''
-  due: ''
-- date: '2025-12-02'
-  topic: 'Presentation: Shuhang, Catherine, Shreezal'
-  reading: ''
-  due: ''
-- date: '2025-12-04'
-  topic: 'Presentation: Alisha, Suchil, Matt'
-  reading: ''
-  due: ''
-- date: '2025-12-09'
-  topic: 'Presentation: Jayna, Trent, Mehran'
-  reading: ''
-  due: ''
-- date: '2025-12-11'
+- date: '2026-09-24'
   topic: Review
   reading: ''
   due: ''
-- date: '2025-12-17'
-  topic: Final Exam (Wednesday 6:20 - 8:20 PM)
+- date: '2026-09-29'
+  topic: Midterm 1
+  reading: ''
+  due: ''
+- date: '2026-10-01'
+  topic: 'Unconstrained and constrained nonlinear optimization + Numerical foundations:
+    roots, diagnostics, and convergence'
+  reading: ''
+  due: ''
+- date: '2026-10-06'
+  topic: Presentation/discussion
+  reading: ''
+  due: ''
+- date: '2026-10-08'
+  topic: Karush Kuhn Tucker and corner solutions
+  reading: ''
+  due: ''
+- date: '2026-10-13'
+  topic: Presentation/discussion
+  reading: ''
+  due: ''
+- date: '2026-10-15'
+  topic: Risk, uncertainty, and scenario analysis in static models
+  reading: ''
+  due: ''
+- date: '2026-10-20'
+  topic: Presentation/discussion
+  reading: ''
+  due: ''
+- date: '2026-10-22'
+  topic: Review
+  reading: ''
+  due: ''
+- date: '2026-10-27'
+  topic: Midterm 2
+  reading: ''
+  due: ''
+- date: '2026-10-29'
+  topic: Finite-horizon dynamic programming and backward induction
+  reading: ''
+  due: ''
+- date: '2026-11-03'
+  topic: Presentation/discussion
+  reading: ''
+  due: ''
+- date: '2026-11-05'
+  topic: Infinite-horizon Bellman equation and value function iteration
+  reading: ''
+  due: ''
+- date: '2026-11-10'
+  topic: Presentation/discussion
+  reading: ''
+  due: ''
+- date: '2026-11-12'
+  topic: Flex Day
+  reading: ''
+  due: ''
+- date: '2026-11-17'
+  topic: Review
+  reading: ''
+  due: ''
+- date: '2026-11-19'
+  topic: Final
   reading: ''
   due: ''
