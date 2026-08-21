@@ -34,11 +34,6 @@ The bottom right icons link to the Github directory for the lecture (<i class="f
         <span><a href="{{ site.url }}{{ site.baseurl }}/{{ modules.dirname }}/{{ modules.filename }}.pdf">{{ modules.title }}</a></span><br>
 <span class = "postlower">
 {{ modules.desc }}</span>
-<strong style="font-size:100%; font-family: 'Titillium Web', sans-serif; float:right; padding-right: .5em">
-	<a href="https://github.com/{{ site.githubdir}}/tree/master/{{ modules.dirname }}"><i class="fab fa-github"></i></a>&nbsp;&nbsp;
-<a href="https://github.com/{{ site.githubdir}}/tree/master/{{ modules.dirname }}/{{ modules.filename}}.Rmd"><i class="fab fa-r-project"></i></a>&nbsp;&nbsp;
-<a href="https://github.com/{{ site.githubdir}}/blob/master/{{ modules.dirname }}/{{ modules.filename}}.pdf"><i class="fas fa-file-pdf"></i></a>
-</strong> 
 {% if modules.readings %}
   <br><strong>📖 Readings:</strong>
   <ul>

@@ -3,7 +3,7 @@ layout: page
 title: Course Materials
 permalink: /course-materials/
 ---
-
+<!-- 
 You can download course materials from this [sharepoint folder](https://colostate-my.sharepoint.com/:f:/g/personal/jbayham_colostate_edu/IgDphAL0V4APQJFJVSaOziIEAWW7yfsIR_cKF6G0O7y1neA?e=VWpgQm). Use your CSU login credentials to access the folder.
 
 ## Books
@@ -23,4 +23,4 @@ Burt, O. R. (1964). Optimal resource use over time with an application to ground
 
 - R: [Download R](https://cran.r-project.org/)
 - RStudio: [Download RStudio](https://posit.co/download/rstudio-desktop/)
-
+ -->
