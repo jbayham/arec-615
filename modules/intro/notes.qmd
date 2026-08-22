@@ -3,14 +3,10 @@ title: Introduction to Mathematical Programming
 ---
 
 
-
-------------------------------------------------------------------------
-
-
-
 # Introductions
     - Who am I?
     - Student introductions: What year and what field? Research interests?
+    - What do you hope to get out of this course?
 
 # Course Orientation & Motivation
 
@@ -32,8 +28,6 @@ title: Introduction to Mathematical Programming
 -   Mathematical programming provides a structured, computer-implementable way to model these decisions.
 
 
-------------------------------------------------------------------------
-
 # What is a Mathematical Program?
 
 -   **General Form**:
@@ -53,7 +47,7 @@ title: Introduction to Mathematical Programming
 -   Objective: maximize profit.
 -   Constraints: land, labor, water.
 
-------------------------------------------------------------------------
+
 
 # Uses of Mathematical Programming (McCarl §1.3)
 
@@ -90,7 +84,6 @@ What does McCarl say are the uses of math programming?
     - solution algorithms... not that important for most of us.
 
 
-------------------------------------------------------------------------
 
 # Preview: How Optimization Methods are Used in Research
 

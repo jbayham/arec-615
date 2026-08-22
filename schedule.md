@@ -8,9 +8,8 @@ permalink: /schedule/
   <thead>
     <tr>
       <th style="width: 10%;">Date</th>
-      <th style="width: 55%;">Topic</th>
-      <th style="width: 20%;">Reading</th>
-      <th style="width: 15%;">Due</th>
+      <th style="width: 65%;">Topic</th>
+      <th style="width: 25%;">Reading</th>
     </tr>
   </thead>
   <tbody>
@@ -20,13 +19,14 @@ permalink: /schedule/
       <tr class="exam-row">
     {% elsif topic_lower contains "no class" %}
       <tr class="noclass-row">
+    {% elsif topic_lower == "presentation/discussion" %}
+      <tr class="presentation-row">
     {% else %}
       <tr>
     {% endif %}
       <td>{{ item.date | date: "%b %d" }}</td>
       <td>{{ item.topic }}</td>
       <td>{{ item.reading }}</td>
-      <td>{{ item.due }}</td>
     </tr>
     {% endfor %}
   </tbody>

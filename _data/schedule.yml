@@ -1,105 +1,79 @@
 - date: '2026-08-25'
   topic: Course orientation; R and AI setup
-  reading: ''
-  due: ''
+  reading: McCarl & Spreen Chapter 1
 - date: '2026-08-27'
-  topic: Math/R refresh
-  reading: ''
-  due: ''
-- date: '2026-09-01'
   topic: 'Linear Programming: formulation and graphical interpretation'
   reading: ''
-  due: ''
-- date: '2026-09-03'
+- date: '2026-09-01'
   topic: LP formulation from data
   reading: ''
-  due: ''
-- date: '2026-09-08'
-  topic: 'Applied LP: solving and interpreting a model'
+- date: '2026-09-03'
+  topic: 'LP: solving and interpreting a model'
   reading: ''
-  due: ''
-- date: '2026-09-10'
+- date: '2026-09-08'
   topic: LP sensitivity and shadow values
   reading: ''
-  due: ''
+- date: '2026-09-10'
+  topic: LP Application
+  reading: Stewart & Greenhalgh (1977)
 - date: '2026-09-15'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-09-17'
   topic: LP duality as economic interpretation
   reading: ''
-  due: ''
 - date: '2026-09-22'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-09-24'
   topic: Review
   reading: ''
-  due: ''
 - date: '2026-09-29'
   topic: Midterm 1
   reading: ''
-  due: ''
 - date: '2026-10-01'
   topic: 'Unconstrained and constrained nonlinear optimization + Numerical foundations:
     roots, diagnostics, and convergence'
   reading: ''
-  due: ''
 - date: '2026-10-06'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-10-08'
   topic: Karush Kuhn Tucker and corner solutions
   reading: ''
-  due: ''
 - date: '2026-10-13'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-10-15'
   topic: Risk, uncertainty, and scenario analysis in static models
   reading: ''
-  due: ''
 - date: '2026-10-20'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-10-22'
   topic: Review
   reading: ''
-  due: ''
 - date: '2026-10-27'
   topic: Midterm 2
   reading: ''
-  due: ''
 - date: '2026-10-29'
   topic: Finite-horizon dynamic programming and backward induction
   reading: ''
-  due: ''
 - date: '2026-11-03'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-11-05'
   topic: Infinite-horizon Bellman equation and value function iteration
   reading: ''
-  due: ''
 - date: '2026-11-10'
   topic: Presentation/discussion
   reading: ''
-  due: ''
 - date: '2026-11-12'
   topic: Flex Day
   reading: ''
-  due: ''
 - date: '2026-11-17'
   topic: Review
   reading: ''
-  due: ''
 - date: '2026-11-19'
   topic: Final
   reading: ''
-  due: ''

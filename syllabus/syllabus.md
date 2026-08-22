@@ -110,6 +110,10 @@ You will submit your slides as the deliverable.
    - Value and policy functions, diagnostics, and parameter sensitivity
 
 
+## Modified Schedule
+
+This class will end on Nov 19 because I will be leaving Fall break to teach in Vietnam. We need to make up 4 75-minute class sessions. First we need to find 4 dates and times that work for everyone. I will send a whentomeet poll to find the best times. My tentative plan is to have model lab development sessions or use it as time to dive deeper into material.
+
 ## Principles of Community
 
 The Principles of Community support the Colorado State University mission and vision of access, research, teaching, service and engagement. A collaborative, and vibrant community is a foundation for learning, critical inquiry, and discovery. Therefore, each member of the CSU community has a responsibility to uphold these principles when engaging with one another and acting on behalf of the University

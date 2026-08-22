@@ -2,7 +2,7 @@
   filename: "notes" 
   dirname: modules/intro
   desc: "These notes provides a brief overview of the course and introduces several optimization concepts"
- readings:
+  readings:
    - title: "McCarl & Spreen Ch. 1"
      url: "course-materials/"
 
