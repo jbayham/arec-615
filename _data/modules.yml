@@ -5,6 +5,9 @@
   readings:
    - title: "McCarl & Spreen Ch. 1"
      url: "course-materials/"
+  materials:
+   - title: "AI Workflows"
+     url: "ai_workflows.html"
 
 
 - title: "Linear Programming"

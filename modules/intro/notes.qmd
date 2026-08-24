@@ -143,4 +143,4 @@ Takeaway: *Mathematical programming is not just a classroom exercise; it’s a c
 Don't forget to discuss:
 
 - Shortened semester schedule. When-to-meet to figure out a time that works for everyone.
-
+- Office hours. When do people have class?
