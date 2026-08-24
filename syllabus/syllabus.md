@@ -9,14 +9,14 @@ format:
 
 ## Course Information
 
-- **Location:** Eddy 106  
-- **Time:** Tuesday and Thursday, 9:30–10:45 AM  
+- **Location:** Eddy 106
+- **Time:** Tuesday and Thursday, 9:30–10:45 AM
 - **Term:** Fall 2026 (August 25–November 19)
 - **Final Exam:** Thursday, November 19, during the regularly scheduled class period
 - **Instructor:** Jude Bayham  
   - Office: Nutrien 203  
   - Email: [jbayham@colostate.edu](mailto:jbayham@colostate.edu)  
-  - Office Hours: Monday and Wednesday 1–2, or by appointment ([book here](https://outlook.office.com/bookwithme/user/8f601447c7934b3fb7dc895f4140ffe4@colostate.edu?anonymous&ismsaljsauthenabled&ep=plink))  
+  - Office Hours: ???, or by appointment ([book here](https://outlook.office.com/bookwithme/user/8f601447c7934b3fb7dc895f4140ffe4@colostate.edu?anonymous&ismsaljsauthenabled&ep=plink))  
 
 
 ## Course Description
