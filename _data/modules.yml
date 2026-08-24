@@ -7,25 +7,22 @@
      url: "course-materials/"
 
 
-# - title: "Linear Programming"
-#   filename: "notes" 
-#   dirname: modules/linear_programming
-#   desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis. Submit problem set on Canvas."
-#   readings:
-#     - title: "McCarl & Spreen Ch. 2–4"
-#       url: "course-materials/"
-#   ps:
-#     - title: "Problem Set 1"
-#       url: "problem_set.pdf"
-#   materials:
-#     - title: "LP Example"
-#       url: "lp_example.html"
-#     - title: "LP_land_alloc.xlsx"
-#       url: "LP_land_alloc.xlsx"
-#     - title: "R_lp_example.pdf"
-#       url: "R_lp_example.pdf"
-#     - title: "IO Example"
-#       url: "IO_example.html"
+- title: "Linear Programming"
+  filename: "notes" 
+  dirname: modules/linear_programming
+  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis. Submit problem set on Canvas."
+  readings:
+    - title: "McCarl & Spreen Ch. 2–4"
+      url: "course-materials/"
+  # materials:
+  #   - title: "LP Example"
+  #     url: "lp_example.html"
+  #   - title: "LP_land_alloc.xlsx"
+  #     url: "LP_land_alloc.xlsx"
+  #   - title: "R_lp_example.pdf"
+  #     url: "R_lp_example.pdf"
+  #   - title: "IO Example"
+  #     url: "IO_example.html"
   
   
 # - title: "Unconstrained and Constrained Nonlinear Programming"
