@@ -41,8 +41,9 @@ AREC 506 or equivalent. I assume students are familiar with basic microeconomic 
 
 I will post several texbooks on Canvas. These are references for the course content.
 
-- Hazell, Peter B. R., and Roger D. Norton. *Mathematical Programming for Economic Analysis in Agriculture*.
 - McCarl, Bruce A., and Thomas A. Spreen. *Applied Mathematical Programming Using Algebraic Systems*. [Available online](https://agecoresearch.tamu.edu/mccarl/regbook/)
+- Kaiser, Harry M., Kent D. Messer. *Mathematical Programming for Agricultural, Environmental, and Resource Economics*. 
+- Hazell, Peter B. R., and Roger D. Norton. *Mathematical Programming for Economic Analysis in Agriculture*.
 - Miranda, Mario J., and Paul L. Fackler. *Applied Computational Economics and Finance*.
 
 
@@ -71,17 +72,13 @@ On selected Thursdays, we will examine an applied economics model or paper. Whet
 
 Between Thursday and Tuesday, each student will use AI and other computational tools to conduct a focused computational or conceptual experiment that produces one substantive insight. A lab may reproduce a simplified model or numerical result; perturb a parameter, constraint, or objective coefficient; identify a problematic parameterization or assumption; extend the model with an economically meaningful feature; reformulate the economic problem; or explain an important feature through a derivation, visualization, or numerical experiment. Labs will become progressively less structured: early exercises may use a supplied working model, while later exercises may provide a partial implementation, data, or the original paper and ask students to formulate and investigate a new question.
 
-AI tools may be used extensively for coding, derivations, debugging, interpretation, and brainstorming. Students remain responsible for their assumptions, formulation, code, results, and claims. 
+AI tools may be used extensively for coding, data analysis, and slide prep. Use AI to teach yourself how the models work and how you can extend them. Students remain responsible for their assumptions, formulation, code, results, and claims. 
 
 On designated Tuesdays, every student must arrive prepared to explain the investigation. At the beginning of class, approximately two or three students will be selected at random to give concise presentations organized around three questions: **What did you want to understand? What did you change, build, solve, or test? What did you learn, and why did the result occur?** Presenters should briefly summarize the key change and teach the class how it affects the solution. The instructor will ask follow-up questions that require reasoning directly from the model, such as why a constraint binds, what a parameter change would imply, the economic meaning of a multiplier, whether a solution is unique, or which assumption drives a result.
 
 Students who are not selected to present are still expected to participate. The instructor may select respondents to predict another comparative static, explain an implication, suggest a useful modification, identify a driving assumption, connect the result to an optimization concept, or propose a next experiment. These discussions are intended to make Model Labs a class-wide model investigation rather than a sequence of passive presentations.
 
-You will submit your slides as the deliverable.
-
-
-
-
+You will submit your presentation slides as the deliverable.
 
 
 ## Tentative Schedule of Topics
