@@ -1,5 +1,5 @@
 ---
-title: Introduction to Mathematical Programming
+title: Introduction to AREC 615
 ---
 
 
@@ -71,14 +71,15 @@ title: Introduction to Mathematical Programming
     3. Interpret solutions, constraints, and comparative statics in economic terms.
     4. Use optimization models to investigate applied research questions.
 
--   We will begin with linear models, then study nonlinear and dynamic optimization. The same modeling questions will recur: What is the decision? What is the objective? What constrains it? What do the solution and its sensitivity mean?
+-   We will begin with linear models, then study nonlinear and dynamic optimization. The same modeling questions will recur: 
+    - What is the decision? 
+    - What is the objective? 
+    - What constrains it? 
+    - What do the solution and its sensitivity mean?
 
 
 
 # Uses of Mathematical Programming (McCarl §1.3)
-
-
-> What does McCarl say are the uses of math programming?
 
 
 1.  **Problem Insight Construction**
