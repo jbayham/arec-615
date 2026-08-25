@@ -4,7 +4,7 @@
   desc: "These notes provides a brief overview of the course and introduces several optimization concepts"
   readings:
    - title: "McCarl & Spreen Ch. 1"
-     url: "course-materials/"
+     #url: "course-materials/"
   materials:
    - title: "AI Workflows"
      url: "ai_workflows.html"
@@ -13,10 +13,10 @@
 - title: "Linear Programming"
   filename: "notes" 
   dirname: modules/linear_programming
-  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory, and input-output analysis. Submit problem set on Canvas."
+  desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory."
   readings:
     - title: "McCarl & Spreen Ch. 2–4"
-      url: "course-materials/"
+      #url: "course-materials/"
   # materials:
   #   - title: "LP Example"
   #     url: "lp_example.html"

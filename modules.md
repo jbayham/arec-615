@@ -38,7 +38,8 @@ The bottom right icons link to the Github directory for the lecture (<i class="f
   <br><strong>📖 Readings:</strong>
   <ul>
     {% for r in modules.readings %}
-      <li><a href="{{ site.url }}{{ site.baseurl }}/{{ r.url }}">{{ r.title }}</a></li>
+      <!-- <li><a href="{{ site.url }}{{ site.baseurl }}/{{ r.url }}">{{ r.title }}</a></li> -->
+      <li>{{ r.title }}</li>
     {% endfor %}
   </ul>
 {% endif %}
