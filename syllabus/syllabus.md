@@ -16,7 +16,7 @@ format:
 - **Instructor:** Jude Bayham  
   - Office: Nutrien 203  
   - Email: [jbayham@colostate.edu](mailto:jbayham@colostate.edu)  
-  - Office Hours: ???, or by appointment ([book here](https://outlook.office.com/bookwithme/user/8f601447c7934b3fb7dc895f4140ffe4@colostate.edu?anonymous&ismsaljsauthenabled&ep=plink))  
+  - Office Hours: Tuesday & Thursday, 11:00–12:00 PM, or by appointment ([book here](https://outlook.office.com/bookwithme/user/8f601447c7934b3fb7dc895f4140ffe4@colostate.edu?anonymous&ismsaljsauthenabled&ep=plink))  
 
 
 ## Course Description

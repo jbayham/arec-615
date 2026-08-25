@@ -6,8 +6,10 @@
    - title: "McCarl & Spreen Ch. 1"
      #url: "course-materials/"
   materials:
-   - title: "AI Workflows"
+   - title: "AI Workflow Slides"
      url: "ai_workflows.html"
+   - title: "AI Demo Bundle"
+     url: "ai-workflow-demo.zip"
 
 
 - title: "Linear Programming"
