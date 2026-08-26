@@ -263,10 +263,9 @@ ggplot(df, aes(x=xW)) +
 #### Core Idea
 - Start at a **basic feasible solution (BFS)** — a corner point of the feasible region.
 - At each step:
-  1. Compute **reduced costs** (how much the objective improves if a variable increases from 0).
-  2. Identify an **entering variable** (the candidate to increase).
-  3. Determine which constraint binds first — this sets the **leaving variable**.
-  4. **Pivot** to a new BFS.
+  1. Identify an **entering variable**: an activity whose introduction can improve the objective.
+  2. Determine which current activity must decrease to keep the solution feasible; this is the **leaving variable**.
+  3. **Pivot** to a neighboring BFS.
 - Stop when no variable can improve the objective — this is optimal.
 
 ---
@@ -277,108 +276,18 @@ ggplot(df, aes(x=xW)) +
 - Continue until no edge yields improvement.
 - The same logic applies in higher dimensions, even though we cannot draw the polytope.
 
----
+### What to take from simplex
 
-### Simplex Pivot — Tiny Worked Example
+- A **basis** identifies the activities currently used to describe a corner-point solution.
+- **Reduced costs** summarize whether introducing a currently inactive activity can improve the objective.
+- The **ratio test** preserves feasibility when the algorithm moves to the next corner.
+- A **slack variable** records unused capacity in a “$\leq$” constraint. A positive slack means that the corresponding resource is not fully used.
 
-We use the smallest LP that still shows the mechanics:
+Modern solvers carry out the tableau and matrix calculations. In this course, the emphasis is on formulating the problem, recognizing the logic of a pivot, and interpreting the solution—not hand-executing a long simplex tableau.
 
-**Problem**
-$$
-\begin{aligned}
-\max\; & z = 3x_1 + 2x_2 \\
-\text{s.t. }& x_1 + x_2 \le 4, \quad x_1 \le 2, \quad x_1,x_2 \ge 0.
-\end{aligned}
-$$
+### Optional reference for simplex mechanics
 
-**Standard form (add slacks $s_1,s_2$)**
-
-
-
-$$
-\begin{aligned}
-x_1 + x_2 + s_1 &= 4,\\
-x_1 + s_2 &= 2,\\
-z - 3x_1 - 2x_2 &= 0, \qquad s_1,s_2\ge 0.
-\end{aligned}
-$$
-- Slack variables are added to “$\leq$” constraints to convert them into equalities, making the LP system compatible with the simplex algorithm.
-
-- They measure the unused portion of a resource — e.g., if a land constraint is $x_1 + x_2 \leq 500$ and only 400 acres are used, the slack variable equals 100.
-
-- Slack variables always have a zero coefficient in the objective function, since they do not directly contribute to profit or cost.
-
-- Each slack variable typically appears with a coefficient of +1 in one constraint and 0 elsewhere, so they “fill the gap” between resource availability and resource use.
-
-- At optimality, a nonzero slack indicates an unused resource. Checking which slack variables are positive helps interpret whether constraints are binding or loose.
-
----
-
-### Initial tableau and choice of entering/leaving variables
-
-**Initial Basic Feasible Solution (BFS):** $x_1=x_2=0 \Rightarrow s_1=4, s_2=2, z=0$.
-
-**Tableau**
-$$
-\begin{array}{c|rrrr|r}
- & x_1 & x_2 & s_1 & s_2 & \text{RHS}\\\hline
-s_1 & 1 & 1 & 1 & 0 & 4\\
-s_2 & 1 & 0 & 0 & 1 & 2\\\hline
-z   & -3 & -2 & 0 & 0 & 0\\
-\end{array}
-$$
-
-- **Entering variable:** look at the objective row; most negative reduced cost is under $x_1$ (coefficient $-3$) → **enter $x_1$**.
-- **Leaving variable (ratio test):** divide RHS by the positive entries in the $x_1$ column:  
-  Row $s_1$: $4/1=4$, Row $s_2$: $2/1=2$. Minimum is 2 → **leave $s_2$**.
-- **Pivot element:** the entry at row $s_2$, column $x_1$ (which is $1$).
-
-We will **pivot on that 1**, swapping $s_2 \leftrightarrow x_1$.
-
-
-### Row operations (make pivot column a unit vector)
-
-Goal: pivot column $(x_1)$ should become $(0,1,0)^\top$.
-
-1) **Normalize pivot row** (already 1, so no change):
-$$
-(s_2)\;:\;[\,1\;\;0\;\;0\;\;1\;|\;2\,].
-$$
-
-2) **Zero out the other entries in the $x_1$ column:**
-
-- Row $s_1$: $(s_1) \leftarrow (s_1) - 1 \cdot (s_2)$
-$$
-[\,1\;\;1\;\;1\;\;0\;|\;4\,] - [\,1\;\;0\;\;0\;\;1\;|\;2\,]
-= [\,0\;\;1\;\;1\;\;-1\;|\;2\,].
-$$
-
-- Row $z$: $(z) \leftarrow (z) + 3 \cdot (s_2)$
-$$
-[\,-3\;\;-2\;\;0\;\;0\;|\;0\,] + 3\cdot[\,1\;\;0\;\;0\;\;1\;|\;2\,]
-= [\,0\;\;-2\;\;0\;\;3\;|\;6\,].
-$$
-
----
-
-### New tableau (after one pivot)
-
-$$
-\begin{array}{c|rrrr|r}
- & x_1 & x_2 & s_1 & s_2 & \text{RHS}\\\hline
-s_1 & 0 & 1 & 1 & -1 & 2\\
-\color{blue}{x_1} & 1 & 0 & 0 & 1 & 2\\\hline
-z   & 0 & -2 & 0 & 3 & 6\\
-\end{array}
-$$
-
-- **Basis after pivot:** $\{\,s_1,\;x_1\,\}$.  
-- **Current solution:** $x_1=2,\; x_2=0,\; s_1=2,\; s_2=0,\; z=6$.  
-- The column labels show that **$x_1$ entered** (blue row) and **$s_2$ left**.
-
-**Next step (if continuing):** the most negative in the $z$-row is under $x_2$ (−2), so $x_2$ would enter next; the algorithm would pivot again and reach the optimum at $(x_1,x_2)=(2,2)$ with $z=10$.
-
-![](simplex_example.png)
+For a matrix-algebra treatment of the simplex algorithm, including tableau mechanics, initial feasible bases, and Phase I/Phase II methods, see McCarl and Spreen, Chapter III, especially Sections 3.2 and 3.4. The graphical method above supplies the intuition needed to interpret what the algorithm is doing.
 
 ### Excel Solver
 
@@ -399,7 +308,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
   - Uses **entering and leaving variables** to pivot.
   - Stops when no further improvement is possible.
 - **Slack variables** convert inequalities to equalities and measure unused resources.
-- Tableau row operations implement pivots (targeted Gaussian elimination).
+- Solvers carry out the pivot calculations; our focus is their modeling and economic interpretation.
 
 
 ## Sensitivity Analysis 
@@ -743,7 +652,11 @@ The **complementary slackness conditions** link the primal and dual solutions. T
 - Duality provides a theoretical foundation for sensitivity analysis and economic interpretation of LP results.
 
 
-# Input–Output Modeling
+\newpage
+
+# Extension: Input–Output Modeling
+
+This final section is an extension of the core LP material. Input–output analysis is primarily a **linear accounting model** for tracing inter-industry linkages; its connection to LP and duality is developed at the end of the section.
 
 ## Motivation
 
@@ -1138,6 +1051,4 @@ Draw the parallels:
 - Discussion prompts:  
   - Which sector has the larger multiplier?  
   - What happens to required outputs if one coefficient $a_{ij}$ increases (e.g., manufacturing requires more agriculture)?  
-
-
 
