@@ -1,0 +1,103 @@
+---
+title: "Class Handout: Formulating Linear Programs"
+format:
+  pdf:
+    geometry: margin=1in
+    fontsize: 11pt
+    number-sections: false
+---
+
+## Instructions
+
+For each example:
+
+1. Define the decision variables and their units.
+2. Write the scalar (algebraic) form of the LP, including the objective, constraints, and nonnegativity restrictions.
+3. Write the matrix form. Define the decision vector, objective-coefficient vector, constraint matrix, and right-hand-side vector.
+
+Do not solve the models.
+
+## Example 1: Farm Land Allocation
+
+A farmer has 500 acres of land available and is deciding how to allocate it between wheat and corn. Each acre of wheat yields a profit of $200, requires 3 hours of labor, and 4 units of fertilizer. Each acre of corn yields a profit of $300, requires 4 hours of labor, and 3 units of fertilizer. The farm has at most 1,800 hours of labor available and 2,000 units of fertilizer.
+
+Formulate the farmer's profit-maximization problem.
+
+
+\newpage
+
+## Example 2: Carbon Abatement
+
+A manufacturing firm must reduce annual emissions of carbon dioxide, methane, and nitrous oxide. It can use three abatement techniques: retrofitting boilers, installing methane-capture equipment, and switching to a lower-emission fuel. One unit of the three techniques costs $0.5 million, $1.2 million, and $3.3 million, respectively. A unit of the techniques reduces carbon dioxide emissions by 10, 15, and 25 thousand tons; methane emissions by 2, 5, and 7 thousand tons; and nitrous oxide emissions by 5, 12, and 13 thousand tons. The firm must reduce carbon dioxide by at least 100 thousand tons, methane by at least 25 thousand tons, and nitrous oxide by at least 75 thousand tons.
+
+Formulate the firm's cost-minimization problem.
+
+\vspace{3.0in}
+
+\newpage
+
+\begin{center}
+\large\textbf{Solutions}
+\end{center}
+
+\small
+
+**Farm land allocation.** Let $W$ be acres of wheat and $C$ be acres of corn.
+
+$$
+\begin{aligned}
+\max_{W,C}\quad & 200W + 300C \\
+\text{s.t.}\quad
+& W + C \leq 500 && \text{(land)} \\
+& 3W + 4C \leq 1800 && \text{(labor)} \\
+& 4W + 3C \leq 2000 && \text{(fertilizer)} \\
+& W, C \geq 0.
+\end{aligned}
+$$
+
+$$
+\max_{x \geq 0}\; c^\top x
+\qquad \text{s.t.} \qquad Ax \leq b,
+$$
+
+$$
+x = \begin{bmatrix} W \\ C \end{bmatrix}, \qquad
+c = \begin{bmatrix} 200 \\ 300 \end{bmatrix}, \qquad
+A = \begin{bmatrix}
+1 & 1 \\
+3 & 4 \\
+4 & 3
+\end{bmatrix}, \qquad
+b = \begin{bmatrix} 500 \\ 1800 \\ 2000 \end{bmatrix}.
+$$
+
+**Carbon abatement.** Let $B$, $M$, and $F$ be units of boiler retrofits, methane-capture equipment, and lower-emission fuel switching, respectively. Costs are in millions of dollars; reductions are in thousand tons.
+
+$$
+\begin{aligned}
+\min_{B,M,F}\quad & 0.5B + 1.2M + 3.3F \\
+\text{s.t.}\quad
+& 10B + 15M + 25F \geq 100 && \text{(carbon dioxide)} \\
+& 2B + 5M + 7F \geq 25 && \text{(methane)} \\
+& 5B + 12M + 13F \geq 75 && \text{(nitrous oxide)} \\
+& B, M, F \geq 0.
+\end{aligned}
+$$
+
+$$
+\min_{x \geq 0}\; c^\top x
+\qquad \text{s.t.} \qquad Ax \geq b,
+$$
+
+$$
+x = \begin{bmatrix} B \\ M \\ F \end{bmatrix}, \qquad
+c = \begin{bmatrix} 0.5 \\ 1.2 \\ 3.3 \end{bmatrix}, \qquad
+A = \begin{bmatrix}
+10 & 15 & 25 \\
+2 & 5 & 7 \\
+5 & 12 & 13
+\end{bmatrix}, \qquad
+b = \begin{bmatrix} 100 \\ 25 \\ 75 \end{bmatrix}.
+$$
+
+\normalsize

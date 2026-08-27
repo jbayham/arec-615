@@ -2,43 +2,30 @@
 title: Linear Programming
 ---
 
+# Foundations of Linear Programming
 
-### Linear Programming (LP) Structure
+What is linear programming (LP)? It is a **mathematical optimization framework** for making decisions under constraints. 
 
--   **Standard LP Form**:
 
-    $$
-    \max \; \pi'x \quad \text{s.t. } Ax \le b, \; x \ge 0
-    $$
+## Formulating Linear Programming Problems
 
--   Characteristics:
+Kaiser and Messer emphasize that formulation is the central task in LP: the analyst translates a verbal decision problem into a mathematical model. Begin by reading the problem carefully to understand the decision setting before trying to write equations. Then read it again to sort the information needed for the model.
 
-    -   Linear objective.
-    -   Linear constraints.
-    -   Nonnegativity.
+### A Practical Formulation Sequence
 
-Can also be written in matrix notation.
+1. **Identify the objective.** What is the decision maker trying to maximize or minimize—for example, profit, cost, sales, or production?
+2. **Identify the activities (decision variables).** What choices can the decision maker make to pursue the objective? Define the unit of measurement for each activity.
+3. **Identify objective coefficients.** For each activity, determine its per-unit contribution to the objective and record its units.
+4. **Identify resources or requirements.** List the resources controlled by the decision maker, their available amounts, and their units. In problems without fixed resources, identify the relevant right-hand-side requirements instead.
+5. **Identify technical coefficients.** For every activity-resource pair, determine how much of the resource is used or supplied by one unit of the activity. Check the units carefully.
+6. **Write the structural constraints.** Translate resource limits or minimum requirements into $\leq$, $\geq$, or $=$ constraints.
+7. **Add variable restrictions and assemble the model.** Include nonnegativity (or other sign restrictions) and combine the objective and constraints into a complete scalar model. Descriptive constraint labels make the model easier to audit and interpret.
 
-**Economic interpretation:**
+Throughout the process, check that every term within an equation has compatible units. Formulation improves through practice: solve many verbal problems, compare alternative specifications, and ask whether each equation faithfully represents the decision setting.
 
--   $\pi$: profit per unit.
--   $A$: resource use matrix.
--   $b$: resource endowment.
 
-------------------------------------------------------------------------
 
-### Model Building Process (McCarl framework)
-
-1.  Identify **decision variables**.
-2.  State the **objective**.
-3.  Identify and formulate **constraints**.
-4.  Collect data.
-5.  Translate into computer-readable form.
-6.  Solve and interpret.
-
---------------------
-
-### Farm LP Example
+## Farm LP Example
 
 A farmer has 500 acres of land available and is deciding how to allocate it between wheat and corn.
 Each acre of wheat yields a profit of $200, requires 3 hours of labor, and 4 units of fertilizer.
@@ -52,7 +39,7 @@ the land, labor, fertilizer, and nonnegativity restrictions.
 **Decision variables.**  
 Let $W$ = acres of wheat, $C$ = acres of corn.
 
-### Scalar (algebraic) form
+### Scalar form
 $$
 \begin{aligned}
 \max_{W,C}\quad 
@@ -90,96 +77,36 @@ b=\begin{bmatrix}
 $$
 
 
--------------------------
+## Properties of LP
 
-## Summary
+- **Objective** is to either maximize or minimize
+- **Constraints**: linear inequalities or equalities that limit the feasible choices (e.g., land, labor, fertilizer).
+- All equations are **linear**
+- **Decision variables**: the choices to be made (e.g., how many acres of wheat and corn to plant) are non-negative.
 
-- Optimization = decision making under constraints.
-- Mathematical programming provides a general framework: decision variables, objective, constraints.
-- Linear programs (LPs): linear objective + linear constraints + nonnegativity.
-- Example: Farm resource allocation with land, labor, fertilizer.
+## Assumptions of Linear Programming
 
+The first three assumptions concern whether the model represents the decision problem appropriately; the remaining four state its mathematical and information requirements.
 
+- **Objective-function appropriateness:** one stated objective is sufficient to rank feasible choices.
+- **Decision-variable appropriateness:** all relevant choices are included and controlled by the decision maker.
+- **Constraint appropriateness:** the constraints accurately represent the relevant limits, requirements, and units.
+- **Proportionality:** each activity's per-unit contribution and resource use do not change with its level.
+- **Additivity:** the contribution of one activity does not depend on the level of another activity.
+- **Divisibility:** decision variables may take fractional values.
+- **Certainty:** objective, technical, and right-hand-side coefficients are known fixed values.
 
-\newpage
+When an assumption is unsuitable, the model may need an extension: multi-objective programming, integer programming, nonlinear programming, or stochastic programming.
 
-## **Day 2: Linear Programming in Practice**
+## Graphical Solution Method (Two Variables)
 
-### Review
-- General form of a mathematical program.
-- Structure of a linear program:
-  - Linear objective
-  - Linear constraints
-  - Nonnegativity
-- Wheat–Corn farm allocation example in scalar and matrix notation.
+### Key Geometry Terms
 
----
-
-
-### 7 Assumptions of Linear Programming
-
-Linear programming models rely on a set of assumptions that make them tractable but also limit their realism. McCarl & Spreen (Ch. 2.4) identify **seven important assumptions**. The first three involve the *appropriateness of the formulation*; the last four describe *mathematical properties* of the LP model.
-
----
-
-#### 1. Objective Function Appropriateness
-- The objective function is assumed to be the **sole criterion** for evaluating solutions.  
-- This means the decision maker’s preferences can be fully represented by a single linear function (e.g., profit, cost, utility).  
-- In practice, decisions may depend on multiple objectives (profit, risk, leisure), but LP assumes one dominates.
-
-
-
-#### 2. Decision Variable Appropriateness
-- All relevant decision variables must be included, and each must be **fully controllable** by the decision maker.  
-- Omitting key variables or including variables outside the decision maker’s control invalidates the formulation.
-
-
-
-#### 3. Constraint Appropriateness
-- Constraints must **accurately and completely capture** the limits faced by the decision maker:
-  - They fully describe resource, technological, and institutional limits.  
-  - Resources within a constraint are **homogeneous** and freely substitutable among activities.  
-  - No constraint should arbitrarily rule out feasible choices.  
-  - Constraints cannot be bent outside the model.
-
-
-
-#### 4. Proportionality
-- Contributions of activities to the objective function are **proportional** to their level.  
-- Likewise, resource use is proportional: doubling an activity doubles its input use.  
-- This rules out fixed costs, economies of scale, or price effects that depend on output level.
-
-
-
-#### 5. Additivity
-- Total contributions to the objective and resource use are the **sum of individual contributions**.  
-- No interactions among variables are allowed (e.g., no multiplicative terms).  
-
-
-#### 6. Divisibility
-- Decision variables can take on **fractional values**.  
-- This assumes continuous activities (e.g., acres of land).  
-- When variables must be integer (e.g., number of tractors), integer programming is required instead.
-
-
-#### 7. Certainty
-- All parameters (objective coefficients, resource availability, input-output coefficients) are **known with certainty**.  
-- LP is thus a deterministic model.  
-- In practice, parameters are often estimated, and uncertainty can be explored with sensitivity or stochastic programming.
-
-
-
-### Teaching Note
-These assumptions both **enable LP to be solvable** and **limit realism**. They provide a natural segue to later topics in the course:
-
-- Multi-objective programming (relax objective function assumption)  
-- Integer programming (relax divisibility)  
-- Stochastic programming (relax certainty)  
-- Nonlinear programming (relax proportionality and additivity)
-
------
-
-### Graphical Solution Method (2 variables)
+- A **feasible solution** satisfies every constraint; an **infeasible solution** violates at least one.
+- The **feasible region** is the set of all feasible solutions.
+- The feasible region of an LP is **convex**: the line segment joining any two feasible solutions is also feasible.
+- An **extreme point** (or vertex) is a corner of the feasible region.
+- A constraint is **binding** when it holds with equality at a solution; otherwise, it has **slack**.
 
 **Step 1. Draw the constraints.**
 
@@ -187,9 +114,7 @@ These assumptions both **enable LP to be solvable** and **limit realism**. They 
 - Labor: $3W + 4C \le 1800$
 - Fertilizer: $4W + 3C \le 2000$
 - Nonnegativity: $W, C \ge 0$
-- Plot based on endpoints. set one var 0 and devote all resources to that var.
-
-
+- Plot based on endpoints. Set one variable to zero and devote all resources to the other variable.
 
 ```{r}
 #| echo: false
@@ -207,7 +132,8 @@ df <- data.frame(
   xW = xW,
   land = land_line,
   labor = labor_line,
-  fert = fertilizer_line
+  fert = fertilizer_line,
+  isoprofit = (90000 - 200 * xW) / 300
 )
 
 vertices <- data.frame(
@@ -216,18 +142,28 @@ vertices <- data.frame(
 )
 
 ggplot(df, aes(x=xW)) +
-  geom_line(aes(y=land), color="blue") +
-  geom_line(aes(y=labor), color="red") +
-  geom_line(aes(y=fert), color="green") +
+  geom_line(aes(y=land, color="Land"), linewidth=0.8) +
+  geom_line(aes(y=labor, color="Labor"), linewidth=0.8) +
+  geom_line(aes(y=fert, color="Fertilizer"), linewidth=0.8) +
+  geom_line(aes(y=isoprofit, color="Isoprofit"),
+            linewidth=0.8, linetype="dashed") +
   geom_point(data=vertices, aes(x=xW, y=xC), size=3, color="black") +
   geom_text(data=vertices, aes(x=xW, y=xC, label=paste0("(",xW,",",xC,")")),
             hjust=-0.1, vjust=-0.5, size=3) +
   coord_cartesian(xlim=c(0,600), ylim=c(0,600)) +
-  labs(x="Wheat",y="Corn")
-
-
+  scale_color_manual(
+    name = "Constraint",
+    values = c(
+      Land = "#0072B2",
+      Labor = "#D55E00",
+      Fertilizer = "#009E73",
+      `Isoprofit` = "#4D4D4D"
+    )
+  ) +
+  labs(x="Wheat", y="Corn") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 ```
-
 
 **Step 2. Identify the feasible region.**
 
@@ -238,19 +174,44 @@ ggplot(df, aes(x=xW)) +
 
 - Profit = $200W + 300C$.
 - Show isoprofit lines:
-    - Suppose we plot \$6000 profit. All wheat no corn, then all corn no wheat.
-    - lines of constant profit slope $-\tfrac{200}{300}=-\tfrac{2}{3}$.
+  - Suppose we plot \$90,000 profit. All wheat no corn, then all corn no wheat.
+  - Lines of constant profit have slope $-\tfrac{200}{300}=-\tfrac{2}{3}$.
 
 **Step 4. Locate the optimum.**
 
 - Slide the isoprofit line outward until the last point of contact with the feasible region.
 - Optimum is always at a **corner point** (fundamental theorem of LP).
 
----
+**Step 5. Verify algebraically.**
 
-### Simplex Method
+Use the binding constraints to recover the exact solution, then check every constraint and calculate the objective value. In the farm example, the graphical optimum has $W=0$ and the labor constraint binds:
 
-#### Why We Need It
+$$
+4C = 1800 \quad \Rightarrow \quad C = 450.
+$$
+
+The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer use $(1350 \leq 2000)$, and it yields profit $200(0)+300(450)=135{,}000$.
+
+
+
+## Section 1 Summary
+
+- LP is a framework for making decisions subject to constraints.
+- Formulate an LP by identifying the objective, activities and their units, coefficients, resources or requirements, and variable restrictions.
+- A standard LP combines a linear objective, linear structural constraints, and sign restrictions; its coefficients are summarized in $c$, $A$, and $b$.
+- LP relies on assumptions about appropriate objectives, variables, and constraints, along with proportionality, additivity, divisibility, and certainty.
+- In two-variable problems, graph the constraints to find the feasible region, use an isoprofit line to locate an extreme-point optimum, and verify the result algebraically.
+
+
+
+
+\newpage
+
+# Solving Linear Programs
+
+## Simplex Method
+
+### Why We Need It
 - The graphical method only works for **two variables**.
 - Real problems may involve **hundreds or thousands** of variables.
 - Key geometric fact:  
@@ -260,7 +221,7 @@ ggplot(df, aes(x=xW)) +
 
 ---
 
-#### Core Idea
+### Core Idea
 - Start at a **basic feasible solution (BFS)** — a corner point of the feasible region.
 - At each step:
   1. Identify an **entering variable**: an activity whose introduction can improve the objective.
@@ -276,7 +237,7 @@ ggplot(df, aes(x=xW)) +
 - Continue until no edge yields improvement.
 - The same logic applies in higher dimensions, even though we cannot draw the polytope.
 
-### What to take from simplex
+### What to Take from Simplex
 
 - A **basis** identifies the activities currently used to describe a corner-point solution.
 - **Reduced costs** summarize whether introducing a currently inactive activity can improve the objective.
@@ -285,7 +246,7 @@ ggplot(df, aes(x=xW)) +
 
 Modern solvers carry out the tableau and matrix calculations. In this course, the emphasis is on formulating the problem, recognizing the logic of a pivot, and interpreting the solution—not hand-executing a long simplex tableau.
 
-### Optional reference for simplex mechanics
+### Optional Reference for Simplex Mechanics
 
 For a matrix-algebra treatment of the simplex algorithm, including tableau mechanics, initial feasible bases, and Phase I/Phase II methods, see McCarl and Spreen, Chapter III, especially Sections 3.2 and 3.4. The graphical method above supplies the intuition needed to interpret what the algorithm is doing.
 
@@ -294,7 +255,7 @@ For a matrix-algebra treatment of the simplex algorithm, including tableau mecha
 Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlxs](LP_land_alloc.xlsx)
 
 
-### Summary
+## Day 2 Summary
 - Linear programming problems have:
   - **Decision variables** (choices to make),
   - **Objective function** (profit, cost, etc.),
@@ -311,21 +272,21 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 - Solvers carry out the pivot calculations; our focus is their modeling and economic interpretation.
 
 
-## Sensitivity Analysis 
+# Sensitivity Analysis
 
-### Review
+## Review
 - LPs make 7 assumptions. What are a few?
 - How do LPs algorithms solve? What is the fundamental theorem of LP?
 
 
-### Motivation
+## Motivation
 - LPs give an **optimal solution** and an **objective value**.
 - But: parameters (profits, resources, input requirements) are rarely known with certainty.
 - We need to know how **robust** the solution is.
 
 ---
 
-### What is Sensitivity Analysis?
+## What Is Sensitivity Analysis?
 - Also called **post-optimality analysis**.
 - Asks: *how much can model parameters change before the current solution changes?*
 - Focus on three categories:
@@ -335,7 +296,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ---
 
-### RHS (Right-Hand Side) Ranging
+## RHS (Right-Hand Side) Ranging
 - Suppose resource availability changes:  
   $$b_{new} = b_{old} + \Delta r$$
 - Current solution remains optimal **as long as basic variables stay $≥$ 0**. 
@@ -346,7 +307,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ---
 
-### Objective Coefficient Ranging
+## Objective Coefficient Ranging
 - How much can a profit coefficient change before the basis changes?
 - For **nonbasic variables**: reduced costs must remain $≥$ 0.
 - For **basic variables**: check feasibility of objective row with new coefficient.
@@ -354,7 +315,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ---
 
-### Technical Coefficient Changes
+## Technical Coefficient Changes
 - What if technology or input requirements change?
 - Example: wheat now needs 3.5 instead of 3 labor hours per acre.
 - Sensitivity analysis uses shadow prices to approximate the effect on objective value.
@@ -362,7 +323,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ---
 
-### The 100% Rule
+## The 100% Rule
 
 The 100% Rule provides a way to evaluate whether simultaneous changes in objective function coefficients or right-hand side (RHS) values will preserve the current optimal basis — that is, whether the current solution remains optimal without re-solving the problem.
 
@@ -394,9 +355,9 @@ Then, compute: $\sum_{i \in \text{changed vars}} r_i$. If: $\sum r_i \leq 1$, th
 
 ---
 
-### **Wheat–Corn Example (Excel Solver Report):**
+## Wheat–Corn Example (Excel Solver Report)
 
-#### Excel top panel: Variable Cells
+### Excel Top Panel: Variable Cells
 
 Interpretation of columns:
 
@@ -416,7 +377,7 @@ Ranges:
 - Corn: profit can fall as much as 33.3 (300 → 266.7) before solution changes.
 - Interpretation: Corn dominates under current prices. Wheat only becomes attractive if its relative profit improves substantially.
 
-#### Excel bottom panel: Constraints
+### Excel Bottom Panel: Constraints
 
 Interpretation of columns:
 
@@ -441,7 +402,7 @@ Interpretation of results:
 
 ---
 
-### Economic Interpretation
+## Economic Interpretation
 - **Shadow prices**: marginal value of resources.
 - **Allowable ranges**: robustness of those shadow prices.
 - **Managerial use**:  
@@ -451,7 +412,7 @@ Interpretation of results:
 
 ---
 
-### Summary
+## Summary
 - Sensitivity analysis extends LP results beyond a single point solution.
 - Provides insight into:
   - Resource valuation (RHS changes),
@@ -460,9 +421,9 @@ Interpretation of results:
 
 ---
 
-## Getting Started with R & RStudio
+# Getting Started with R & RStudio
 
-### RStudio Orientation (2–3 min tour)
+## RStudio Orientation (2–3 Minute Tour)
 
 - **Source Pane (top-left):** where you edit scripts (`.R`) and notebooks (`.qmd`, `.Rmd`).
 - **Console (bottom-left):** runs commands immediately (`>` prompt).
@@ -477,7 +438,7 @@ Interpretation of results:
 
 ---
 
-### Preview
+## Preview
 - Next class: **duality** — formalize the relationship between primal and dual problems.
 - Show how shadow prices emerge naturally from the dual formulation.
 
@@ -642,7 +603,7 @@ The **complementary slackness conditions** link the primal and dual solutions. T
 
 
 
-# Summary
+## Summary
 
 - Every LP has a corresponding dual LP.
 - Dual variables represent shadow prices of primal constraints.
@@ -1051,4 +1012,3 @@ Draw the parallels:
 - Discussion prompts:  
   - Which sector has the larger multiplier?  
   - What happens to required outputs if one coefficient $a_{ij}$ increases (e.g., manufacturing requires more agriculture)?  
-
