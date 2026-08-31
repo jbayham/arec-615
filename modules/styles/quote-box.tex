@@ -1,0 +1,19 @@
+% Render Markdown blockquotes (>) as compact, light-gray callout boxes in PDF.
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{quotebox}{
+  enhanced,
+  breakable,
+  colback=black!6,
+  colframe=black!22,
+  boxrule=0.35pt,
+  arc=1.2mm,
+  left=1.5mm,
+  right=1.5mm,
+  top=1mm,
+  bottom=1mm,
+  before skip=0.9\baselineskip,
+  after skip=0.9\baselineskip
+}
+
+\renewenvironment{quote}{\begin{quotebox}}{\end{quotebox}}

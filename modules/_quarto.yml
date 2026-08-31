@@ -7,3 +7,4 @@ format:
     number-sections: true
     documentclass: article
     geometry: margin=1in
+    include-in-header: styles/quote-box.tex
