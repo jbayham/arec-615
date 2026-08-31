@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carbon-Abatement LP: 3D Constraint Planes</title>
+  <script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #1f2933;
+      background: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1.25rem;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.3rem, 3vw, 1.9rem);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 0.6rem 0 0.9rem;
+      color: #52616b;
+      font-size: 0.95rem;
+    }
+
+    button {
+      padding: 0.4rem 0.65rem;
+      border: 1px solid #52616b;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #1f2933;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    fieldset {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    legend {
+      float: left;
+      margin-right: 0.2rem;
+      font-weight: 600;
+    }
+
+    label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+    }
+
+    input[type="checkbox"] {
+      accent-color: #0072B2;
+    }
+
+    button:hover,
+    button:focus-visible {
+      background: #edf2f5;
+    }
+
+    #carbon-abatement-plot {
+      width: 100%;
+      height: min(72vh, 720px);
+      min-height: 460px;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Carbon-Abatement LP: Constraint Planes and Feasible Vertices</h1>
+    <div class="controls">
+      <span>Drag to rotate · Scroll to zoom · Double-click to reset</span>
+      <fieldset>
+        <legend>Show:</legend>
+        <label><input id="toggle-co2" type="checkbox" checked> CO₂</label>
+        <label><input id="toggle-ch4" type="checkbox" checked> Methane</label>
+        <label><input id="toggle-n2o" type="checkbox" checked> Nitrous oxide</label>
+        <label><input id="toggle-optimum" type="checkbox" checked> Optimal edge</label>
+      </fieldset>
+      <button id="reset-view" type="button">Reset view</button>
+    </div>
+    <div id="carbon-abatement-plot" role="img" aria-label="Interactive three-dimensional plot of carbon dioxide, methane, and nitrous-oxide constraints for the carbon-abatement linear program."></div>
+  </main>
+
+  <script>
+    const plotElement = document.getElementById("carbon-abatement-plot");
+    const resetButton = document.getElementById("reset-view");
+    const traceToggles = [
+      { control: "toggle-co2", trace: 0 },
+      { control: "toggle-ch4", trace: 1 },
+      { control: "toggle-n2o", trace: 2 },
+      { control: "toggle-optimum", trace: 3 }
+    ];
+
+    const palette = {
+      co2: "#D55E00",
+      ch4: "#009E73",
+      n2o: "#CC79A7",
+      vertices: "#1f2933",
+      optimum: "#0072B2"
+    };
+
+    const defaultCamera = {
+      eye: { x: 1.65, y: 1.45, z: 0.95 },
+      up: { x: 0, y: 0, z: 1 },
+      center: { x: 0, y: 0, z: 0 }
+    };
+
+    const B = Array.from({ length: 41 }, (_, i) => (16 * i) / 40);
+    const M = Array.from({ length: 41 }, (_, i) => (8 * i) / 40);
+
+    function planeTrace(name, color, fValue) {
+      const z = M.map((m) => B.map((b) => {
+        const f = fValue(b, m);
+        return f >= 0 && f <= 7 ? f : null;
+      }));
+
+      return {
+        type: "surface",
+        name,
+        x: B,
+        y: M,
+        z,
+        showscale: false,
+        opacity: 0.42,
+        colorscale: [[0, color], [1, color]],
+        hovertemplate:
+          "<b>" + name + "</b><br>" +
+          "Boiler retrofits: %{x:.2f}<br>" +
+          "Methane capture: %{y:.2f}<br>" +
+          "Fuel switching: %{z:.2f}<extra></extra>"
+      };
+    }
+
+    const vertices = [
+      { label: "CO₂, N₂O, B = 0", B: 0, M: 115 / 21, F: 5 / 7, cost: 8.9286 },
+      { label: "CO₂, N₂O, F = 0", B: 5 / 3, M: 50 / 9, F: 0, cost: 7.5 },
+      { label: "CO₂, B = 0, F = 0", B: 0, M: 20 / 3, F: 0, cost: 8 },
+      { label: "N₂O, B = 0, M = 0", B: 0, M: 0, F: 75 / 13, cost: 19.0385 },
+      { label: "N₂O, M = 0, F = 0", B: 15, M: 0, F: 0, cost: 7.5 }
+    ];
+
+    const optimalB = Array.from({ length: 100 }, (_, i) => 5 / 3 + (15 - 5 / 3) * i / 99);
+    const optimalM = optimalB.map((b) => (75 - 5 * b) / 12);
+
+    const traces = [
+      planeTrace("CO₂ requirement", palette.co2, (b, m) => (100 - 10 * b - 15 * m) / 25),
+      planeTrace("Methane requirement", palette.ch4, (b, m) => (25 - 2 * b - 5 * m) / 7),
+      planeTrace("Nitrous-oxide requirement", palette.n2o, (b, m) => (75 - 5 * b - 12 * m) / 13),
+      {
+        type: "scatter3d",
+        mode: "lines",
+        name: "Optimal edge (cost = $7.5m)",
+        x: optimalB,
+        y: optimalM,
+        z: optimalB.map(() => 0),
+        line: { color: palette.optimum, width: 8 },
+        hovertemplate: "<b>Optimal plan</b><br>Cost: $7.5 million<extra></extra>"
+      },
+      {
+        type: "scatter3d",
+        mode: "markers",
+        name: "Feasible vertices",
+        x: vertices.map((v) => v.B),
+        y: vertices.map((v) => v.M),
+        z: vertices.map((v) => v.F),
+        marker: { color: palette.vertices, size: 5 },
+        customdata: vertices.map((v) => [v.label, v.cost]),
+        hovertemplate:
+          "<b>%{customdata[0]}</b><br>" +
+          "B = %{x:.2f}, M = %{y:.2f}, F = %{z:.2f}<br>" +
+          "Cost = $%{customdata[1]:.2f} million<extra></extra>"
+      }
+    ];
+
+    const layout = {
+      margin: { l: 0, r: 0, b: 0, t: 20 },
+      paper_bgcolor: "#ffffff",
+      font: { family: "system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif", color: "#1f2933" },
+      legend: {
+        orientation: "h",
+        x: 0,
+        y: 0.02,
+        xanchor: "left",
+        yanchor: "bottom",
+        itemclick: false,
+        itemdoubleclick: false
+      },
+      scene: {
+        camera: defaultCamera,
+        aspectmode: "manual",
+        aspectratio: { x: 1.55, y: 1, z: 0.85 },
+        xaxis: { title: "Boiler retrofits (B)", range: [0, 16], gridcolor: "#d9e1e5", zerolinecolor: "#52616b" },
+        yaxis: { title: "Methane capture (M)", range: [0, 8], gridcolor: "#d9e1e5", zerolinecolor: "#52616b" },
+        zaxis: { title: "Fuel switching (F)", range: [0, 7], gridcolor: "#d9e1e5", zerolinecolor: "#52616b" }
+      }
+    };
+
+    const config = { responsive: true, displaylogo: false };
+
+    Plotly.newPlot(plotElement, traces, layout, config);
+
+    traceToggles.forEach(({ control, trace }) => {
+      document.getElementById(control).addEventListener("change", (event) => {
+        Plotly.restyle(plotElement, { visible: event.target.checked ? true : "legendonly" }, [trace]);
+      });
+    });
+
+    resetButton.addEventListener("click", () => {
+      Plotly.relayout(plotElement, { "scene.camera": defaultCamera });
+    });
+  </script>
+</body>
+</html>
