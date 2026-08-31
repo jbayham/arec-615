@@ -2,7 +2,7 @@
 title: Linear Programming
 ---
 
-# Foundations of Linear Programming
+# Day 1: Foundations of Linear Programming
 
 What is linear programming (LP)? It is a **mathematical optimization framework** for making decisions under constraints. 
 
@@ -194,7 +194,8 @@ The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer 
 
 
 
-## Section 1 Summary
+
+## Day 1 Summary
 
 - LP is a framework for making decisions subject to constraints.
 - Formulate an LP by identifying the objective, activities and their units, coefficients, resources or requirements, and variable restrictions.
@@ -207,7 +208,63 @@ The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer 
 
 \newpage
 
-# Solving Linear Programs
+# Day 2: Solving Linear Programs
+
+Day 1 recap:
+
+- What was the decision the farmer had to make? What did $W$ and $C$ represent?
+
+
+## Graphical solution method (2 variables)
+
+| Vertex        |        Profit |
+| ------------- | ------------: |
+| $(W,C)=(0,0)$ |           \$0 |
+| $(0,450)$      | **\$135,000** |
+| $(200,300)$  |     \$130,000 |
+| $(500,0)$    |     \$100,000 |
+
+Why don't we need to check (371,171)? Because it is not a vertex of the feasible region.
+
+> Fundamental theorem of linear programming: If an LP has an optimal solution, at least one of them occurs at a vertex of the feasible region.
+
+### Algebraic solution: find and compare the vertices
+
+The carbon-abatement model has three decision variables, so a vertex is usually found by setting **three independent constraints** to equality. The candidate binding constraints can be emissions requirements or nonnegativity restrictions such as $B=0$.
+
+For example, set the nitrous-oxide requirement and $M=F=0$ to equality:
+
+$$
+5B = 75 \quad \Rightarrow \quad (B,M,F)=(15,0,0).
+$$
+
+This candidate is feasible because it reduces carbon dioxide by $150\geq100$, methane by $30\geq25$, and nitrous oxide by $75$. Its cost is $0.5(15)=\$7.5$ million.
+
+To find another candidate, set the carbon-dioxide and nitrous-oxide requirements to equality and set $F=0$:
+
+$$
+\begin{aligned}
+10B+15M &= 100,\\
+5B+12M &= 75.
+\end{aligned}
+$$
+
+Doubling the second equation and subtracting the first gives $9M=50$, so $M=50/9$ and $B=5/3$. This point is feasible because its methane reduction is $280/9\approx31.1\geq25$.
+
+Repeating this process for all combinations of three binding constraints, and discarding any intersection that violates a remaining constraint, gives the feasible vertices below.
+
+| Binding constraints | $(B,M,F)$ | Cost (million \$) |
+|---|---:|---:|
+| CO$_2$, N$_2$O, $B=0$ | $(0,115/21,5/7)$ | 8.93 |
+| CO$_2$, N$_2$O, $F=0$ | $(5/3,50/9,0)$ | **7.50** |
+| CO$_2$, $B=0$, $F=0$ | $(0,20/3,0)$ | 8.00 |
+| N$_2$O, $B=0$, $M=0$ | $(0,0,75/13)$ | 19.04 |
+| N$_2$O, $M=0$, $F=0$ | $(15,0,0)$ | **7.50** |
+
+The smallest cost is \$7.5 million. Because two vertices tie, every feasible point on the line segment between $(5/3,50/9,0)$ and $(15,0,0)$ is also optimal.
+
+This is an example of **multiple optimal solutions**.
+
 
 ## Simplex Method
 
@@ -219,7 +276,7 @@ The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer 
   - The **optimal solution lies at a vertex (corner point)**.  What about the problem makes this a fact?
 - The simplex method provides a **systematic way** to move from vertex to vertex until the best one is found.
 
----
+
 
 ### Core Idea
 - Start at a **basic feasible solution (BFS)** — a corner point of the feasible region.
@@ -229,7 +286,50 @@ The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer 
   3. **Pivot** to a neighboring BFS.
 - Stop when no variable can improve the objective — this is optimal.
 
----
+### One pivot without a full tableau
+
+Return to the wheat--corn model from Day 1. We can use it to see what the simplex terms mean without carrying out a long sequence of row operations:
+
+$$
+\begin{aligned}
+\max\quad & z = 200W + 300C \\
+\text{s.t.}\quad
+& W+C \leq 500 && \text{(land)},\\
+& 3W+4C \leq 1800 && \text{(labor)},\\
+& 4W+3C \leq 2000 && \text{(fertilizer)},\\
+& W,C \geq 0.
+\end{aligned}
+$$
+
+Add slack variables to write the resource constraints as equalities:
+
+$$
+\begin{aligned}
+W+C+s_L &= 500,\\
+3W+4C+s_{\text{labor}} &= 1800,\\
+4W+3C+s_F &= 2000,\\
+s_L,s_{\text{labor}},s_F &\geq 0.
+\end{aligned}
+$$
+
+At the origin, $W=C=0$, so $(s_L,s_{\text{labor}},s_F)=(500,1800,2000)$. This is a BFS: the slack variables form the initial **basis** and record the unused resources.
+
+- At this point, a unit of corn raises profit by \$300, compared with \$200 for a unit of wheat. Choose $C$ as the **entering variable**.
+- Let $C=t$ while $W=0$. The slack equations become $s_L=500-t$, $s_{\text{labor}}=1800-4t$, and $s_F=2000-3t$. Feasibility requires
+  $$
+  t\leq500,\qquad t\leq\frac{1800}{4}=450,\qquad t\leq\frac{2000}{3}\approx666.7.
+  $$
+- Labor is reached first, so $s_{\text{labor}}$ is the **leaving variable**. This is the **ratio test**: the smallest nonnegative limit determines how far the entering activity can increase.
+- The pivot moves us to the neighboring vertex $(W,C)=(0,450)$, where $(s_L,s_{\text{labor}},s_F)=(50,0,650)$ and $z=\$135{,}000$. The basis changes from $\{s_L,s_{\text{labor}},s_F\}$ to $\{s_L,C,s_F\}$.
+
+The algorithm then checks whether bringing wheat into the plan would improve profit. To remain on the binding labor constraint, one additional acre of wheat requires reducing corn by $3/4$ acre. The resulting change in profit is
+
+$$
+200 - 300\left(\frac{3}{4}\right) = -25.
+$$
+
+Thus wheat has no profitable direction in which to enter, and the current BFS is optimal. The simplex algorithm performs this same check-and-move process in higher dimensions, using matrix operations rather than a graph.
+
 
 ### Intuition
 - Simplex is like **walking along the edges** of the feasible polygon.
@@ -256,20 +356,11 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 
 ## Day 2 Summary
-- Linear programming problems have:
-  - **Decision variables** (choices to make),
-  - **Objective function** (profit, cost, etc.),
-  - **Constraints** (resource limits, requirements).
-- Graphical method (2 variables) shows:
-  - Feasible region = convex polygon.
-  - Optimum occurs at a **corner point**.
-- **Fundamental theorem of LP:** optimum is always at a vertex of the feasible region.
-- **Simplex method** generalizes:
-  - Moves systematically from one **basic feasible solution (BFS)** to another.
-  - Uses **entering and leaving variables** to pivot.
-  - Stops when no further improvement is possible.
-- **Slack variables** convert inequalities to equalities and measure unused resources.
-- Solvers carry out the pivot calculations; our focus is their modeling and economic interpretation.
+- If a bounded LP has an optimum, at least one optimal solution occurs at a **vertex** of its feasible region.
+- **Simplex** generalizes the graphical corner-point search: it moves from one **basic feasible solution (BFS)** to a neighboring BFS until no feasible move improves the objective.
+- Slack variables convert “$\leq$” constraints to equalities, measure unused resources, and often provide a convenient initial basis.
+- In each iteration, choose an **entering variable** with potential to improve the objective; the **ratio test** identifies the **leaving variable** and keeps the solution feasible; a **pivot** updates the basis.
+- A different feasible starting vertex may change the path simplex takes, but not the optimal objective value. 
 
 
 # Sensitivity Analysis
