@@ -3,15 +3,15 @@
   reading: McCarl & Spreen Chapter 1
 - date: '2026-08-27'
   topic: 'Linear Programming: formulation and graphical interpretation'
-  reading: ''
+  reading: Kaiser and Messer Chapter 1
 - date: '2026-09-01'
-  topic: LP formulation from data
-  reading: ''
-- date: '2026-09-03'
   topic: 'LP: solving and interpreting a model'
   reading: ''
-- date: '2026-09-08'
+- date: '2026-09-03'
   topic: LP sensitivity and shadow values
+  reading: ''
+- date: '2026-09-08'
+  topic: LP duality as economic interpretation
   reading: ''
 - date: '2026-09-10'
   topic: LP Application
@@ -20,7 +20,7 @@
   topic: Presentation/discussion
   reading: ''
 - date: '2026-09-17'
-  topic: LP duality as economic interpretation
+  topic: LP Application
   reading: ''
 - date: '2026-09-22'
   topic: Presentation/discussion
