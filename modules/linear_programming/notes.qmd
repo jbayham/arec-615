@@ -210,9 +210,7 @@ The solution $(W,C)=(0,450)$ satisfies land use $(450 \leq 500)$ and fertilizer 
 
 # Day 2: Solving Linear Programs
 
-Day 1 recap:
 
-- What was the decision the farmer had to make? What did $W$ and $C$ represent?
 
 
 ## Graphical solution method (2 variables)
@@ -224,13 +222,24 @@ Day 1 recap:
 | $(200,300)$  |     \$130,000 |
 | $(500,0)$    |     \$100,000 |
 
-Why don't we need to check (371,171)? Because it is not a vertex of the feasible region.
+- Why don't we need to check (371,171)? Because it is not a vertex of the feasible region.
 
 > Fundamental theorem of linear programming: If an LP has an optimal solution, at least one of them occurs at a vertex of the feasible region.
 
-### Algebraic solution: find and compare the vertices
+- Which constraints bind at the optimum? 
 
-The carbon-abatement model has three decision variables, so a vertex is usually found by setting **three independent constraints** to equality. The candidate binding constraints can be emissions requirements or nonnegativity restrictions such as $B=0$.
+- What parameters of the problem would need to change for wheat to enter the solution? 
+
+### Carbon abatement problem: algebraic solution
+
+> Write the carbon-abatement problem in matrix form. Identify the decision variables, objective coefficients, technical coefficients, and right-hand-side requirements.
+
+- The carbon-abatement model has three decision variables.
+
+> Show 3d plot of carbon-abatement feasible region.
+
+- We can find a vertex by setting **three independent constraints** to equality. 
+- The candidate binding constraints can be emissions requirements or nonnegativity restrictions such as $B=0$.
 
 For example, set the nitrous-oxide requirement and $M=F=0$ to equality:
 
@@ -249,7 +258,7 @@ $$
 \end{aligned}
 $$
 
-Doubling the second equation and subtracting the first gives $9M=50$, so $M=50/9$ and $B=5/3$. This point is feasible because its methane reduction is $280/9\approx31.1\geq25$.
+- Using Gaussian elimination, we can solve this system of equations. Doubling the second equation and subtracting the first gives $9M=50$, so $M=50/9$ and $B=5/3$. This point is feasible because its methane reduction is $280/9\approx31.1\geq25$.
 
 Repeating this process for all combinations of three binding constraints, and discarding any intersection that violates a remaining constraint, gives the feasible vertices below.
 
@@ -269,11 +278,8 @@ This is an example of **multiple optimal solutions**.
 ## Simplex Method
 
 ### Why We Need It
-- The graphical method only works for **two variables**.
+- The graphical method only works for **two or three variables**. Algebraic methods are tedious for large problems.
 - Real problems may involve **hundreds or thousands** of variables.
-- Key geometric fact:  
-  - The feasible region of an LP is a **convex polytope**.  
-  - The **optimal solution lies at a vertex (corner point)**.  What about the problem makes this a fact?
 - The simplex method provides a **systematic way** to move from vertex to vertex until the best one is found.
 
 
@@ -286,13 +292,13 @@ This is an example of **multiple optimal solutions**.
   3. **Pivot** to a neighboring BFS.
 - Stop when no variable can improve the objective — this is optimal.
 
-### One pivot without a full tableau
+### One pivot 
 
 Return to the wheat--corn model from Day 1. We can use it to see what the simplex terms mean without carrying out a long sequence of row operations:
 
 $$
 \begin{aligned}
-\max\quad & z = 200W + 300C \\
+\max\quad & 200W + 300C \\
 \text{s.t.}\quad
 & W+C \leq 500 && \text{(land)},\\
 & 3W+4C \leq 1800 && \text{(labor)},\\
@@ -306,23 +312,25 @@ Add slack variables to write the resource constraints as equalities:
 $$
 \begin{aligned}
 W+C+s_L &= 500,\\
-3W+4C+s_{\text{labor}} &= 1800,\\
+3W+4C+s_{K} &= 1800,\\
 4W+3C+s_F &= 2000,\\
-s_L,s_{\text{labor}},s_F &\geq 0.
+s_L,s_{K},s_F &\geq 0.
 \end{aligned}
 $$
 
-At the origin, $W=C=0$, so $(s_L,s_{\text{labor}},s_F)=(500,1800,2000)$. This is a BFS: the slack variables form the initial **basis** and record the unused resources.
+At the origin, $W=C=0$, so $(s_L,s_{K},s_F)=(500,1800,2000)$. This is a BFS: the slack variables form the initial **basis** and record the unused resources.
 
 - At this point, a unit of corn raises profit by \$300, compared with \$200 for a unit of wheat. Choose $C$ as the **entering variable**.
-- Let $C=t$ while $W=0$. The slack equations become $s_L=500-t$, $s_{\text{labor}}=1800-4t$, and $s_F=2000-3t$. Feasibility requires
+- Let $C=t$ while $W=0$. The slack equations become $s_L=500-t$, $s_{K}=1800-4t$, and $s_F=2000-3t$. Feasibility requires
   $$
   t\leq500,\qquad t\leq\frac{1800}{4}=450,\qquad t\leq\frac{2000}{3}\approx666.7.
   $$
-- Labor is reached first, so $s_{\text{labor}}$ is the **leaving variable**. This is the **ratio test**: the smallest nonnegative limit determines how far the entering activity can increase.
-- The pivot moves us to the neighboring vertex $(W,C)=(0,450)$, where $(s_L,s_{\text{labor}},s_F)=(50,0,650)$ and $z=\$135{,}000$. The basis changes from $\{s_L,s_{\text{labor}},s_F\}$ to $\{s_L,C,s_F\}$.
+- Labor is reached first, so $s_{\text{K}}$ is the **leaving variable**. This is the **ratio test**: the smallest nonnegative limit determines how far the entering activity can increase.
+- The pivot moves us to the neighboring vertex $(W,C)=(0,450)$, where $(s_L,s_{K},s_F)=(50,0,650)$ and $z=\$135{,}000$. The basis changes from $\{s_L,s_{K},s_F\}$ to $\{s_L,C,s_F\}$.
 
-The algorithm then checks whether bringing wheat into the plan would improve profit. To remain on the binding labor constraint, one additional acre of wheat requires reducing corn by $3/4$ acre. The resulting change in profit is
+Can we improve profit by adding wheat? 
+
+- To remain on the binding labor constraint, one additional acre of wheat requires reducing corn by $3/4$ acre (ratio of technical coefficients). The resulting change in profit is
 
 $$
 200 - 300\left(\frac{3}{4}\right) = -25.
@@ -337,18 +345,11 @@ Thus wheat has no profitable direction in which to enter, and the current BFS is
 - Continue until no edge yields improvement.
 - The same logic applies in higher dimensions, even though we cannot draw the polytope.
 
-### What to Take from Simplex
 
-- A **basis** identifies the activities currently used to describe a corner-point solution.
-- **Reduced costs** summarize whether introducing a currently inactive activity can improve the objective.
-- The **ratio test** preserves feasibility when the algorithm moves to the next corner.
-- A **slack variable** records unused capacity in a “$\leq$” constraint. A positive slack means that the corresponding resource is not fully used.
-
-Modern solvers carry out the tableau and matrix calculations. In this course, the emphasis is on formulating the problem, recognizing the logic of a pivot, and interpreting the solution—not hand-executing a long simplex tableau.
 
 ### Optional Reference for Simplex Mechanics
 
-For a matrix-algebra treatment of the simplex algorithm, including tableau mechanics, initial feasible bases, and Phase I/Phase II methods, see McCarl and Spreen, Chapter III, especially Sections 3.2 and 3.4. The graphical method above supplies the intuition needed to interpret what the algorithm is doing.
+For a matrix-algebra treatment of the simplex algorithm, see McCarl and Spreen, Chapter III, especially Sections 3.2 and 3.4. The graphical method above supplies the intuition needed to interpret what the algorithm is doing.
 
 ### Excel Solver
 
@@ -363,6 +364,8 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 - A different feasible starting vertex may change the path simplex takes, but not the optimal objective value. 
 
 
+
+\newpage
 # Sensitivity Analysis
 
 ## Review
