@@ -366,7 +366,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 
 \newpage
-# Sensitivity Analysis
+# Day 3: Sensitivity Analysis
 
 ## Review
 - LPs make 7 assumptions. What are a few?
@@ -382,72 +382,332 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 
 ## What Is Sensitivity Analysis?
 - Also called **post-optimality analysis**.
-- Asks: *how much can model parameters change before the current solution changes?*
+- Asks how changes in model parameters affect the optimal activities and objective value.
+- It supports both **what-if analysis** and, when a price varies systematically, a **price-quantity schedule** such as an individual supply curve.
 - Focus on three categories:
-  1. RHS (resources)  
-  2. Objective coefficients (profits/costs)  
-  3. Technical coefficients (input-output relationships)
+  1. Objective coefficients ($c_j$: unit profits, costs, or prices),
+  2. RHS values ($b_i$: resource endowments or requirements), and
+  3. Technical coefficients ($a_{ij}$: input-output relationships).
+
+The objective-coefficient walkthrough below follows the sequence in Kaiser and Messer,
+Chapter 1, pp. 34--37, but applies every step to our wheat--corn farm model.
 
 ---
 
-## RHS (Right-Hand Side) Ranging
-- Suppose resource availability changes:  
-  $$b_{new} = b_{old} + \Delta r$$
-- Current solution remains optimal **as long as basic variables stay $≥$ 0**. 
-- Interpretation:
-  - Within the allowable range, the **shadow price** is valid.
-  - Outside the range, the optimal activity mix shifts.
+## Walk-Through: Objective-Coefficient Sensitivity
+
+Returning to the wheat--corn farm example, the LP is:
+
+$$
+\begin{aligned}
+\max_{W,C}\quad & Z=200W+300C\\
+\text{s.t.}\quad
+& W+C\leq500 &&\text{(land)}\\
+& 3W+4C\leq1800 &&\text{(labor)}\\
+& 4W+3C\leq2000 &&\text{(fertilizer)}\\
+& W,C\geq0.
+\end{aligned}
+$$
+
+### Step 1: Start at the baseline optimum
+
+The baseline solution is $W^*=0$, $C^*=450$, and $Z^*=\$135{,}000$. Labor is binding;
+land and fertilizer have slack. The point also lies on the nonnegativity boundary $W=0$.
+
+Changing an objective coefficient changes the direction of an iso-profit line, but it does
+not move the feasible region. The question is therefore: how far can that line rotate before
+another corner becomes better than the corn-only corner?
+
+### Step 2: Write the relevant slopes
+
+Use general unit-profit coefficients $c_W$ and $c_C$:
+
+$$
+\max Z=c_WW+c_CC.
+$$
+
+Solving an iso-profit line for corn gives
+
+$$
+C=\frac{Z}{c_C}-\frac{c_W}{c_C}W,
+$$
+
+so its slope is $-c_W/c_C$. The labor constraint, which is the feasible edge leaving the
+corn-only corner, is
+
+$$
+C=450-\frac{3}{4}W,
+$$
+
+with slope $-3/4$.
+
+For the corn-only corner to remain optimal, moving rightward along the labor boundary
+must not increase profit. Thus, the iso-profit line must be no steeper than that edge:
+
+$$
+-\frac{c_W}{c_C}\geq-\frac{3}{4}
+\qquad\Longleftrightarrow\qquad
+\frac{c_W}{c_C}\leq\frac{3}{4}.
+$$
+
+Unlike the reading's feed-dealer example, this corner has only one adjacent structural
+constraint edge; the other binding condition is $W=0$. Therefore the coefficient ranges
+below have one finite endpoint rather than two.
+
+### Step 3: Range for wheat's unit profit
+
+Hold corn's unit profit at $c_C=300$. Then
+
+$$
+\frac{c_W}{300}\leq\frac{3}{4}
+\qquad\Longrightarrow\qquad
+c_W\leq225.
+$$
+
+So wheat's unit profit can rise from $200 to $225 per acre without changing the unique
+corn-only optimum. At $c_W=225$, the labor edge has the same slope as the iso-profit line:
+every feasible mix on that edge from $(W,C)=(0,450)$ to $(200,300)$ is optimal. Above
+$225, wheat enters the optimal plan.
+
+There is no finite allowable decrease for wheat's objective coefficient in this example:
+making an activity that is already unused even less attractive does not displace corn.
+
+### Step 4: Range for corn's unit profit
+
+Hold wheat's unit profit at $c_W=200$. Then
+
+$$
+\frac{200}{c_C}\leq\frac{3}{4}
+\qquad\Longrightarrow\qquad
+c_C\geq266.67.
+$$
+
+Corn's unit profit can fall from $300 to $266.67 per acre without changing the unique
+corn-only optimum. At $c_C=266.67$, the same alternative-optima edge appears; below
+that level, wheat enters the plan. There is no finite allowable increase for corn's unit
+profit, because a higher corn return reinforces the corn-only solution.
+
+### Step 5: Separate activity levels from the objective value
+
+Within the range, the activity levels stay at $W=0$ and $C=450$, but profit changes with
+the coefficient. For example, if corn's unit profit rises to $320, the plan remains corn-only
+while profit becomes
+
+$$
+Z^*=320(450)=\$144{,}000.
+$$
+
+This is the central distinction in objective-coefficient ranging: the **optimal basis and
+activity levels** can remain unchanged even though the **optimal objective value** changes.
+
+
+
+**Discussion prompts**
+
+1. If wheat profit rises to $220, should we re-solve the LP? Why or why not?
+2. Why is $225 a threshold for alternative optima rather than a point at which a solver must
+   choose a particular positive wheat acreage?
+3. If both crop prices change, why must we check the ratio $c_W/c_C$ rather than apply two
+   one-at-a-time ranges independently?
+
+---
+
+## Walk-Through: Resource Endowment (RHS) Sensitivity
+
+This walkthrough follows the resource-endowment method in Kaiser and Messer, Chapter 1,
+pp. 38--40, but applies it to the wheat--corn farm. Hold the objective coefficients and all
+other model parameters constant while changing one RHS value at a time.
+
+### Step 1: Identify resource use at the baseline optimum
+
+The three resource endowments are
+
+$$
+b_{\text{land}}=500,\qquad
+b_{\text{labor}}=1800,\qquad
+b_{\text{fert}}=2000.
+$$
+
+At $(W^*,C^*)=(0,450)$, the farm uses 450 acres of land, 1,800 labor hours, and 1,350
+units of fertilizer. Labor is binding; land has 50 acres of slack and fertilizer has 650 units
+of slack.
+
+**Question.** If the farm obtains one additional unit of a resource, how much does optimal
+profit change?
+
+### Step 2: Define the shadow price
+
+Following Kaiser and Messer, change resource $i$ by a small amount, re-solve the model,
+and compare the new and original optimal values:
+
+$$
+SP_i
+=\frac{Z^*(b_i+\Delta b_i)-Z^*(b_i)}{\Delta b_i}.
+$$
+
+For a one-unit increase, $\Delta b_i=1$, so the shadow price is simply the change in
+optimal profit. Because an LP value function is piecewise linear, this marginal value is exact
+for any RHS change that remains within the allowable range.
+
+### Step 3: Increase the binding labor endowment by one hour
+
+Raise labor availability from 1,800 to 1,801 hours. If the current basis remains optimal,
+wheat stays at zero and the new labor constraint binds:
+
+$$
+3W+4C=1801,\qquad W=0.
+$$
+
+Therefore,
+
+$$
+C'=\frac{1801}{4}=450.25.
+$$
+
+Check the remaining constraints:
+
+$$
+450.25\leq500\quad\text{(land)},\qquad
+3(450.25)=1350.75\leq2000\quad\text{(fertilizer)}.
+$$
+
+The new solution is feasible and its profit is
+
+$$
+Z'=300(450.25)=\$135{,}075.
+$$
+
+Thus,
+
+$$
+SP_{\text{labor}}
+=\frac{135{,}075-135{,}000}{1801-1800}
+=\$75\text{ per labor hour}.
+$$
+
+One more labor hour permits one-quarter acre of additional corn, worth
+$300(1/4)=75$ dollars. This is the operation's marginal value of labor capacity before paying
+to acquire it.
+
+### Step 4: Check the nonbinding resources
+
+Increasing land from 500 to 501 acres leaves the plan at $(0,450)$: land slack rises from
+50 to 51 acres, while profit remains \$135,000. Therefore,
+$SP_{\text{land}}=0$ at the current endowment.
+
+Likewise, increasing fertilizer from 2,000 to 2,001 units only raises fertilizer slack.
+The activity levels and profit do not change, so $SP_{\text{fert}}=0$ at the current
+endowment.
+
+ >A zero shadow price does not mean that a resource can never have value. It means that one additional unit has no value **at the current endowment and basis**.
+
+### Step 5: Derive the allowable labor range
+
+Let labor availability be the variable RHS $b_{\text{labor}}$. As long as the corn-only basis
+remains feasible,
+
+$$
+C=\frac{b_{\text{labor}}}{4},\qquad
+s_{\text{land}}=500-\frac{b_{\text{labor}}}{4},\qquad
+s_{\text{fert}}=2000-\frac{3b_{\text{labor}}}{4}.
+$$
+
+All basic variables must remain nonnegative. Ask what would $b_{labor}$ have to be for each basic variable to become zero:
+
+$$
+\begin{aligned}
+C\geq0 &\Longrightarrow b_{\text{labor}}\geq0,\\
+s_{\text{land}}\geq0 &\Longrightarrow b_{\text{labor}}\leq2000,\\
+s_{\text{fert}}\geq0 &\Longrightarrow b_{\text{labor}}\leq2666.67.
+\end{aligned}
+$$
+
+The tightest conditions give
+
+$$
+0\leq b_{\text{labor}}\leq2000.
+$$
+
+Starting from 1,800 hours, the allowable decrease is 1,800 hours and the allowable increase
+is 200 hours. Within this range,
+
+$$
+C^*=\frac{b_{\text{labor}}}{4},\qquad
+Z^*=75b_{\text{labor}},
+$$
+
+so the shadow price remains \$75 per hour. At 2,000 hours, land also becomes binding. Beyond
+that breakpoint, the farm cannot expand corn acreage, so the marginal value of more labor
+falls to zero.
+
+### Step 6: Derive the ranges for land and fertilizer
+
+At the baseline solution, corn uses 450 acres and 1,350 fertilizer units. Therefore:
+
+- The current basis remains feasible for $b_{\text{land}}\geq450$. The allowable decrease is
+  50 acres, the allowable increase is unbounded, and the current shadow price is zero.
+- The current basis remains feasible for $b_{\text{fert}}\geq1350$. The allowable decrease is
+  650 units, the allowable increase is unbounded, and the current shadow price is zero.
+
+The one-at-a-time RHS sensitivity results are:
+
+| Resource | Current RHS | Use | Slack | Shadow price | Allowable decrease | Allowable increase |
+|---|---:|---:|---:|---:|---:|---:|
+| Land | 500 | 450 | 50 | \$0/acre | 50 | $\infty$ |
+| Labor | 1,800 | 1,800 | 0 | \$75/hour | 1,800 | 200 |
+| Fertilizer | 2,000 | 1,350 | 650 | \$0/unit | 650 | $\infty$ |
+
+### Step 7: Use the ranges for what-if questions
+
+- **Add 100 labor hours.** This is within the allowable increase. Corn rises to 475 acres
+  and profit rises by $75(100)=7{,}500$ dollars.
+- **Add 250 labor hours.** This exceeds the allowable increase. Applying \$75 to all 250
+  hours would incorrectly predict an \$18,750 gain. Re-solving gives 500 corn acres and
+  \$150,000 profit, a gain of only \$15,000, because land becomes binding after the first
+  200 additional labor hours.
+- **Lose 75 acres of land.** The first 50 acres reduce slack but not profit. The remaining
+  25-acre loss forces corn down to 425 acres, reducing profit by $300(25)=7{,}500$ dollars.
+
+At an allowable-range endpoint, interpret the shadow price as one-sided: the marginal value
+on one side of the kink can differ from the marginal value on the other.
+
+**Discussion prompts**
+
+1. Why does labor have a positive shadow price while land and fertilizer initially have zero
+   shadow prices?
+2. Why can activity levels change even though the current basis and shadow price remain valid?
+3. What resource becomes binding after labor rises above 2,000 hours, and how does that alter
+   the value of additional labor?
 
 
 ---
 
-## Objective Coefficient Ranging
-- How much can a profit coefficient change before the basis changes?
-- For **nonbasic variables**: reduced costs must remain $≥$ 0.
-- For **basic variables**: check feasibility of objective row with new coefficient.
+## Solver Connection: Reduced Costs
+- The graphical condition above says that wheat can enter only when its unit profit exceeds
+  $225. In the Excel maximization convention, wheat's reduced cost is therefore
+  $200-225=-25$.
+- A nonbasic activity has a reduced cost of zero at the entry threshold; at the threshold,
+  alternative optima can occur. Sign conventions differ across solvers, so always interpret the
+  reported value using the solver's documentation.
+- Changing an objective coefficient never changes primal feasibility. For a basic activity,
+  the solver checks whether the implied dual prices and reduced costs remain feasible.
 
 
 ---
 
 ## Technical Coefficient Changes
 - What if technology or input requirements change?
-- Example: wheat now needs 3.5 instead of 3 labor hours per acre.
-- Sensitivity analysis uses shadow prices to approximate the effect on objective value.
-- Interpretation: tighter labor constraints may shift which crop dominates.
+- A change in $a_{ij}$ changes the feasible region itself, so it is not covered by the usual
+  one-at-a-time objective-coefficient or RHS ranges in a Solver sensitivity report.
+- For a small change that preserves the current basis, a shadow-price approximation is
+  $$\Delta Z^* \approx -y_i^*x_j^*\Delta a_{ij},$$
+  where $y_i^*$ is the shadow price of resource $i$ and $x_j^*$ is the activity level.
+- Example: if corn's labor requirement rises from 4 to 4.02 hours per acre, the wheat--corn
+  model predicts $\Delta Z^*\approx-75(450)(0.02)=-\$675$. Re-solve for a material change.
+- If an activity is currently zero, changing one of its technical coefficients has no local
+  effect on the objective value, although a sufficiently large change can make it enter.
 
----
 
-## The 100% Rule
-
-The 100% Rule provides a way to evaluate whether simultaneous changes in objective function coefficients or right-hand side (RHS) values will preserve the current optimal basis — that is, whether the current solution remains optimal without re-solving the problem.
-
-This rule applies separately to:
-	
-  - Changes in objective function coefficients (i.e., the $c_i$’s), and
-  - Changes in the RHS values of constraints (i.e., the $b_j$’s).
-
----
-
-Objective Function Coefficients
-
-Suppose multiple objective coefficients change. For each decision variable $x_i$, let:
-	
-  -	$\Delta c_i$ be the change in the objective coefficient.
-  -	$AL_i, AU_i$ be the allowable decrease and increase, respectively, as reported in the sensitivity analysis.
-
-Define the proportion of the allowable range used for each change:
-
-$$
-r_i =
-\begin{cases}
-\frac{|\Delta c_i|}{AL_i} & \text{if } \Delta c_i < 0 \\
-\frac{|\Delta c_i|}{AU_i} & \text{if } \Delta c_i > 0
-\end{cases}
-$$
-
-Then, compute: $\sum_{i \in \text{changed vars}} r_i$. If: $\sum r_i \leq 1$, then the current optimal basis remains optimal, although the optimal value of the objective function will generally change. If the sum exceeds 1, the basis may change, and re-solving the problem is required.
-
----
 
 ## Wheat–Corn Example (Excel Solver Report)
 
@@ -462,12 +722,14 @@ Interpretation of columns:
 
 Interpretation of results
 
-- Corn: optimal solution plants 450 acres of corn. Reduced cost = 0 because it’s in the basis.
-- Wheat: optimal solution plants 0 acres of wheat. Reduced cost = -25 means if wheat’s profit increased by more than $25/acre (from 200 → 225), it would enter the solution.
+- Corn: optimal solution plants 450 acres of corn. Reduced cost = 0 because corn is already in the solution
+- Wheat: optimal solution plants 0 acres of wheat. Reduced cost = -25 means a $25/acre
+  increase (from 200 to 225) reaches the alternative-optima threshold; an increase beyond
+  $25 makes wheat enter the solution.
 
 Ranges:
 
-- Wheat: profit can increase up to +25 before wheat enters.
+- Wheat: profit can increase by 25 before the current corner ceases to be uniquely optimal.
 - Corn: profit can fall as much as 33.3 (300 → 266.7) before solution changes.
 - Interpretation: Corn dominates under current prices. Wheat only becomes attractive if its relative profit improves substantially.
 
@@ -490,7 +752,8 @@ Interpretation of results:
 **Economic Takeaways for Discussion**
 
 - Which resource is scarce? Labor.
-- How much should the agent be willing to pay for an additional unit of labor? 75 per labor hour. This is also the opportunity cost of labor on this operation.
+- What is the operation's reservation value for an additional hour of labor capacity? $75 per
+  hour, before paying any cost of obtaining that capacity.
 - Why does wheat drop out of the solution? Because relative to corn it uses too much labor per profit dollar.
 - Policy thought experiment: If labor availability were increased by 200 hours, profit would rise by $15,000 (200 × 75).
 
@@ -513,7 +776,7 @@ Interpretation of results:
   - Profit robustness (objective changes),
   - Technology shifts (coefficient changes).
 
----
+
 
 # Getting Started with R & RStudio
 
