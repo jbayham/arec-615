@@ -431,11 +431,12 @@ $$
 C=\frac{Z}{\pi_C}-\frac{\pi_W}{\pi_C}W,
 $$
 
-so its slope is $-\pi_W/\pi_C$. The labor constraint, which is the feasible edge leaving the
-corn-only corner, is
+so its slope is $-\pi_W/\pi_C$. 
+
+The labor constraint, which is the feasible edge leaving the corn-only corner, is
 
 $$
-C=450-\frac{3}{4}W,
+C= \frac{b_{labor}}{a_{lc}} - \frac{a_{lw}}{a_{lc}}W = 450-\frac{3}{4}W,
 $$
 
 with slope $-3/4$.
@@ -698,7 +699,7 @@ on one side of the kink can differ from the marginal value on the other.
 - What if technology or input requirements change?
 - A change in $a_{ij}$ changes the feasible region itself, so it is not covered by the usual
   one-at-a-time objective-coefficient or RHS ranges in a Solver sensitivity report.
-- For a small change that preserves the current basis, a shadow-price approximation is
+- For a small change that preserves the current solution, a shadow-price approximation is
   $$\Delta Z^* \approx -y_i^*x_j^*\Delta a_{ij},$$
   where $y_i^*$ is the shadow price of resource $i$ and $x_j^*$ is the activity level.
 - Example: if corn's labor requirement rises from 4 to 4.02 hours per acre, the wheat--corn
@@ -776,30 +777,12 @@ Interpretation of results:
   - Technology shifts (coefficient changes).
 
 
+
+# Solve an LP in R
+
+Work through R_lp_example.pdf
+
 \newpage
-# Getting Started with R & RStudio
-
-## RStudio Orientation (2–3 Minute Tour)
-
-- **Source Pane (top-left):** where you edit scripts (`.R`) and notebooks (`.qmd`, `.Rmd`).
-- **Console (bottom-left):** runs commands immediately (`>` prompt).
-- **Environment/History (top-right):** objects in memory (data, vectors, functions).
-- **Files/Plots/Packages/Help (bottom-right):** manage files, see plots, install packages, read docs.
-
-**Workflow tips**
-
-- Create a **Project** (`File → New Project…`) for the course; it pins your working directory.
-- Put scripts in a `code/` folder, data in `data/`, and outputs in `out/`.
-- Use **scripts** for anything you might need to re-run. Avoid one-off console work for assignments.
-
----
-
-## Preview
-- Next class: **duality** — formalize the relationship between primal and dual problems.
-- Show how shadow prices emerge naturally from the dual formulation.
-
-
---------------------------
 
 # Duality in Linear Programming
 
@@ -808,7 +791,6 @@ Interpretation of results:
 - Sensitivity analysis evaluates robustness of LP solutions to parameter changes.
 - Shadow prices measure the marginal value of resources.
 - Ranging analysis indicate how much parameters can change before the solution structure shifts.
-- The 100% Rule helps assess simultaneous changes in parameters.
 - Excel Solver provides a convenient way to solve LPs and get sensitivity reports.
 
 ## Motivation for Duality
@@ -839,13 +821,44 @@ $$
 \end{aligned}
 $$
 
-**Rules of transformation (quick guide):**
+### Rules of transformation
 
-- One **dual variable** per **primal constraint**; one **dual constraint** per **primal variable**.
-- Primal “$a_i^T x \leq b_i$” with $x \ge 0$ → dual variable $y_i \ge 0$. Relaxing the RHS makes the feasible set bigger, so the dual variable (shadow price) must be nonnegative.
-- Primal “$a_i^T x \geq b_i$” → dual variable $y_i \le 0$. Tightening the RHS makes the feasible set bigger (since it’s “$≥$”), so the associated price flips sign.
-- Primal “$a_i^T x = b_i$” → dual variable $y$ **free** (unrestricted in sign). An equality can cut the feasible set in either direction, so the shadow price can be positive or negative.
-- If a primal variable is **free**, the corresponding dual constraint is an **equality**; if primal variable has sign $x_j \le 0$, flip inequality accordingly.
+Start with the canonical pair above. The dual exchanges the roles of activities and resources:
+
+- Each **primal constraint** becomes a **dual variable**.
+- Each **primal variable** becomes a **dual constraint**.
+- The primal RHS $b$ becomes the dual objective coefficients.
+- The primal objective coefficients $c$ become the dual RHS.
+- The coefficient matrix is transposed: $A$ becomes $A^\top$.
+
+**1. A primal constraint determines the sign of its dual variable.**
+
+| Primal constraint | Maximization primal | Minimization primal |
+|---|---|---|
+| $a_i^\top x\le b_i$ | $y_i\ge0$ | $y_i\le0$ |
+| $a_i^\top x\ge b_i$ | $y_i\le0$ | $y_i\ge0$ |
+| $a_i^\top x=b_i$ | $y_i$ unrestricted | $y_i$ unrestricted |
+
+To understand the sign, ask: **What happens to the optimal objective value when $b_i$ increases?**
+
+For a $\le$ constraint, increasing $b_i$ relaxes the restriction. Maximum profit cannot fall,
+while minimum cost cannot rise. For a $\ge$ constraint, increasing $b_i$ tightens the
+restriction, reversing these directions. An equality has no general direction of effect.
+
+**2. A primal variable's sign determines the direction of its dual constraint.**
+
+Let $a_j$ denote column $j$ of $A$, containing the coefficients for primal variable $x_j$.
+
+| Primal variable | Maximization primal → minimization dual | Minimization primal → maximization dual |
+|---|---|---|
+| $x_j\ge0$ | $a_j^\top y\ge c_j$ | $a_j^\top y\le c_j$ |
+| $x_j\le0$ | $a_j^\top y\le c_j$ | $a_j^\top y\ge c_j$ |
+| $x_j$ unrestricted | $a_j^\top y=c_j$ | $a_j^\top y=c_j$ |
+
+**In the wheat–corn example:** We maximize profit with three resource-availability
+constraints of the form $\le$, so all three dual variables are nonnegative. Both crop
+acreages are nonnegative, so both dual constraints take the form $\ge$: the implicit value
+of the resources used by each crop must cover its per-acre return.
 
 ---
 
@@ -864,36 +877,126 @@ $$
 \end{aligned}
 $$
 
-Introduce dual variables $y_1,y_2,y_3 \ge 0$ for (land, labor, fertilizer).  
+### An alternative to farming: offer the resources to someone else
 
-**Dual:**
+Suppose another farmer offers to pay for the use of our land, labor capacity, and fertilizer
+for the production period. Our farmer can either use these resources to grow crops or
+receive payment for making them available to the buyer.
+
+Let the buyer's per-unit offers be:
+
+- $y_1$: dollars per acre of land;
+- $y_2$: dollars per hour of labor capacity;
+- $y_3$: dollars per unit of fertilizer.
+
+The buyer wants to acquire the available resources at the lowest total payment:
+
+$$
+\min_{y_1,y_2,y_3\ge0}
+500y_1+1800y_2+2000y_3.
+$$
+
+Without any restrictions, the buyer would offer zero. But the farmer has an alternative:
+use the resources to earn profit from wheat or corn. We therefore require the offers to
+**cover the production value of the resource bundle used by each crop**.
+
+### What makes an offer adequate?
+
+One acre of wheat requires one acre of land, three labor hours, and four fertilizer units.
+The buyer's payment for that bundle would be
+
+$$
+y_1+3y_2+4y_3.
+$$
+
+The farmer could use the same bundle to earn \$200 growing wheat. To cover that
+opportunity, the offers must satisfy
+
+$$
+y_1+3y_2+4y_3\ge200.
+$$
+
+Likewise, one acre of corn uses one acre of land, four labor hours, and three fertilizer
+units, and earns \$300. Thus,
+
+$$
+y_1+4y_2+3y_3\ge300.
+$$
+
+These conditions ensure that neither crop earns more than the value assigned to the
+resources it uses. Because production is linear, they also cover any feasible combination
+of wheat and corn.
+
+The resulting dual is
 
 $$
 \begin{aligned}
-\min\ & 500\,y_1 + 1800\,y_2 + 2000\,y_3\\
-\text{s.t. } 
-& y_1 + 3y_2 + 4y_3 \ge 200 && \text{(wheat)}\\
-& y_1 + 4y_2 + 3y_3 \ge 300 && \text{(corn)}\\
-& y_1, y_2, y_3 \ge 0~.
+\min\quad &500y_1+1800y_2+2000y_3\\
+\text{s.t.}\quad
+&y_1+3y_2+4y_3\ge200 &&\text{(wheat)}\\
+&y_1+4y_2+3y_3\ge300 &&\text{(corn)}\\
+&y_1,y_2,y_3\ge0.
 \end{aligned}
 $$
 
-**Economic meanings:**  
+The primal chooses **crop acreages** to maximize profit. The dual chooses **resource
+valuations** to minimize the total offer while covering every crop's production opportunity.
 
-$y_1$= land rent (per acre), $y_2$= wage (per labor hour), $y_3$= fertilizer value (per unit).
+### Interpreting the optimal offers
 
-### Solve directly by intuition
+Recall that the optimal planting plan is 450 acres of corn and no wheat. It earns
+\$135,000, uses all 1,800 labor hours, and leaves 50 acres of land and 650 fertilizer
+units unused.
 
-A low-cost feasible choice is to try just one variable:
+Consider the offers
 
-- Set $y_1=0,\, y_3=0$. The corn constraint gives $4y_2 \ge 300 \Rightarrow y_2 \ge 75$.
-- Check wheat: $3y_2 \ge 200 \Rightarrow y_2 \ge 66.67$. So $y_2=75$ satisfies both.
-- Dual objective: $500(0) + 1800(75) + 2000(0) = 135{,}000$.
-- Could adding anything to $y_1$ or $y_3$ lower the cost? 
-- No, because both constraints are already satisfied and any increase would only raise the objective.
-- Feasibility check:
-  - Wheat: $0 + 3(75) + 4(0) = 225 \ge 200$ 
-  - Corn: $0 + 4(75) + 3(0) = 300 \ge 300$ 
+$$
+y_1=0,\qquad y_2=75,\qquad y_3=0.
+$$
+
+They satisfy both crop constraints:
+
+$$
+\begin{aligned}
+\text{Wheat:}\quad &0+3(75)+4(0)=225\ge200,\\
+\text{Corn:}\quad &0+4(75)+3(0)=300.
+\end{aligned}
+$$
+
+The total offer is
+
+$$
+500(0)+1800(75)+2000(0)=\$135{,}000.
+$$
+
+This equals the profit from the best planting plan. The farmer is indifferent, within the
+model, between farming and accepting this payment. No feasible dual offer can be lower
+than the return from a feasible planting plan, so this equality establishes optimality.
+
+These optimal offers are **shadow prices**: they measure the marginal value of additional
+resource availability to this farm.
+
+- **Land: $y_1=0$.** More land alone cannot raise profit because some land already remains unused.
+- **Labor: $y_2=75$.** Another labor hour permits another quarter-acre of corn, adding \$75 to profit before paying for the extra hour.
+- **Fertilizer: $y_3=0$.** More fertilizer alone cannot raise profit because fertilizer already remains unused.
+
+These are implicit values generated by the model's production opportunities and resource
+availability. They need not equal observed land rents, wages, or fertilizer prices. The
+\$75 labor value applies to the next 200 additional hours; beyond that, land prevents
+further expansion.
+
+### Why corn is grown and wheat is not
+
+At the optimal resource valuations, corn's \$300 return exactly covers its resource
+opportunity cost. Wheat earns \$200 but uses resources valued at \$225.
+
+The difference has a concrete interpretation: wheat's three labor hours could support
+three-quarters of an acre of corn, earning \$225. Growing an acre of wheat therefore
+sacrifices \$25 of profit.
+
+This illustrates complementary slackness: a crop grown in positive quantity must exactly
+cover its resource opportunity cost; a crop whose resource opportunity cost strictly
+exceeds its return is excluded from the optimal plan.
 
 **Let's verify in excel**
 
@@ -927,9 +1030,9 @@ If the primal and dual have optimal solutions, so does the other, and $c^{\top} 
 - At the optimum, the primal objective (profit) equals the dual objective (resource value).
 - The upper bound becomes tight: best possible activity plan = best possible valuation of resources.
 - Market analogy:
-  - Primal: maximize profit given resource costs.
-  - Dual: minimize resource costs to support given profits.
-  - At equilibrium, profit = cost of resources.
+  - Primal: choose crop acreages to maximize profit given resource availability.
+  - Dual: choose resource valuations to minimize the total offer while covering every crop's production opportunity.
+  - At the optimum, farm profit equals the value of the resource endowment at the optimal shadow prices.
   
 - Wheat–corn example:  
   - Primal optimum: $Z^* = 135{,}000$.
