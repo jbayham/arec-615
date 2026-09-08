@@ -385,7 +385,7 @@ Excel implements the simplex method in the solver add-on. See [LP_land_alloc.xlx
 - Asks how changes in model parameters affect the optimal activities and objective value.
 - It supports both **what-if analysis** and, when a price varies systematically, a **price-quantity schedule** such as an individual supply curve.
 - Focus on three categories:
-  1. Objective coefficients ($c_j$: unit profits, costs, or prices),
+  1. Objective coefficients ($\pi_j$: unit profits, costs, or prices),
   2. RHS values ($b_i$: resource endowments or requirements), and
   3. Technical coefficients ($a_{ij}$: input-output relationships).
 
@@ -414,25 +414,24 @@ $$
 The baseline solution is $W^*=0$, $C^*=450$, and $Z^*=\$135{,}000$. Labor is binding;
 land and fertilizer have slack. The point also lies on the nonnegativity boundary $W=0$.
 
-Changing an objective coefficient changes the direction of an iso-profit line, but it does
-not move the feasible region. The question is therefore: how far can that line rotate before
+Changing an objective coefficient changes the direction of an iso-profit line, but it does not move the feasible region. The question is therefore: how far can that line rotate before
 another corner becomes better than the corn-only corner?
 
 ### Step 2: Write the relevant slopes
 
-Use general unit-profit coefficients $c_W$ and $c_C$:
+Use general unit-profit coefficients $\pi_W$ and $\pi_C$:
 
 $$
-\max Z=c_WW+c_CC.
+\max Z=\pi_W W+\pi_C C.
 $$
 
 Solving an iso-profit line for corn gives
 
 $$
-C=\frac{Z}{c_C}-\frac{c_W}{c_C}W,
+C=\frac{Z}{\pi_C}-\frac{\pi_W}{\pi_C}W,
 $$
 
-so its slope is $-c_W/c_C$. The labor constraint, which is the feasible edge leaving the
+so its slope is $-\pi_W/\pi_C$. The labor constraint, which is the feasible edge leaving the
 corn-only corner, is
 
 $$
@@ -445,9 +444,9 @@ For the corn-only corner to remain optimal, moving rightward along the labor bou
 must not increase profit. Thus, the iso-profit line must be no steeper than that edge:
 
 $$
--\frac{c_W}{c_C}\geq-\frac{3}{4}
+-\frac{\pi_W}{\pi_C}\geq-\frac{3}{4}
 \qquad\Longleftrightarrow\qquad
-\frac{c_W}{c_C}\leq\frac{3}{4}.
+\frac{\pi_W}{\pi_C}\leq\frac{3}{4}.
 $$
 
 Unlike the reading's feed-dealer example, this corner has only one adjacent structural
@@ -456,16 +455,16 @@ below have one finite endpoint rather than two.
 
 ### Step 3: Range for wheat's unit profit
 
-Hold corn's unit profit at $c_C=300$. Then
+Hold corn's unit profit at $\pi_C=300$. Then
 
 $$
-\frac{c_W}{300}\leq\frac{3}{4}
+\frac{\pi_W}{300}\leq\frac{3}{4}
 \qquad\Longrightarrow\qquad
-c_W\leq225.
+\pi_W\leq225.
 $$
 
 So wheat's unit profit can rise from $200 to $225 per acre without changing the unique
-corn-only optimum. At $c_W=225$, the labor edge has the same slope as the iso-profit line:
+corn-only optimum. At $\pi_W=225$, the labor edge has the same slope as the iso-profit line:
 every feasible mix on that edge from $(W,C)=(0,450)$ to $(200,300)$ is optimal. Above
 $225, wheat enters the optimal plan.
 
@@ -474,16 +473,16 @@ making an activity that is already unused even less attractive does not displace
 
 ### Step 4: Range for corn's unit profit
 
-Hold wheat's unit profit at $c_W=200$. Then
+Hold wheat's unit profit at $\pi_W=200$. Then
 
 $$
-\frac{200}{c_C}\leq\frac{3}{4}
+\frac{200}{\pi_C}\leq\frac{3}{4}
 \qquad\Longrightarrow\qquad
-c_C\geq266.67.
+\pi_C\geq266.67.
 $$
 
 Corn's unit profit can fall from $300 to $266.67 per acre without changing the unique
-corn-only optimum. At $c_C=266.67$, the same alternative-optima edge appears; below
+corn-only optimum. At $\pi_C=266.67$, the same alternative-optima edge appears; below
 that level, wheat enters the plan. There is no finite allowable increase for corn's unit
 profit, because a higher corn return reinforces the corn-only solution.
 
@@ -507,7 +506,7 @@ activity levels** can remain unchanged even though the **optimal objective value
 1. If wheat profit rises to $220, should we re-solve the LP? Why or why not?
 2. Why is $225 a threshold for alternative optima rather than a point at which a solver must
    choose a particular positive wheat acreage?
-3. If both crop prices change, why must we check the ratio $c_W/c_C$ rather than apply two
+3. If both crop prices change, why must we check the ratio $\pi_W/\pi_C$ rather than apply two
    one-at-a-time ranges independently?
 
 ---
@@ -777,7 +776,7 @@ Interpretation of results:
   - Technology shifts (coefficient changes).
 
 
-
+\newpage
 # Getting Started with R & RStudio
 
 ## RStudio Orientation (2–3 Minute Tour)

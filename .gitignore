@@ -10,3 +10,5 @@ Gemfile.lock
 
 references/
 FALL_2026*
+tmp/
+.vscode/
