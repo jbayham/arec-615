@@ -791,8 +791,9 @@ Work through R_lp_example.pdf
 ## Review
 
 - Sensitivity analysis evaluates robustness of LP solutions to parameter changes.
+    - Ranging analysis indicate how much parameters can change before the solution structure shifts.
+
 - Shadow prices measure the marginal value of resources.
-- Ranging analysis indicate how much parameters can change before the solution structure shifts.
 - Excel Solver provides a convenient way to solve LPs and get sensitivity reports.
 
 
@@ -996,45 +997,134 @@ This gives a general foundation for the shadow prices we studied in sensitivity 
 The following theorems explain why feasible resource valuations bound achievable profit,
 why the optimal values coincide, and how resource prices relate to the optimal activity mix.
 
----
+
 
 ## Duality theorems 
 
-### Weak duality 
+### Weak duality
 
-For any feasible solution $x$ and $y$, 
+Suppose the buyer offers $y_1=0$, $y_2=100$, and $y_3=0$: nothing for land or fertilizer
+and \$100 per labor hour. These offers cover both crop opportunities:
 
-$$c^\top x \le b^\top y$$
+$$
+\begin{aligned}
+\text{Wheat:}\quad &0+3(100)+4(0)=300\ge200,\\
+\text{Corn:}\quad &0+4(100)+3(0)=400\ge300.
+\end{aligned}
+$$
 
-- From the primal constraints: $Ax \le b$
-- From the dual constraints: $A^\top y \ge c$
-- Premultiply the dual constraint by $x^\top \ge 0$: $x^\top A^\top y \ge x^\top c$ and note that $x^\top A^\top y = (Ax)^\top y$ 
-- And post multiply the primal constraint by $y$: $(Ax)^\top y \le b^\top y$.
-- Then putting the two together gives $c^\top x \leq x^\top A^\top y = (Ax)^\top y \leq b^\top y$.
+The total offer is $500(0)+1800(100)+2000(0)=\$180{,}000$.
+Does this mean the farm can earn \$180,000? No. It means that **no feasible planting plan
+can earn more than that**. These resource valuations put a ceiling on profit, but the
+ceiling may be loose.
 
-Wheat-corn example:
+For any primal-feasible $x$ and dual-feasible $y$, **weak duality** states that
 
-- Primal feasible: $x_W=0, x_C=450 \Rightarrow Z=135{,}000$.
-- Dual feasible: $y_1=0, y_2=75, y_3=0 \Rightarrow W=500(0)+1800(75)+2000(0)=135{,}000$.
-- Weak duality holds: $135{,}000 \le 135{,}000$.
+$$
+c^\top x\le b^\top y.
+$$
 
+The economic reasoning is a chain of three quantities:
 
-### Strong duality 
+$$
+\underbrace{c^\top x}_{\text{crop profit}}
+\;\le\;
+\underbrace{y^\top Ax}_{\text{value of resources used}}
+\;\le\;
+\underbrace{y^\top b}_{\text{value of resources available}}.
+$$
 
-If the primal and dual have optimal solutions, so does the other, and $c^{\top} x^* = b^{\top} y^*$.
+The first inequality holds because each crop's return is no greater than the valuation
+of its resource bundle. Multiplying by acres planted and summing preserves that
+relationship. The second holds because the farmer cannot use more resources than are
+available: at nonnegative prices, the resources used cannot be worth more than the
+entire endowment.
 
-- At the optimum, the primal objective (profit) equals the dual objective (resource value).
-- The upper bound becomes tight: best possible activity plan = best possible valuation of resources.
-- Market analogy:
-  - Primal: choose crop acreages to maximize profit given resource availability.
-  - Dual: choose resource valuations to minimize the total offer while covering every crop's production opportunity.
-  - At the optimum, farm profit equals the value of the resource endowment at the optimal shadow prices.
-  
-- Wheat–corn example:  
-  - Primal optimum: $Z^* = 135{,}000$.
-  - Dual optimum: $500(0) + 1800(75) + 2000(0) = 135{,}000$
-  
+**Derivation step by step:**
 
+- From the primal constraints: $Ax\le b$.
+- From the dual constraints: $A^\top y\ge c$.
+- Premultiply the dual constraint by $x^\top$, with $x\ge0$:
+  $x^\top A^\top y\ge x^\top c$. Note that $x^\top A^\top y=(Ax)^\top y$.
+- Transpose the primal inequality and postmultiply by $y\ge0$:
+  $(Ax)^\top y\le b^\top y$.
+- Putting the two together gives
+  $c^\top x\le x^\top A^\top y=(Ax)^\top y\le b^\top y$.
+- If the primal is a minimization problem, the inequality is reversed:
+  $c^\top x\ge b^\top y$.
+
+For our feasible planting plan of 450 acres of corn, the \$100 labor valuation gives
+
+$$
+\underbrace{135{,}000}_{\text{crop profit}}
+\le
+\underbrace{180{,}000}_{\text{value of resources used}}
+\le
+\underbrace{180{,}000}_{\text{value of resources available}}.
+$$
+
+The gap is \$45,000. Feasibility alone does not imply that either the planting plan or
+the resource valuation is optimal.
+
+### Strong duality
+
+The \$180,000 valuation covers the farmer's opportunities, but the buyer can do better.
+Lowering the labor offer to \$75 still covers both crops and reduces the total offer to
+\$135,000:
+
+$$
+\begin{aligned}
+\text{Wheat:}\quad &0+3(75)+4(0)=225\ge200,\\
+\text{Corn:}\quad &0+4(75)+3(0)=300,\\
+\text{Total offer:}\quad &500(0)+1800(75)+2000(0)=135{,}000.
+\end{aligned}
+$$
+
+Meanwhile, the farmer can actually earn \$135,000 by planting 450 acres of corn.
+We now have a feasible planting plan earning \$135,000 and a feasible resource valuation
+ruling out anything higher. **There is no room left for either side to improve.**
+
+**Strong duality** states that if either problem has a finite optimal solution, the other
+also has an optimal solution, and their objective values coincide:
+
+$$
+\max_{x\ge0,\;Ax\le b}c^\top x
+=
+\min_{y\ge0,\;A^\top y\ge c}b^\top y.
+$$
+
+Equivalently, $c^\top x^*=b^\top y^*$. The tightest resource valuation exactly matches
+the best production plan. The two problems arrive at the same value by choosing different
+things: acres in the primal and resource prices in the dual.
+
+### Where does the gap come from?
+
+Subtract the profit from the total resource valuation, then add and subtract the value
+of resources used:
+
+$$
+\begin{aligned}
+b^\top y-c^\top x
+&=b^\top y-y^\top Ax+y^\top Ax-c^\top x\\
+&=y^\top(b-Ax)+x^\top(A^\top y-c).
+\end{aligned}
+$$
+
+There are two possible sources of a gap:
+
+- $y^\top(b-Ax)$: **value assigned to unused resources**.
+- $x^\top(A^\top y-c)$: **resource valuation above returns on crops grown**.
+
+For feasible $x$ and $y$, both terms are nonnegative. At optimality, strong duality says
+their sum is zero, so both must be zero.
+
+In our optimal wheat–corn solution, unused land and fertilizer create no gap because
+their shadow prices are zero. Wheat's resource valuation exceeds its return, but that
+creates no gap because we grow no wheat. Corn is grown, and its return exactly equals
+its resource valuation.
+
+This is the economic content of **complementary slackness**: neither source of a gap
+remains at the optimum.
 
 ### Complementary slackness conditions
 
