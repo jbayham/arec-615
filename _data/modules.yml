@@ -17,17 +17,19 @@
   dirname: modules/linear_programming
   desc: "This unit introduces linear programming (LP) and covers the simplex method, sensitivity analysis, duality theory."
   readings:
-    - title: "McCarl & Spreen Ch. 2–4"
-      #url: "course-materials/"
-  # materials:
-  #   - title: "LP Example"
-  #     url: "lp_example.html"
-  #   - title: "LP_land_alloc.xlsx"
-  #     url: "LP_land_alloc.xlsx"
-  #   - title: "R_lp_example.pdf"
-  #     url: "R_lp_example.pdf"
-  #   - title: "IO Example"
-  #     url: "IO_example.html"
+    - title: "Kaiser and Messer Ch. 1"
+    - title: "Kaiser and Messer Ch. 3"
+    - title: "Baumol - Duality"
+    - title: "Stewart and Greenhaalgh (1977)"
+  materials:
+    - title: "LP Example"
+      url: "lp_example.html"
+    - title: "LP_land_alloc.xlsx"
+      url: "LP_land_alloc.xlsx"
+    - title: "R_lp_example.pdf"
+      url: "R_lp_example.pdf"
+    - title: "Shadow Price Challenge"
+      url: "shadow_price_challenge.pdf"
   
   
 # - title: "Unconstrained and Constrained Nonlinear Programming"
