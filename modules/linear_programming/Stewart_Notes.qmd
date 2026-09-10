@@ -107,6 +107,16 @@ Shadow Prices in Determining Marginal Values for Agricultural Land*.
 The numerical model below uses Table 1 of the paper; the resource-package
 argument appears on printed pages 3--7 and in footnote 1.
 
+> **Economic question and motivation**
+>
+> **What is an additional acre of agricultural land worth when its land-use
+> restrictions expand with it?**
+>
+> - Hold required agricultural output fixed; minimize production cost.
+> - Value of added land = reduction in minimum cost.
+> - Compare that benefit with the cost of land development.
+> - Land is a package: more acres change several constraints together.
+
 Land development projects, including drainage, flood protection, and erosion
 control, can expand the agricultural resource base. A planner needs to compare
 the benefits of those additions with their development costs. Market evidence
@@ -142,16 +152,20 @@ There are three land groups, indexed by $g=1,2,3$, and three activities on each
 group. Let $C_g$, $W_g$, and $P_g$ denote acres of corn, wheat, and pasture,
 respectively. These nine acreages are the baseline decision variables.
 
-The full numerical objective is
-
-$$
-\begin{aligned}
-\min_{C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3}\quad
-&66.40C_1+96.40W_1+80.14P_1\\
-&{}+151.20C_2+93.80W_2+84.16P_2\\
-&{}+102.60C_3+61.50W_3+75.48P_3.
-\end{aligned}
-$$
+> **Decision variables and objective**
+>
+> $C_g,W_g,P_g$ = acres of corn, wheat, and pasture on land group $g=1,2,3$.
+>
+> **Cost per acre $\times$ acres; sum over activities and land groups.**
+>
+> $$
+> \begin{aligned}
+> \min_{C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3}\quad
+> &66.40C_1+96.40W_1+80.14P_1\\
+> &{}+151.20C_2+93.80W_2+84.16P_2\\
+> &{}+102.60C_3+61.50W_3+75.48P_3.
+> \end{aligned}
+> $$
 
 Each coefficient is a cost per acre. The objective is total production cost,
 measured in dollars. The three lines group costs by land type.
@@ -161,13 +175,17 @@ measured in dollars. The three lines group costs by land type.
 The model must produce the specified quantities of corn, wheat, and pasture
 output:
 
-$$
-\begin{aligned}
-80C_1+60C_2+40C_3 &= 7{,}500 &&\text{(corn)},\\
-40W_1+35W_2+25W_3 &= 2{,}500 &&\text{(wheat)},\\
-2.2P_1+2.0P_2+1.8P_3 &= 170 &&\text{(pasture)}.
-\end{aligned}
-$$
+> **Meet the output requirements**
+>
+> **Yield $\times$ acres; sum across land groups = required output.**
+>
+> $$
+> \begin{aligned}
+> 80C_1+60C_2+40C_3 &= 7{,}500 &&\text{(corn)},\\
+> 40W_1+35W_2+25W_3 &= 2{,}500 &&\text{(wheat)},\\
+> 2.2P_1+2.0P_2+1.8P_3 &= 170 &&\text{(pasture)}.
+> \end{aligned}
+> $$
 
 The coefficients are output per acre. Table 1 does not explicitly label the
 physical output units, so we retain its numerical units. These are
@@ -179,28 +197,24 @@ than choosing output in response to product prices.
 Each land group initially contains 100 acres. Corn and wheat have maximum
 acreages; pasture has a minimum acreage. All twelve restrictions are
 
-$$
-\begin{aligned}
-C_1+W_1+P_1 &\le 100 &&\text{(land 1)},\\
-C_1 &\le 60 &&\text{(corn 1 maximum)},\\
-W_1 &\le 20 &&\text{(wheat 1 maximum)},\\
-P_1 &\ge 20 &&\text{(pasture 1 minimum)},\\[5pt]
-C_2+W_2+P_2 &\le 100 &&\text{(land 2)},\\
-C_2 &\le 40 &&\text{(corn 2 maximum)},\\
-W_2 &\le 30 &&\text{(wheat 2 maximum)},\\
-P_2 &\ge 30 &&\text{(pasture 2 minimum)},\\[5pt]
-C_3+W_3+P_3 &\le 100 &&\text{(land 3)},\\
-C_3 &\le 20 &&\text{(corn 3 maximum)},\\
-W_3 &\le 30 &&\text{(wheat 3 maximum)},\\
-P_3 &\ge 30 &&\text{(pasture 3 minimum)}.
-\end{aligned}
-$$
-
-Finally, the variable restrictions are
-
-$$
-C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3\ge0.
-$$
+> **Land availability, permitted uses, and nonnegativity**
+>
+> Each column is a land group. Rows: total land, corn maximum, wheat maximum,
+> pasture minimum.
+>
+> $$
+> \begin{array}{lll}
+> \text{Group 1} & \text{Group 2} & \text{Group 3}\\[4pt]
+> C_1+W_1+P_1\le100 & C_2+W_2+P_2\le100 & C_3+W_3+P_3\le100\\[4pt]
+> C_1\le60 & C_2\le40 & C_3\le20\\[4pt]
+> W_1\le20 & W_2\le30 & W_3\le30\\[4pt]
+> P_1\ge20 & P_2\ge30 & P_3\ge30.
+> \end{array}
+> $$
+>
+> $$
+> C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3\ge0.
+> $$
 
 Together, the objective, three production equalities, twelve land-use
 inequalities, and nine nonnegativity restrictions define the full baseline LP.
@@ -236,20 +250,38 @@ system would adjust if more of that land package became available.
 Let $L$ denote the endowment of land group 2. Keeping its characteristics in
 the original proportions replaces its four bounds with
 
-$$
-\begin{aligned}
-C_2+W_2+P_2&\le L,\\
-C_2&\le0.4L,\\
-W_2&\le0.3L,\\
-P_2&\ge0.3L.
-\end{aligned}
-$$
+> **Expand group 2 land and its restrictions together**
+>
+> $L$ = group 2 land endowment; baseline $L=100$.
+>
+> $$
+> \begin{aligned}
+> C_2+W_2+P_2&\le L,\\
+> C_2&\le0.4L,\\
+> W_2&\le0.3L,\\
+> P_2&\ge0.3L.
+> \end{aligned}
+> $$
+>
+> **One extra acre:** $L:100\to101$.
+>
+> $$
+> \begin{aligned}
+> (b_L,b_C,b_W,b_P)&:(100,40,30,30)\\
+> &\phantom{:}\longrightarrow(101,40.4,30.3,30.3),\\
+> \Delta b&=(1,0.4,0.3,0.3).
+> \end{aligned}
+> $$
+>
+> More land relaxes the upper bounds **and raises the pasture minimum**.
 
 At the baseline, $L=100$. An additional acre raises the four right-hand sides
 by $1$, $0.4$, $0.3$, and $0.3$. The fractions apply to the **land endowment**;
 the solver chooses the actual allocation. Raising the pasture minimum tightens
 a restriction, so the package brings an additional obligation as well as
 additional opportunities.
+
+\newpage
 
 ## Derive the weighted sum
 
@@ -258,26 +290,33 @@ increase in right-hand side $b_i$. With the original inequality directions,
 upper-bound resource prices are nonpositive; minimum-requirement prices are
 nonnegative.
 
-Within a range where the relevant marginal values remain valid,
-
-$$
-\Delta C^*=\lambda_L\Delta b_L+\lambda_C\Delta b_C
-             +\lambda_W\Delta b_W+\lambda_P\Delta b_P.
-$$
-
-Substituting the coordinated changes gives
-
-$$
-\Delta C^*
-=\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right)\Delta L.
-$$
-
-Therefore the marginal benefit of the package, measured as a cost saving, is
-
-$$
-\boxed{MV(L)=-\frac{dC^*(L)}{dL}
-=-\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right).}
-$$
+> **Price the coordinated change**
+>
+> $\lambda_i$ = change in minimum cost per unit increase in bound $b_i$.
+> Within the current sensitivity range:
+>
+> $$
+> \Delta C^*=\lambda_L\Delta b_L+\lambda_C\Delta b_C
+>              +\lambda_W\Delta b_W+\lambda_P\Delta b_P.
+> $$
+>
+> Substitute $\Delta b=(1,0.4,0.3,0.3)\Delta L$:
+>
+> $$
+> \Delta C^*
+> =\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right)\Delta L.
+> $$
+>
+> **Marginal benefit = cost saving:**
+>
+> $$
+> \begin{aligned}
+> MV(L)&=-\frac{dC^*(L)}{dL}\\
+> &=-\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right).
+> \end{aligned}
+> $$
+>
+> Weighted **sum**. Weights = changes in the bounds per added acre.
 
 This is a **weighted sum**, not a weighted average. The weights are the
 right-hand-side changes per added acre; there is no division by their sum.
@@ -308,24 +347,68 @@ cropping constraints bind together. A solver can report a different allocation
 of shadow values across these rows while giving the same value for the
 coordinated package. A binding constraint can also have a zero shadow price.
 
+> **Numerical takeaway**
+>
+> $$
+> \begin{aligned}
+> \Delta C^*/\Delta L&\approx-1.14917-0.62033+0.43275\\
+> &=-1.33675,\\
+> MV&\approx\$1.34\text{ per added acre}.
+> \end{aligned}
+> $$
+>
+> The pasture obligation offsets part of the benefit. The prediction is local.
+
+> **Understanding question**
+>
+> Why is the shadow price on the **group 2 wheat maximum** zero even though
+> $W_2=30$ and the constraint $W_2\le30$ binds?
+>
+> Predict the effect of changing only that bound to $W_2\le30.1$.
+> Does a binding constraint necessarily have a nonzero shadow price?
+
+**Discussion.** At the baseline, group 2 has $C_2=40$, $W_2=30$, and $P_2=30$:
+all 100 acres are in use. Raising the wheat maximum provides permission to
+grow more wheat, but adds no land and does not relax the pasture minimum.
+More wheat would have to displace corn, requiring compensating production
+changes elsewhere. At these costs and yields, those reallocations do not
+reduce total cost. Re-solving with $W_2\le30.1$ leaves the original allocation
+optimal and minimum cost unchanged at \$`r money(baseline$cost)`.
+
+The zero multiplier therefore correctly values a marginal **relaxation** of
+this bound. A binding constraint can have a zero shadow price. As a follow-up,
+tightening the bound to $W_2\le29.9$ raises cost by approximately \$0.115.
+The baseline is a corner with nonunique dual multipliers, so the effects of
+relaxing and tightening this individual bound need not be symmetric. This is
+why specifying the direction of the proposed change matters.
+
 The paper's earlier displayed multipliers on printed page 5 imply about
 \$1.34042, a slightly different value. These notes consistently use Table 1's
 coefficients, which yield \$1.33675 and agree with the later range-analysis
 tables after accounting for the transfer activity's cost.
+
+\newpage
 
 # Representing the package with a transfer activity
 
 Define a new decision variable $t\ge0$ as additional acres of the land group 2
 package. Then $L=100+t$, and the four constraints become
 
-$$
-\begin{aligned}
-C_2+W_2+P_2-t&\le100,\\
-C_2-0.4t&\le40,\\
-W_2-0.3t&\le30,\\
-P_2-0.3t&\ge30.
-\end{aligned}
-$$
+> **One variable supplies the whole package**
+>
+> $t\ge0$ = added group 2 acres; $L=100+t$.
+>
+> $$
+> \begin{aligned}
+> C_2+W_2+P_2-t&\le100,\\
+> C_2-0.4t&\le40,\\
+> W_2-0.3t&\le30,\\
+> P_2-0.3t&\ge30.
+> \end{aligned}
+> $$
+>
+> Transfer column: $(-1,-0.4,-0.3,-0.3)'$.
+> The last row still **raises** the pasture minimum: $P_2\ge30+0.3t$.
 
 These are the coefficients in the paper's **TRANSFER 2** column. For example,
 $t=5$ provides 105 total acres, permits up to 42 corn acres and 31.5 wheat
@@ -340,10 +423,20 @@ $t\le\bar t$ lets the analyst vary how much development is allowed.
 If $k$ is development cost per acre, the expanded objective is production cost
 plus $kt$. The local change in that objective per unit of transfer is
 
-$$
-k+\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P
-=k-MV(L).
-$$
+> **Control expansion and account for its cost**
+>
+> $0\le t\le\bar t$: development allowance. Add $kt$ to production cost.
+>
+> $$
+> \begin{aligned}
+> \text{Marginal change in total cost}
+> &=k+\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\\
+> &=k-MV(L).
+> \end{aligned}
+> $$
+>
+> Expand while $MV(L)>k$, subject to the allowance.
+> Use the sensitivity range for the **whole package**, not separate row ranges.
 
 This links the transfer activity's reduced-cost calculation to the package
 valuation. Expansion is attractive when its gross cost saving exceeds its
@@ -366,10 +459,17 @@ To construct the derived-demand schedule, vary $L$, update all four land group
 2 bounds, and re-solve the production model. Keep costs, yields, the other land
 groups, and output requirements fixed. At each solution calculate
 
-$$
-MV(L)=-\left(\lambda_L(L)+0.4\lambda_C(L)
-                     +0.3\lambda_W(L)+0.3\lambda_P(L)\right).
-$$
+> **Construct derived demand**
+>
+> Vary $L$; update $(L,0.4L,0.3L,0.3L)$; re-solve.
+>
+> $$
+> MV(L)=-\left(\lambda_L(L)+0.4\lambda_C(L)
+>                      +0.3\lambda_W(L)+0.3\lambda_P(L)\right).
+> $$
+>
+> Linear cost segments imply **constant marginal values within segments**.
+> Recompute at changes in slope; use one-sided values at corners.
 
 These are valuations of specified endowments. In particular, evaluating
 $L<100$ describes a smaller endowment, rather than a negative value of the
@@ -417,6 +517,14 @@ text(100, par("usr")[4] - 0.08, "Baseline", pos = 2, cex = 0.8)
 
 ## Interpret the steps and the development decision
 
+> **Why the marginal value falls**
+>
+> - $L\approx`r sprintf("%.2f", breaks[1])`$: $P_3=30$ binds;
+>   marginal value falls from \$`r money(regime_mv[1])` to \$`r money(regime_mv[2])` per acre.
+> - $L=`r sprintf("%.2f", breaks[2])`$: $C_3=0$;
+>   marginal value falls to $-\$`r money(abs(regime_mv[3]))`$ per acre.
+> - Adding land also raises $P_2\ge0.3L$: a larger package can raise cost.
+
 The initial value of approximately \$`r money(regime_mv[1])` persists through
 about **`r sprintf("%.2f", breaks[1])` acres**. At that point, the minimum
 pasture acreage on land group 3 binds, changing the production adjustment
@@ -439,9 +547,20 @@ constant cost $k$, compare the height of each step with $k$ and expand only
 while the marginal saving exceeds that cost. For a finite project, total gross
 benefit is the area under the marginal-value schedule:
 
-$$
-C^*(100)-C^*(100+t)=\int_{100}^{100+t}MV(L)\,dL.
-$$
+> **Value the project across all affected segments**
+>
+> $$
+> \begin{aligned}
+> \text{Gross benefit}
+> &=C^*(100)-C^*(100+t)\\
+> &=\int_{100}^{100+t}MV(L)\,dL,\\
+> \text{Net benefit}&=\text{gross benefit}-kt.
+> \end{aligned}
+> $$
+>
+> Add the areas under the steps. Use $MV(100)\times t$ only if the entire
+> project stays in the initial range. Optional development stops before
+> negative marginal values when $k\ge0$.
 
 Subtract $kt$ to obtain net benefit. Multiplying the initial shadow value by
 every added acre is valid only while the project stays within that initial
