@@ -1195,9 +1195,9 @@ display:block!important;
 <section id="policy-relevance-of-land-use-flexibility" class="slide level2">
 <h2>Policy relevance of land-use flexibility</h2>
 <p>A development program may require pasture or limit cropping on new land. What production benefit does the program give up by attaching those rules?</p>
-<div class="valuation">
-<p><i>V</i>(<i>t</i>) = <i>C</i><sub>R</sub>(<i>t</i>) − <i>C</i><sub>U</sub>(<i>t</i>) = <i>B</i><sub>U</sub>(<i>t</i>) − <i>B</i><sub>R</sub>(<i>t</i>)</p>
-</div>
+<p><span class="math display">\[
+V(t) = C_R(t) - C_U(t) = B_U(t) - B_R(t)
+\]</span></p>
 <p>Here, <strong>C</strong> is minimized production cost and <strong>B</strong> is the saving from expansion. <strong>V</strong> measures the value of removing the restrictions for a project of size <em>t</em>.</p>
 <ul>
 <li>Compare that production cost with the restrictions’ conservation benefits.</li>
@@ -1237,32 +1237,20 @@ overflow: hidden!important;
 display:block!important;
 }</style></aside>
 </section>
-<section id="calculating-the-cost-savings-curves" class="slide level2">
-<h2>Calculating the cost-savings curves</h2>
-<p><strong>Shadow prices apply within a segment. We recomputed them as marginal values changed.</strong></p>
-<ol type="1">
-<li><strong>Re-solve both LPs</strong> over 0–20 added acres using a grid spaced 0.025 acres apart.</li>
-<li><strong>Record minimized costs and shadow prices.</strong> Use the weighted sum for restricted expansion and the new-land shadow price for unrestricted expansion.</li>
-<li><strong>Construct each savings curve as baseline cost minus optimized cost.</strong> Locate corners by intersecting adjacent cost segments, then plot their endpoints.</li>
-</ol>
-<div class="shared-assumptions">
-<p><strong>Breakpoints in added acreage:</strong> restricted at <strong>5.52</strong> and <strong>12.50</strong> acres; unrestricted at <strong>5.00</strong> and <strong>8.38</strong> acres. One baseline shadow price cannot describe the entire curve.</p>
-</div>
-<aside class="notes">
-<p>The calculation first solves both models at the midpoints of a grid spaced 0.025 acres apart. At each solution it records minimized cost and the marginal cost saving implied by the duals. For restricted expansion this is minus the weighted sum with weights 1, 0.4, 0.3, and 0.3. For unrestricted expansion it is minus the shadow price on the new-land availability constraint.</p>
-<p>Consecutive solutions with the same marginal saving define candidate linear cost segments. Intersections of adjacent cost lines locate the breakpoints more precisely than the grid spacing. The code verifies the resulting curves against separate solves at all grid endpoints and verifies marginal values with small changes in acreage inside each segment. It plots savings at the union of the two scenarios’ breakpoints, joined by straight lines.</p>
-<p>Within a segment, its shadow value gives the exact linear change in optimized cost. Beyond its valid range, the optimization must supply a new marginal value. A parametric LP method could move directly between breakpoints; this implementation uses repeated solves to discover and check them. At t=0 and other corners, duals can be nonunique, so the calculation uses interior points and one-sided comparisons rather than extrapolating an arbitrary endpoint dual. Source: Stewart_Notes.qmd, lab-calculations chunk.</p>
-<style type="text/css">
-span.MJX_Assistive_MathML {
-position:absolute!important;
-clip: rect(1px, 1px, 1px, 1px);
-padding: 1px 0 0 0!important;
-border: 0!important;
-height: 1px!important;
-width: 1px!important;
-overflow: hidden!important;
-display:block!important;
-}</style></aside>
+<section id="land-use-restrictions-carry-an-economic-cost" class="slide level2">
+<h2>Land use restrictions carry an economic cost</h2>
+<ul>
+<li>Unrestricted expansion allows landowners more flexibility in crop choice and production.</li>
+<li>These ideas could be applied to zoning, conservation easements, and other land-use regulations.</li>
+</ul>
+</section>
+<section id="brainstorm" class="slide level2">
+<h2>Brainstorm</h2>
+<ul>
+<li>How might your modify the Stewart and Greenhalgh (1977) model?</li>
+<li>What aspects of the model interest you?</li>
+<li>Any implicit assumptions or limitations you would like to explore?</li>
+</ul>
 <div class="footer footer-default">
 
 </div>

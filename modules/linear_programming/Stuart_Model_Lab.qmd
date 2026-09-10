@@ -95,10 +95,11 @@ separate activity variables for the additional acres.
 A development program may require pasture or limit cropping on new land.
 What production benefit does the program give up by attaching those rules?
 
-::: {.valuation}
-<i>V</i>(<i>t</i>) = <i>C</i><sub>R</sub>(<i>t</i>) − <i>C</i><sub>U</sub>(<i>t</i>)
-= <i>B</i><sub>U</sub>(<i>t</i>) − <i>B</i><sub>R</sub>(<i>t</i>)
-:::
+
+$$
+V(t) = C_R(t) - C_U(t) = B_U(t) - B_R(t)
+$$
+
 
 Here, **C** is minimized production cost and **B** is the saving from expansion.
 **V** measures the value of removing the restrictions for a project of size *t*.
@@ -176,44 +177,13 @@ flexibility cannot be applied to every acre of a larger project. All monetary
 values use the original model's accounting period, not capitalized land prices.
 :::
 
-## Calculating the cost-savings curves
+## Land use restrictions carry an economic cost
 
-**Shadow prices apply within a segment. We recomputed them as marginal values changed.**
+- Unrestricted expansion allows landowners more flexibility in crop choice and production.
+- These ideas could be applied to zoning, conservation easements, and other land-use regulations.
 
-1. **Re-solve both LPs** over 0–20 added acres using a grid spaced 0.025 acres apart.
-2. **Record minimized costs and shadow prices.** Use the weighted sum for restricted
-   expansion and the new-land shadow price for unrestricted expansion.
-3. **Construct each savings curve as baseline cost minus optimized cost.** Locate
-   corners by intersecting adjacent cost segments, then plot their endpoints.
+## Brainstorm 
 
-::: {.shared-assumptions}
-**Breakpoints in added acreage:** restricted at
-**`r sprintf("%.2f", restricted_regimes$t_start[2])`** and
-**`r sprintf("%.2f", restricted_regimes$t_start[3])`** acres; unrestricted at
-**`r sprintf("%.2f", unrestricted_regimes$t_start[2])`** and
-**`r sprintf("%.2f", unrestricted_regimes$t_start[3])`** acres.
-One baseline shadow price cannot describe the entire curve.
-:::
-
-::: {.notes}
-The calculation first solves both models at the midpoints of a grid spaced
-0.025 acres apart. At each solution it records minimized cost and the marginal
-cost saving implied by the duals. For restricted expansion this is minus the
-weighted sum with weights 1, 0.4, 0.3, and 0.3. For unrestricted expansion it is
-minus the shadow price on the new-land availability constraint.
-
-Consecutive solutions with the same marginal saving define candidate linear
-cost segments. Intersections of adjacent cost lines locate the breakpoints
-more precisely than the grid spacing. The code verifies the resulting curves
-against separate solves at all grid endpoints and verifies marginal values
-with small changes in acreage inside each segment. It plots savings at the
-union of the two scenarios' breakpoints, joined by straight lines.
-
-Within a segment, its shadow value gives the exact linear change in optimized
-cost. Beyond its valid range, the optimization must supply a new marginal
-value. A parametric LP method could move directly between breakpoints; this
-implementation uses repeated solves to discover and check them. At t=0 and
-other corners, duals can be nonunique, so the calculation uses interior points
-and one-sided comparisons rather than extrapolating an arbitrary endpoint dual.
-Source: Stewart_Notes.qmd, lab-calculations chunk.
-:::
+- How might your modify the Stewart and Greenhalgh (1977) model?
+- What aspects of the model interest you?
+- Any implicit assumptions or limitations you would like to explore?
