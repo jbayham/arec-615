@@ -1,0 +1,842 @@
+---
+title: "Stewart and Greenhalgh: Shadow Prices and Agricultural Land"
+# toc: true
+format:
+  pdf:
+    papersize: letter
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup-model
+#| include: false
+# Requires lpSolve and knitr. All coefficients are from Table 1.
+library(lpSolve)
+
+# Columns: C1, W1, P1, C2, W2, P2, C3, W3, P3.
+cost <- c(66.40, 96.40, 80.14, 151.20, 93.80, 84.16,
+          102.60, 61.50, 75.48)
+names(cost) <- c("C1", "W1", "P1", "C2", "W2", "P2",
+                 "C3", "W3", "P3")
+A <- rbind(
+  corn_output    = c(80, 0, 0, 60, 0, 0, 40, 0, 0),
+  wheat_output   = c(0, 40, 0, 0, 35, 0, 0, 25, 0),
+  pasture_output = c(0, 0, 2.2, 0, 0, 2.0, 0, 0, 1.8),
+  land1          = c(1, 1, 1, 0, 0, 0, 0, 0, 0),
+  corn1          = c(1, 0, 0, 0, 0, 0, 0, 0, 0),
+  wheat1         = c(0, 1, 0, 0, 0, 0, 0, 0, 0),
+  pasture1       = c(0, 0, 1, 0, 0, 0, 0, 0, 0),
+  land2          = c(0, 0, 0, 1, 1, 1, 0, 0, 0),
+  corn2          = c(0, 0, 0, 1, 0, 0, 0, 0, 0),
+  wheat2         = c(0, 0, 0, 0, 1, 0, 0, 0, 0),
+  pasture2       = c(0, 0, 0, 0, 0, 1, 0, 0, 0),
+  land3          = c(0, 0, 0, 0, 0, 0, 1, 1, 1),
+  corn3          = c(0, 0, 0, 0, 0, 0, 1, 0, 0),
+  wheat3         = c(0, 0, 0, 0, 0, 0, 0, 1, 0),
+  pasture3       = c(0, 0, 0, 0, 0, 0, 0, 0, 1)
+)
+directions <- c(rep("=", 3), rep(c("<=", "<=", "<=", ">="), 3))
+package_rows <- match(c("land2", "corn2", "wheat2", "pasture2"),
+                      rownames(A))
+package_weights <- c(1, 0.4, 0.3, 0.3)
+
+solve_land <- function(L = 100) {
+  rhs <- c(7500, 2500, 170, 100, 60, 20, 20,
+           L, 0.4 * L, 0.3 * L, 0.3 * L, 100, 20, 30, 30)
+  fit <- lp("min", cost, A, directions, rhs, compute.sens = TRUE)
+  if (fit$status != 0) stop("No optimal solution at L = ", L)
+
+  # Audit the original constraints and reconstruct the objective.
+  residual <- drop(A %*% fit$solution) - rhs
+  stopifnot(all(fit$solution >= -1e-7),
+            all(abs(residual[directions == "="]) < 1e-6),
+            all(residual[directions == "<="] < 1e-6),
+            all(residual[directions == ">="] > -1e-6),
+            abs(sum(cost * fit$solution) - fit$objval) < 1e-6)
+  list(cost = fit$objval, acres = fit$solution,
+       dual = fit$duals[seq_len(nrow(A))],
+       mv = -sum(fit$duals[package_rows] * package_weights))
+}
+
+baseline <- solve_land(100)
+epsilon <- 0.001
+finite_difference <- (baseline$cost - solve_land(100 + epsilon)$cost) /
+  epsilon
+stopifnot(abs(finite_difference - baseline$mv) < 1e-5)
+
+# Compute the curve over a feasible interval, including its negative portion.
+land_grid <- seq(90.5, 120, by = 0.025)
+grid_fits <- lapply(land_grid, solve_land)
+grid_mv <- vapply(grid_fits, function(s) s$mv, numeric(1))
+
+# Within each LP regime, C*(L) = intercept - MV * L.
+# Locate the corners by intersecting adjacent cost segments, then verify
+# that the resulting piecewise-linear function matches every grid solution.
+regime_starts <- c(1L, which(abs(diff(grid_mv)) > 1e-6) + 1L)
+regime_mv <- grid_mv[regime_starts]
+intercepts <- vapply(grid_fits[regime_starts], function(s) s$cost,
+                     numeric(1)) + regime_mv * land_grid[regime_starts]
+breaks <- diff(intercepts) / diff(regime_mv)
+edges <- c(min(land_grid), breaks, max(land_grid))
+segment_id <- pmin(findInterval(land_grid, edges), length(regime_mv))
+predicted_cost <- intercepts[segment_id] -
+  regime_mv[segment_id] * land_grid
+actual_cost <- vapply(grid_fits, function(s) s$cost, numeric(1))
+stopifnot(all(diff(edges) > 0),
+          max(abs(predicted_cost - actual_cost)) < 1e-5)
+
+# Check dual-based slopes against local re-solves inside each regime.
+for (L in (head(edges, -1) + tail(edges, -1)) / 2) {
+  s <- solve_land(L)
+  fd <- (s$cost - solve_land(L + epsilon)$cost) / epsilon
+  stopifnot(abs(fd - s$mv) < 1e-5)
+}
+
+money <- function(x) formatC(x, format = "f", digits = 2, big.mark = ",")
+```
+
+
+
+# Motivation: What is an additional acre worth?
+
+**Reading:** Fred J. Stewart and Richard A. Greenhalgh (1977), *The Use of
+Shadow Prices in Determining Marginal Values for Agricultural Land*.
+The numerical model below uses Table 1 of the paper; the resource-package
+argument appears on printed pages 3--7 and in footnote 1.
+
+Land development projects, including drainage, flood protection, and erosion
+control, can expand the agricultural resource base. A planner needs to compare
+the benefits of those additions with their development costs. Market evidence
+can be limited, and a land price need not reveal the contribution of another
+acre to a particular production system.
+
+Stewart and Greenhalgh ask how an optimization model can estimate that marginal
+contribution. Their example holds agricultural production requirements fixed
+and minimizes the cost of meeting them. Additional useful land creates value
+when it allows the same output to be produced at lower cost.
+
+The complication is that **land is a package of characteristics**. An acre can
+bring a total-acreage allowance, limits on suitable crop uses, and a requirement
+to maintain some pasture. Expanding the resource changes several constraints
+at once. The shadow price on the total-land constraint values only one of those
+changes.
+
+This application connects duality to an economic question: *Which right-hand
+sides actually change when a project adds a unit of the resource?* The answer
+determines which shadow prices belong in its marginal valuation.
+
+The paper develops a small illustrative model, rather than estimating a model
+from a documented farm dataset. Its values are conditional on the stated
+production requirements, technologies, costs, and land-use restrictions. They
+measure production-cost savings over the model's accounting period, not a
+capitalized market sale price for land.
+
+# The agricultural production model
+
+## Activities and costs
+
+There are three land groups, indexed by $g=1,2,3$, and three activities on each
+group. Let $C_g$, $W_g$, and $P_g$ denote acres of corn, wheat, and pasture,
+respectively. These nine acreages are the baseline decision variables.
+
+The full numerical objective is
+
+$$
+\begin{aligned}
+\min_{C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3}\quad
+&66.40C_1+96.40W_1+80.14P_1\\
+&{}+151.20C_2+93.80W_2+84.16P_2\\
+&{}+102.60C_3+61.50W_3+75.48P_3.
+\end{aligned}
+$$
+
+Each coefficient is a cost per acre. The objective is total production cost,
+measured in dollars. The three lines group costs by land type.
+
+## Production requirements
+
+The model must produce the specified quantities of corn, wheat, and pasture
+output:
+
+$$
+\begin{aligned}
+80C_1+60C_2+40C_3 &= 7{,}500 &&\text{(corn)},\\
+40W_1+35W_2+25W_3 &= 2{,}500 &&\text{(wheat)},\\
+2.2P_1+2.0P_2+1.8P_3 &= 170 &&\text{(pasture)}.
+\end{aligned}
+$$
+
+The coefficients are output per acre. Table 1 does not explicitly label the
+physical output units, so we retain its numerical units. These are
+**equalities**, as in the paper: the model produces the specified output rather
+than choosing output in response to product prices.
+
+## Land and cropping restrictions
+
+Each land group initially contains 100 acres. Corn and wheat have maximum
+acreages; pasture has a minimum acreage. All twelve restrictions are
+
+$$
+\begin{aligned}
+C_1+W_1+P_1 &\le 100 &&\text{(land 1)},\\
+C_1 &\le 60 &&\text{(corn 1 maximum)},\\
+W_1 &\le 20 &&\text{(wheat 1 maximum)},\\
+P_1 &\ge 20 &&\text{(pasture 1 minimum)},\\[5pt]
+C_2+W_2+P_2 &\le 100 &&\text{(land 2)},\\
+C_2 &\le 40 &&\text{(corn 2 maximum)},\\
+W_2 &\le 30 &&\text{(wheat 2 maximum)},\\
+P_2 &\ge 30 &&\text{(pasture 2 minimum)},\\[5pt]
+C_3+W_3+P_3 &\le 100 &&\text{(land 3)},\\
+C_3 &\le 20 &&\text{(corn 3 maximum)},\\
+W_3 &\le 30 &&\text{(wheat 3 maximum)},\\
+P_3 &\ge 30 &&\text{(pasture 3 minimum)}.
+\end{aligned}
+$$
+
+Finally, the variable restrictions are
+
+$$
+C_1,W_1,P_1,C_2,W_2,P_2,C_3,W_3,P_3\ge0.
+$$
+
+Together, the objective, three production equalities, twelve land-use
+inequalities, and nine nonnegativity restrictions define the full baseline LP.
+The cropping bounds can represent physical suitability or imposed land-use
+rules. Their economic justification matters because they help determine the
+calculated value of development.
+
+## Baseline allocation
+
+Solving this model in R gives the following acreages and a minimized cost of
+**\$`r money(baseline$cost)`**. The results and figure in these notes are
+computed when the document renders.
+
+```{r}
+#| label: baseline-allocation
+allocation <- matrix(baseline$acres, nrow = 3, byrow = TRUE)
+knitr::kable(
+  data.frame(`Land group` = 1:3, Corn = allocation[, 1],
+             Wheat = allocation[, 2], Pasture = allocation[, 3],
+             `Total used` = rowSums(allocation), check.names = FALSE),
+  format = "latex", digits = 2, booktabs = TRUE, row.names = FALSE
+)
+```
+
+Land group 2 uses all 100 acres, with corn and wheat at their upper bounds and
+pasture at its lower bound. The economic question is how this whole production
+system would adjust if more of that land package became available.
+
+# The main insight: Value the complete resource package
+
+## Specify the change before interpreting the shadow price
+
+Let $L$ denote the endowment of land group 2. Keeping its characteristics in
+the original proportions replaces its four bounds with
+
+$$
+\begin{aligned}
+C_2+W_2+P_2&\le L,\\
+C_2&\le0.4L,\\
+W_2&\le0.3L,\\
+P_2&\ge0.3L.
+\end{aligned}
+$$
+
+At the baseline, $L=100$. An additional acre raises the four right-hand sides
+by $1$, $0.4$, $0.3$, and $0.3$. The fractions apply to the **land endowment**;
+the solver chooses the actual allocation. Raising the pasture minimum tightens
+a restriction, so the package brings an additional obligation as well as
+additional opportunities.
+
+## Derive the weighted sum
+
+Write $C^*(L)$ for minimized cost and $\lambda_i$ for its local change per unit
+increase in right-hand side $b_i$. With the original inequality directions,
+upper-bound resource prices are nonpositive; minimum-requirement prices are
+nonnegative.
+
+Within a range where the relevant marginal values remain valid,
+
+$$
+\Delta C^*=\lambda_L\Delta b_L+\lambda_C\Delta b_C
+             +\lambda_W\Delta b_W+\lambda_P\Delta b_P.
+$$
+
+Substituting the coordinated changes gives
+
+$$
+\Delta C^*
+=\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right)\Delta L.
+$$
+
+Therefore the marginal benefit of the package, measured as a cost saving, is
+
+$$
+\boxed{MV(L)=-\frac{dC^*(L)}{dL}
+=-\left(\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P\right).}
+$$
+
+This is a **weighted sum**, not a weighted average. The weights are the
+right-hand-side changes per added acre; there is no division by their sum.
+Using only $\lambda_L$ would value more total land while holding every cropping
+bound fixed, which is a different economic experiment.
+
+## A numerical interpretation
+
+One valid set of multipliers for this numerical model, matching the rounded
+values in the paper's Table 2, gives the following contributions:
+
+| Constraint | Cost shadow price | Change per acre | Cost effect |
+|:-----------|------------------:|----------------:|------------:|
+| Total land 2 | $-1.14917$ | $1.0$ | $-1.14917$ |
+| Corn maximum | $-1.55083$ | $0.4$ | $-0.62033$ |
+| Wheat maximum | $0$ | $0.3$ | $0$ |
+| Pasture minimum | $+1.44250$ | $0.3$ | $+0.43275$ |
+| **Package** | | | **$-1.33675$** |
+
+An additional acre saves approximately **\$`r money(baseline$mv)`** at the
+margin. The extra pasture requirement offsets some of the gains from additional
+land and permitted corn acreage. A direct re-solve at $L=100.001$ gives a cost
+saving per added acre of `r sprintf("%.5f", finite_difference)`, confirming the
+weighted-shadow-price calculation.
+
+Individual multipliers need not be unique at this solution: the land and
+cropping constraints bind together. A solver can report a different allocation
+of shadow values across these rows while giving the same value for the
+coordinated package. A binding constraint can also have a zero shadow price.
+
+The paper's earlier displayed multipliers on printed page 5 imply about
+\$1.34042, a slightly different value. These notes consistently use Table 1's
+coefficients, which yield \$1.33675 and agree with the later range-analysis
+tables after accounting for the transfer activity's cost.
+
+# Representing the package with a transfer activity
+
+Define a new decision variable $t\ge0$ as additional acres of the land group 2
+package. Then $L=100+t$, and the four constraints become
+
+$$
+\begin{aligned}
+C_2+W_2+P_2-t&\le100,\\
+C_2-0.4t&\le40,\\
+W_2-0.3t&\le30,\\
+P_2-0.3t&\ge30.
+\end{aligned}
+$$
+
+These are the coefficients in the paper's **TRANSFER 2** column. For example,
+$t=5$ provides 105 total acres, permits up to 42 corn acres and 31.5 wheat
+acres, and requires at least 31.5 pasture acres. It adds land to the modeled
+resource base; it does not move land out of groups 1 or 3.
+
+The other constraints and the nine production-cost coefficients stay as
+specified above. The paper adds a cost of $0.01t$ to the objective and, in its
+illustrative bounded experiment, adds the row $t\le1$. More generally, a bound
+$t\le\bar t$ lets the analyst vary how much development is allowed.
+
+If $k$ is development cost per acre, the expanded objective is production cost
+plus $kt$. The local change in that objective per unit of transfer is
+
+$$
+k+\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P
+=k-MV(L).
+$$
+
+This links the transfer activity's reduced-cost calculation to the package
+valuation. Expansion is attractive when its gross cost saving exceeds its
+development cost. The paper's $0.01$ activity cost must be accounted for when
+recovering gross resource value from its reported net activity value; reduced
+cost signs also depend on the solver's reporting convention and active bound.
+
+The transfer activity makes a coordinated change into a single explicit
+choice. Its sensitivity range concerns the whole package. Separate
+one-at-a-time ranges for land, corn, wheat, or pasture do not directly give
+the allowable range for that coordinated change.
+
+\newpage
+
+# Derived demand for the land package
+
+## Trace marginal value as the endowment changes
+
+To construct the derived-demand schedule, vary $L$, update all four land group
+2 bounds, and re-solve the production model. Keep costs, yields, the other land
+groups, and output requirements fixed. At each solution calculate
+
+$$
+MV(L)=-\left(\lambda_L(L)+0.4\lambda_C(L)
+                     +0.3\lambda_W(L)+0.3\lambda_P(L)\right).
+$$
+
+These are valuations of specified endowments. In particular, evaluating
+$L<100$ describes a smaller endowment, rather than a negative value of the
+nonnegative development variable $t$.
+
+Within each optimal LP regime, cost is linear in $L$ and marginal value is
+constant. When the limiting constraints or optimal production adjustments
+change, the slope changes. The result is a stepwise marginal-value schedule.
+At a corner, use the appropriate one-sided value for expansion or contraction.
+
+The embedded R calculation uses `lpSolve`, audits feasibility and cost at every
+solution, and checks the shadow-price prediction against small numerical
+changes in $L$. It locates the plotted corners by intersecting adjacent linear
+cost segments.
+
+```{r}
+#| label: fig-derived-demand
+#| fig-cap: "Derived marginal value of the land group 2 package, computed from Table 1. All four land group 2 bounds change together. The dashed line marks the 100-acre baseline; dotted lines mark changes in marginal value. The negative segment reflects the rising pasture minimum."
+#| fig-width: 6.2
+#| fig-height: 3.8
+#| out-width: "100%"
+#| fig-align: center
+#| fig-pos: H
+#| dev: pdf
+par(mar = c(4.2, 4.5, 1.0, 0.7), mgp = c(2.7, 0.8, 0),
+    family = "serif", las = 1, cex = 0.95)
+plot(range(edges), range(c(regime_mv, 0)) + c(-0.20, 0.28),
+     type = "n", xlab = "Land group 2 endowment (acres)",
+     ylab = "Marginal cost saving ($ per added acre)",
+     xaxs = "i", yaxs = "i", bty = "l")
+abline(h = 0, col = "gray55", lwd = 0.8)
+abline(v = 100, lty = 2, col = "gray45")
+abline(v = breaks, lty = 3, col = "gray65")
+segments(head(edges, -1), regime_mv, tail(edges, -1), regime_mv,
+         lwd = 2.4, col = "#174A66")
+segments(breaks, head(regime_mv, -1), breaks, tail(regime_mv, -1),
+         lwd = 1.1, lty = 3, col = "#174A66")
+text((head(edges, -1) + tail(edges, -1)) / 2,
+     regime_mv + 0.12, labels = sprintf("$%.2f", regime_mv), cex = 0.9)
+points(100, baseline$mv, pch = 16, cex = 0.8)
+text(100, par("usr")[4] - 0.08, "Baseline", pos = 2, cex = 0.8)
+```
+
+\newpage
+
+## Interpret the steps and the development decision
+
+The initial value of approximately \$`r money(regime_mv[1])` persists through
+about **`r sprintf("%.2f", breaks[1])` acres**. At that point, the minimum
+pasture acreage on land group 3 binds, changing the production adjustment
+available to accommodate additional land group 2. The marginal benefit falls
+to approximately **\$`r money(regime_mv[2])`**.
+
+At about **`r sprintf("%.2f", breaks[2])` acres**, corn production on land
+group 3 reaches zero and the marginal value falls again, becoming negative.
+Additional land group 2 can no longer save costs by replacing corn on land
+group 3. The model
+now pays more to meet the same output requirements as $L$ rises. This is
+possible because the package increases a compulsory pasture minimum:
+larger endowments do not simply enlarge the feasible set. The paper's Figure 1
+emphasizes the positive steps; the calculation here also displays the next
+segment implied by its numerical model.
+
+For an optional development project with nonnegative development costs, there
+is no reason to purchase additions on the negative-value segment. With
+constant cost $k$, compare the height of each step with $k$ and expand only
+while the marginal saving exceeds that cost. For a finite project, total gross
+benefit is the area under the marginal-value schedule:
+
+$$
+C^*(100)-C^*(100+t)=\int_{100}^{100+t}MV(L)\,dL.
+$$
+
+Subtract $kt$ to obtain net benefit. Multiplying the initial shadow value by
+every added acre is valid only while the project stays within that initial
+range. The value of the resource follows from both the **package being added**
+and the **production adjustments available at each endowment**.
+
+\newpage
+
+# Model Lab Example
+
+## Question and experimental design
+
+**What is the production-cost penalty from applying the land-use restrictions
+to newly developed group 2 acreage, and how does that penalty change with
+project size?**
+
+Compare two ways of adding $t$ acres of group 2 land. Restricted expansion
+brings the paper's corn and wheat maxima and pasture minimum. Unrestricted
+expansion permits any mix of the three activities on the additional land.
+Both scenarios retain the original restrictions on all existing land, the
+same yields and costs, and the same output requirements. This isolates the
+value of flexibility on the new acreage.
+
+Increasing the total-land bound alone while holding the corn and wheat bounds
+fixed would not implement unrestricted expansion: those crop bounds would
+still apply to the additional acreage. Instead, distinguish existing and new
+land explicitly.
+
+Let $z_C,z_W,z_P\ge0$ denote acres of corn, wheat, and pasture on the **new**
+group 2 land. The original nine variables describe only existing land. Retain
+all twelve original land-use inequalities and all nine original nonnegativity
+restrictions. Replace the output equalities with
+
+$$
+\begin{aligned}
+80C_1+60C_2+40C_3+60z_C &=7{,}500,\\
+40W_1+35W_2+25W_3+35z_W &=2{,}500,\\
+2.2P_1+2.0P_2+1.8P_3+2.0z_P &=170.
+\end{aligned}
+$$
+
+If $C_{\mathrm{old}}(x)$ denotes the fully parameterized production-cost
+objective given above, both scenarios minimize
+
+$$
+C_{\mathrm{old}}(x)+151.20z_C+93.80z_W+84.16z_P.
+$$
+
+The **unrestricted** scenario adds only
+
+$$
+z_C+z_W+z_P\le t,\qquad z_C,z_W,z_P\ge0.
+$$
+
+The **restricted** scenario also imposes
+
+$$
+z_C\le0.4t,\qquad z_W\le0.3t,\qquad z_P\ge0.3t.
+$$
+
+These are maxima and a minimum, not three required exact shares. The
+restricted formulation is equivalent, in aggregate, to expanding the original
+group 2 package to $100+t$ acres. Because old and new group 2 land have the
+same technology, labels on otherwise interchangeable acres can be nonunique;
+the minimized cost is the quantity we use for valuation.
+
+## Define the value of removing the restrictions
+
+Let $C_R(t)$ and $C_U(t)$ be minimized production costs in the restricted and
+unrestricted scenarios, and let $C_0=C_R(0)=C_U(0)$ be baseline cost. Gross
+benefits of development are
+
+$$
+B_R(t)=C_0-C_R(t),\qquad B_U(t)=C_0-C_U(t).
+$$
+
+The total value of flexibility on the added acreage is
+
+$$
+\boxed{V(t)=C_R(t)-C_U(t)=B_U(t)-B_R(t).}
+$$
+
+Every allocation feasible under restricted expansion is also feasible under
+unrestricted expansion. Therefore $C_U(t)\le C_R(t)$ and **$V(t)\ge0$** wherever
+both problems are feasible. The average value per added acre is $V(t)/t$ for
+$t>0$; it is distinct from the marginal value $V'(t)$.
+
+No development cost is included in this comparison. An identical cost $kt$
+in both scenarios would cancel from $V(t)$. The result is the production
+system's value of removing the restrictions. Any benefits of the restrictions
+themselves, such as erosion reduction, would require separate representation.
+
+Define the marginal benefits of acreage as
+
+$$
+MV_R(t)=-C_R'(t),\qquad MV_U(t)=-C_U'(t).
+$$
+
+For the new-land constraints, denote cost shadow prices by $\mu$. As in the
+paper, restricted expansion changes four bounds together, whereas
+unrestricted expansion changes only the new-land availability bound:
+
+$$
+\begin{aligned}
+MV_R(t)&=-\left(\mu_{L,R}+0.4\mu_{C,R}
+                         +0.3\mu_{W,R}+0.3\mu_{P,R}\right),\\
+MV_U(t)&=-\mu_{L,U}.
+\end{aligned}
+$$
+
+Thus, away from corners,
+
+$$
+\boxed{V'(t)=MV_U(t)-MV_R(t),\qquad
+V(t)=\int_0^t\left[MV_U(s)-MV_R(s)\right]ds.}
+$$
+
+Use one-sided slopes at corners and at $t=0$. In particular, a solver may
+return a nonunique dual solution when all new-acreage variables are fixed to
+zero; a small positive expansion identifies the relevant right-hand slope.
+
+```{r}
+#| label: lab-calculations
+#| include: false
+library(ggplot2)
+
+solve_expansion <- function(t, restricted = FALSE) {
+  stopifnot(length(t) == 1L, is.finite(t), t >= 0)
+  new_columns <- matrix(0, nrow(A), 3)
+  new_columns[1:3, ] <- diag(c(60, 35, 2))
+  lab_A <- rbind(cbind(A, new_columns), c(rep(0, 9), 1, 1, 1))
+  lab_dir <- c(directions, "<=")
+  lab_rhs <- c(7500, 2500, 170, 100, 60, 20, 20,
+               100, 40, 30, 30, 100, 20, 30, 30, t)
+  rhs_change <- 1
+  if (restricted) {
+    lab_A <- rbind(lab_A, cbind(matrix(0, 3, 9), diag(3)))
+    lab_dir <- c(lab_dir, "<=", "<=", ">=")
+    lab_rhs <- c(lab_rhs, 0.4 * t, 0.3 * t, 0.3 * t)
+    rhs_change <- c(1, 0.4, 0.3, 0.3)
+  }
+  lab_cost <- c(cost, cost[4:6])
+  fit <- lp("min", lab_cost, lab_A, lab_dir, lab_rhs,
+            compute.sens = TRUE)
+  if (fit$status != 0) stop("Expansion problem not optimal at t = ", t)
+  residual <- drop(lab_A %*% fit$solution) - lab_rhs
+  stopifnot(all(fit$solution >= -1e-7),
+            all(abs(residual[lab_dir == "="]) < 1e-6),
+            all(residual[lab_dir == "<="] < 1e-6),
+            all(residual[lab_dir == ">="] > -1e-6),
+            abs(sum(lab_cost * fit$solution) - fit$objval) < 1e-6)
+  list(cost = fit$objval, acres = fit$solution,
+       mv = -sum(fit$duals[16:nrow(lab_A)] * rhs_change))
+}
+
+# Sample inside intervals so t=0 and known corners do not select ambiguous
+# endpoint duals. Intersect adjacent linear cost segments for exact corners.
+lab_grid <- seq(0, 20, by = 0.025)
+lab_midpoints <- (head(lab_grid, -1) + tail(lab_grid, -1)) / 2
+get_lab_regimes <- function(restricted) {
+  fits <- lapply(lab_midpoints, solve_expansion, restricted = restricted)
+  mv <- vapply(fits, function(s) s$mv, numeric(1))
+  mv[abs(mv) < 1e-7] <- 0
+  starts <- c(1L, which(abs(diff(mv)) > 1e-6) + 1L)
+  slopes <- mv[starts]
+  intercept <- vapply(fits[starts], function(s) s$cost, numeric(1)) +
+    slopes * lab_midpoints[starts]
+  corners <- diff(intercept) / diff(slopes)
+  bounds <- c(0, corners, 20)
+  stopifnot(all(diff(bounds) > 0))
+  segments <- data.frame(t_start = head(bounds, -1),
+                         t_end = tail(bounds, -1), mv = slopes,
+                         intercept = intercept)
+  for (j in seq_len(nrow(segments))) {
+    t <- mean(c(segments$t_start[j], segments$t_end[j]))
+    fd <- (solve_expansion(t, restricted)$cost -
+           solve_expansion(t + epsilon, restricted)$cost) / epsilon
+    stopifnot(abs(fd - segments$mv[j]) < 1e-5)
+  }
+  segments
+}
+restricted_regimes <- get_lab_regimes(TRUE)
+unrestricted_regimes <- get_lab_regimes(FALSE)
+regime_cost <- function(t, segments) {
+  i <- pmin(findInterval(t, segments$t_start), nrow(segments))
+  segments$intercept[i] - segments$mv[i] * t
+}
+
+# Independently verify the piecewise curves against grid solutions, confirm
+# feasible-set dominance, and reproduce the paper's aggregate formulation.
+for (t in lab_grid) {
+  r <- solve_expansion(t, TRUE)
+  u <- solve_expansion(t, FALSE)
+  stopifnot(abs(r$cost - regime_cost(t, restricted_regimes)) < 1e-5,
+            abs(u$cost - regime_cost(t, unrestricted_regimes)) < 1e-5,
+            abs(r$cost - solve_land(100 + t)$cost) < 1e-5,
+            u$cost <= r$cost + 1e-6)
+}
+stopifnot(abs(solve_expansion(0, TRUE)$cost - baseline$cost) < 1e-6,
+          abs(solve_expansion(0, FALSE)$cost - baseline$cost) < 1e-6)
+
+example_t <- c(0, 1, 5, 10, 12.5, 20)
+examples <- data.frame(t = example_t,
+                      restricted = regime_cost(example_t, restricted_regimes),
+                      unrestricted = regime_cost(example_t, unrestricted_regimes))
+examples$value <- examples$restricted - examples$unrestricted
+examples$value[abs(examples$value) < 1e-7] <- 0
+ten <- examples[examples$t == 10, ]
+initial_R <- restricted_regimes$mv[1]
+initial_U <- unrestricted_regimes$mv[1]
+initial_gap <- initial_U - initial_R
+unrestricted_plateau <- tail(unrestricted_regimes$t_start, 1)
+
+# Plot only actual segment endpoints; lines therefore retain the LP corners.
+plot_t <- sort(unique(c(restricted_regimes$t_start,
+                        unrestricted_regimes$t_start, 20)))
+plot_R <- baseline$cost - regime_cost(plot_t, restricted_regimes)
+plot_U <- baseline$cost - regime_cost(plot_t, unrestricted_regimes)
+benefit_data <- rbind(
+  data.frame(t = plot_t, benefit = plot_R, scenario = "Restricted"),
+  data.frame(t = plot_t, benefit = plot_U, scenario = "Unrestricted")
+)
+value_data <- data.frame(t = plot_t, value = plot_U - plot_R)
+benefit_band <- data.frame(t = plot_t, lower = plot_R, upper = plot_U)
+scenario_colors <- c(Restricted = "#A34A28", Unrestricted = "#174A66")
+scenario_lines <- c(Restricted = "dashed", Unrestricted = "solid")
+lab_theme <- theme_minimal(base_size = 10, base_family = "serif") +
+  theme(panel.grid.minor = element_blank(), legend.position = "bottom",
+        legend.title = element_blank(), plot.margin = margin(6, 10, 6, 6),
+        strip.text = element_text(face = "bold", hjust = 0))
+
+# The area between marginal curves equals the directly calculated V(t).
+interval_mid <- (head(plot_t, -1) + tail(plot_t, -1)) / 2
+get_mv <- function(t, segments) {
+  segments$mv[pmin(findInterval(t, segments$t_start), nrow(segments))]
+}
+interval_R <- get_mv(interval_mid, restricted_regimes)
+interval_U <- get_mv(interval_mid, unrestricted_regimes)
+integrated_value <- c(0, cumsum((interval_U - interval_R) * diff(plot_t)))
+stopifnot(max(abs(integrated_value - value_data$value)) < 1e-5)
+```
+
+\newpage
+
+## Calculate the value of flexibility
+
+The calculation solves both twelve-variable LPs at each expansion size. It
+checks feasibility, reconstructs costs, verifies $C_U(t)\le C_R(t)$, and confirms
+that restricted expansion reproduces the earlier aggregate model. The table
+reports dollars over the same accounting period as the original model.
+
+```{r}
+#| label: lab-value-table
+knitr::kable(
+  data.frame(
+    `Added acres` = sprintf("%g", examples$t),
+    `Restricted cost` = money(examples$restricted),
+    `Unrestricted cost` = money(examples$unrestricted),
+    `Flexibility value` = money(examples$value),
+    `Value per acre` = ifelse(examples$t == 0, "--",
+                             money(examples$value / examples$t)),
+    check.names = FALSE
+  ), format = "latex", booktabs = TRUE, row.names = FALSE,
+  align = c("r", "r", "r", "r", "r")
+)
+```
+
+For a **10-acre project**, restricted expansion saves
+\$`r money(baseline$cost - ten$restricted)`, while unrestricted expansion
+saves \$`r money(baseline$cost - ten$unrestricted)`. Removing the restrictions
+is therefore worth **\$`r money(ten$value)` in total**, or
+**\$`r money(ten$value / 10)` per added acre** on average. This is the maximum
+additional project cost justified by flexibility alone within this model.
+
+```{r}
+#| label: fig-lab-development-benefits
+#| fig-cap: "Production-cost savings from adding group 2 land. The vertical gap, shaded between the curves, is the total value of removing restrictions at a given project size. The baseline is the same in both scenarios."
+#| fig-width: 6.2
+#| fig-height: 3.6
+#| out-width: "100%"
+#| fig-align: center
+#| fig-pos: H
+#| dev: pdf
+ggplot(benefit_data, aes(t, benefit, color = scenario, linetype = scenario)) +
+  geom_ribbon(data = benefit_band,
+              aes(x = t, ymin = lower, ymax = upper),
+              inherit.aes = FALSE, fill = "#DCE8EC", alpha = 0.8) +
+  geom_line(linewidth = 0.85) +
+  annotate("segment", x = 10, xend = 10,
+           y = baseline$cost - ten$restricted,
+           yend = baseline$cost - ten$unrestricted,
+           linewidth = 0.65, color = "gray25") +
+  annotate("text", x = 10.4,
+           y = baseline$cost - (ten$restricted + ten$unrestricted) / 2,
+           label = paste0("$", money(ten$value), " at 10 acres"),
+           hjust = 0, size = 3.1, family = "serif") +
+  scale_color_manual(values = scenario_colors) +
+  scale_linetype_manual(values = scenario_lines) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Additional group 2 land (acres)",
+       y = "Total production-cost saving ($)") + lab_theme
+```
+
+The unrestricted curve levels off after approximately
+**`r sprintf("%.2f", unrestricted_plateau)` added acres**. Beyond that point,
+more available acreage creates no further production-cost saving. Restricted
+benefits peak at **12.50 added acres** and then decline as the growing pasture
+minimum becomes costly. Common development costs would be subtracted from
+both benefit curves when choosing project size.
+
+\newpage
+
+## Explain the marginal values and their changing gap
+
+Initially, one unrestricted acre can grow corn and replace $60/40=1.5$ acres
+of corn on group 3. The saving is
+
+$$
+MV_U(0^+)=1.5(102.60)-151.20=\$2.70\text{ per added acre}.
+$$
+
+This adjustment lasts for five added acres, enough to replace the original
+7.5 acres of group 3 corn. Restricted expansion initially saves only
+\$`r sprintf("%.5f", initial_R)` per acre, because the corn maximum expands
+more slowly and the pasture requirement grows. Thus
+
+$$
+V'(0^+)=`r sprintf("%.5f", initial_U)`-`r sprintf("%.5f", initial_R)`
+=\$`r sprintf("%.5f", initial_gap)`\text{ per added acre}.
+$$
+
+The initial value of flexibility is about \$`r money(initial_gap)` per acre,
+but this rate cannot be multiplied by every acre of a large project.
+
+```{r}
+#| label: fig-lab-marginal-and-total-flexibility
+#| fig-cap: "Upper panel: marginal values of added acreage. Lower panel: total value of removing its restrictions. Total flexibility value rises where the unrestricted marginal value is higher and falls where it is lower. Dotted guides mark unrestricted breakpoints; total flexibility value remains nonnegative."
+#| fig-width: 6.2
+#| fig-height: 4.8
+#| out-width: "100%"
+#| fig-align: center
+#| fig-pos: H
+#| dev: pdf
+marginal_data <- rbind(
+  transform(restricted_regimes, scenario = "Restricted"),
+  transform(unrestricted_regimes, scenario = "Unrestricted")
+)
+panel_levels <- c("Marginal cost saving ($ per added acre)",
+                  "Total value of flexibility ($)")
+marginal_data$panel <- factor(panel_levels[1], levels = panel_levels)
+value_data$panel <- factor(panel_levels[2], levels = panel_levels)
+ggplot() +
+  geom_hline(yintercept = 0, color = "gray65", linewidth = 0.3) +
+  geom_vline(xintercept = unrestricted_regimes$t_start[-1],
+             color = "gray70", linetype = "dotted", linewidth = 0.4) +
+  geom_segment(data = marginal_data,
+               aes(x = t_start, xend = t_end, y = mv, yend = mv,
+                   color = scenario, linetype = scenario), linewidth = 0.9) +
+  geom_line(data = value_data, aes(t, value),
+            color = "gray15", linewidth = 0.85) +
+  facet_wrap(~panel, ncol = 1, scales = "free_y") +
+  scale_color_manual(values = scenario_colors) +
+  scale_linetype_manual(values = scenario_lines) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Additional group 2 land (acres)", y = NULL) + lab_theme
+```
+
+## What the experiment teaches
+
+**A nonnegative total value need not increase at every project size.**
+Unrestricted expansion always costs no more than restricted expansion at the
+same $t$. Nevertheless, the marginal-value curves cross. Between 5 and about
+5.52 added acres, unrestricted corn substitution has ended, while restricted
+expansion still earns its initial marginal benefit. Between about
+`r sprintf("%.2f", unrestricted_plateau)` and 12.50 acres, unrestricted benefits
+are flat while restricted benefits continue rising. In both intervals,
+$V'(t)<0$: the restricted scenario partially catches up. That does not imply
+the restrictions have become beneficial.
+
+After 12.50 acres, the restricted scenario's pasture obligation raises costs,
+while unrestricted cost stays constant. Consequently the value of removing
+the restrictions rises again. The integral of the marginal-value gap matches
+the direct cost difference; the R calculation checks both ways of computing
+$V(t)$.
+
+**Project size and the decision being valued must be explicit.** These curves
+compare two specified projects of equal size. An unrestricted project may
+leave acreage unused. A restricted project still incurs its pasture minimum
+on all developed acres, even if it would prefer a smaller project. The plotted
+comparison stops at $t=20$: beyond that, the three pasture minima alone imply
+more than the required 170 units of pasture output, making restricted
+expansion infeasible under the paper's equality constraint.
+
+For a Model Lab presentation, the central explanation is the sequence from
+the counterfactual to its consequences: define which land is freed from which
+rules, predict the initial marginal effect, solve and verify both models, and
+use changing allocations and binding constraints to explain the difference
+between the two value curves.

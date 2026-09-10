@@ -1,0 +1,219 @@
+---
+title: "Model Lab: The Value of Land-Use Flexibility"
+format:
+  revealjs:
+    theme: simple
+    title-slide: false
+    slide-number: true
+    transition: fade
+    center: false
+    width: 1280
+    height: 720
+    margin: 0.04
+    embed-resources: true
+    toc: false
+    number-sections: false
+    include-in-header:
+      text: |
+        <style>
+        .reveal { font-size: 32px; }
+        .reveal h2 { font-size: 1.45em; margin-bottom: 0.6em; }
+        .reveal h3 { font-size: 1.05em; margin-top: 0.5em; }
+        .reveal p, .reveal li { line-height: 1.3; }
+        .reveal .shared-assumptions { font-size: 0.85em; margin-top: 1.1em; }
+        .reveal .valuation { text-align: center; font-size: 1.18em; margin: 0.8em 0; }
+        .reveal .result { font-size: 0.9em; text-align: center; }
+        .reveal .cell-output-display img { margin: 0 auto; }
+        </style>
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: slide-calculations
+#| include: false
+# Reuse the model and audited calculations from the neighboring notes.
+# Rendering this QMD requires Stewart_Notes.qmd, lpSolve, ggplot2, and knitr.
+# The rendered HTML embeds its figure and presentation resources.
+notes_source <- readLines("Stewart_Notes.qmd", warn = FALSE)
+notes_chunk <- function(label) {
+  start <- which(trimws(notes_source) == paste0("#| label: ", label))
+  if (length(start) != 1L) stop("Expected one notes chunk named: ", label)
+  closing <- which(seq_along(notes_source) > start &
+                     trimws(notes_source) == "```")
+  if (!length(closing)) stop("Missing closing fence for: ", label)
+  notes_source[seq.int(start + 1L, min(closing) - 1L)]
+}
+for (label in c("setup-model", "lab-calculations")) {
+  eval(parse(text = notes_chunk(label)), envir = knitr::knit_global())
+}
+
+```
+
+## What is the value of unrestricted new acreage?
+
+Add *t* acres of **group 2 land** and compare two versions of the same project.
+
+:::: {.columns}
+::: {.column width="50%"}
+### Restricted expansion
+
+On the additional acreage:
+
+- Corn: at most 40%.
+- Wheat: at most 30%.
+- Pasture: at least 30%.
+:::
+
+::: {.column width="50%"}
+### Unrestricted expansion
+
+Any combination of corn, wheat, and pasture on the new land.
+
+Total use cannot exceed the additional acreage available.
+:::
+::::
+
+::: {.shared-assumptions}
+**Existing land keeps its restrictions.** Both projects use the same yields,
+production costs, and output requirements.
+:::
+
+::: {.notes}
+This extends Stewart and Greenhalgh (1977). Only the treatment of newly added
+group 2 acreage changes. Restricted shares are upper bounds for corn and wheat
+and a lower bound for pasture, rather than three exact required shares.
+Increasing the total-land bound alone while retaining the original aggregate
+crop caps would not make the new land unrestricted. The notes implement
+separate activity variables for the additional acres.
+:::
+
+## Policy relevance of land-use flexibility
+
+A development program may require pasture or limit cropping on new land.
+What production benefit does the program give up by attaching those rules?
+
+::: {.valuation}
+<i>V</i>(<i>t</i>) = <i>C</i><sub>R</sub>(<i>t</i>) − <i>C</i><sub>U</sub>(<i>t</i>)
+= <i>B</i><sub>U</sub>(<i>t</i>) − <i>B</i><sub>R</sub>(<i>t</i>)
+:::
+
+Here, **C** is minimized production cost and **B** is the saving from expansion.
+**V** measures the value of removing the restrictions for a project of size *t*.
+
+- Compare that production cost with the restrictions' conservation benefits.
+- Evaluate the proposed project size: the value per acre changes with acreage.
+
+::: {.notes}
+R denotes restricted expansion and U denotes unrestricted expansion. Both
+benefits use the same baseline production cost. Feasible-set inclusion implies
+V(t) is nonnegative, but it need not rise at every project size. Environmental
+benefits are outside this production model and must be evaluated separately.
+The paper's coefficients are illustrative, so these dollars describe the
+example rather than an estimate for a current real-world policy.
+Source: Stewart_Notes.qmd, Model Lab Example.
+:::
+
+## Flexibility is worth \$`r money(ten$value)` for 10 added acres
+
+```{r}
+#| label: flexibility-gap-plot
+#| fig-width: 10
+#| fig-height: 4.2
+#| out-width: "94%"
+#| fig-align: center
+#| fig-alt: "Restricted and unrestricted production-cost savings as group 2 acreage expands. The shaded gap is the value of flexibility. At 10 additional acres, the gap is 7.16 dollars."
+#| dev: svg
+# Recreate Figure 2 with the same computed values and larger slide labels.
+ggplot(benefit_data, aes(t, benefit, color = scenario, linetype = scenario)) +
+  geom_ribbon(data = benefit_band,
+              aes(x = t, ymin = lower, ymax = upper),
+              inherit.aes = FALSE, fill = "#DCE8EC", alpha = 0.8) +
+  geom_line(linewidth = 1.15) +
+  annotate("text", x = 19.8,
+           y = baseline$cost - regime_cost(19.8, unrestricted_regimes) + 0.8,
+           label = "Unrestricted", color = scenario_colors[["Unrestricted"]],
+           hjust = 1, size = 5.6, fontface = "bold" ) +
+  annotate("text", x = 19.8,
+           y = baseline$cost - regime_cost(19.8, restricted_regimes) - 0.9,
+           label = "Restricted", color = scenario_colors[["Restricted"]],
+           hjust = 1, size = 5.6, fontface = "bold" ) +
+  annotate("segment", x = 10, xend = 10,
+           y = baseline$cost - ten$restricted,
+           yend = baseline$cost - ten$unrestricted,
+           linewidth = 0.8, color = "gray25") +
+  annotate("text", x = 10.45,
+           y = baseline$cost - (ten$restricted + ten$unrestricted) / 2,
+           label = paste0("$", money(ten$value), " value of flexibility"),
+           hjust = 0, size = 5) +
+  scale_color_manual(values = scenario_colors) +
+  scale_linetype_manual(values = scenario_lines) +
+  scale_x_continuous(breaks = seq(0, 20, 5)) +
+  labs(x = "Additional group 2 land (acres)",
+       y = "Total cost saving ($)") +
+  theme_minimal(base_size = 17) +
+  theme(panel.grid.minor = element_blank(),
+        legend.position = "none",
+        plot.margin = margin(5, 12, 0, 5))
+```
+
+::: {.result}
+At 10 acres, total savings are **\$`r money(baseline$cost - ten$unrestricted)` unrestricted**
+versus **\$`r money(baseline$cost - ten$restricted)` restricted**.
+The **\$`r money(ten$value)` difference** is the value of flexibility.
+:::
+
+::: {.notes}
+This reproduces Figure 2 from the notes. At any project size, the vertical gap
+between the cost-saving curves is the total value of flexibility. At ten acres,
+the difference is approximately $7.16, or $0.72 per added acre on average.
+The unrestricted benefit levels off after about 8.38 acres. Restricted
+benefits peak at 12.5 acres and then decline as the pasture minimum grows.
+The shrinking and widening gap shows why the initial marginal value of
+flexibility cannot be applied to every acre of a larger project. All monetary
+values use the original model's accounting period, not capitalized land prices.
+:::
+
+## Calculating the cost-savings curves
+
+**Shadow prices apply within a segment. We recomputed them as marginal values changed.**
+
+1. **Re-solve both LPs** over 0–20 added acres using a grid spaced 0.025 acres apart.
+2. **Record minimized costs and shadow prices.** Use the weighted sum for restricted
+   expansion and the new-land shadow price for unrestricted expansion.
+3. **Construct each savings curve as baseline cost minus optimized cost.** Locate
+   corners by intersecting adjacent cost segments, then plot their endpoints.
+
+::: {.shared-assumptions}
+**Breakpoints in added acreage:** restricted at
+**`r sprintf("%.2f", restricted_regimes$t_start[2])`** and
+**`r sprintf("%.2f", restricted_regimes$t_start[3])`** acres; unrestricted at
+**`r sprintf("%.2f", unrestricted_regimes$t_start[2])`** and
+**`r sprintf("%.2f", unrestricted_regimes$t_start[3])`** acres.
+One baseline shadow price cannot describe the entire curve.
+:::
+
+::: {.notes}
+The calculation first solves both models at the midpoints of a grid spaced
+0.025 acres apart. At each solution it records minimized cost and the marginal
+cost saving implied by the duals. For restricted expansion this is minus the
+weighted sum with weights 1, 0.4, 0.3, and 0.3. For unrestricted expansion it is
+minus the shadow price on the new-land availability constraint.
+
+Consecutive solutions with the same marginal saving define candidate linear
+cost segments. Intersections of adjacent cost lines locate the breakpoints
+more precisely than the grid spacing. The code verifies the resulting curves
+against separate solves at all grid endpoints and verifies marginal values
+with small changes in acreage inside each segment. It plots savings at the
+union of the two scenarios' breakpoints, joined by straight lines.
+
+Within a segment, its shadow value gives the exact linear change in optimized
+cost. Beyond its valid range, the optimization must supply a new marginal
+value. A parametric LP method could move directly between breakpoints; this
+implementation uses repeated solves to discover and check them. At t=0 and
+other corners, duals can be nonunique, so the calculation uses interior points
+and one-sided comparisons rather than extrapolating an arbitrary endpoint dual.
+Source: Stewart_Notes.qmd, lab-calculations chunk.
+:::
