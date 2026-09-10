@@ -1,173 +1,113 @@
 ---
 title: "AREC 615 Problem Set: Linear Programming"
-#format: pdf
+format:
+  pdf:
+    fontsize: 11pt
 ---
 
+**Show your work and justify your answers.** Complete Questions 1, 3, and 4 on paper; software checks are optional. Use R or Excel Solver for Question 2 and append your code or spreadsheet setup.
 
-This problem set covers the material from the introduction to linear programming through the simplex method, duality, and sensitivity analysis. Questions vary in difficulty and format. **Show your work and justify your answers.** Where appropriate, use R or Excel to solve the problems and include outputs as appendices.
+# Farm Allocation and Sensitivity (On Paper)
 
----
+A farm grows **tomatoes** and **bell peppers**, earning \$60 and \$40 per acre, respectively. It has **8 acres** and **10 irrigation units** available. Tomatoes use 2 irrigation units per acre; peppers use 1. Acreages may be fractional.
 
-# LP-by-hand and Interpretation (On Paper)
+Let $x_1$ and $x_2$ denote tomato and pepper acres. For each experiment, start from this baseline and change only the stated parameter.
 
-A small farm grows **heirloom tomatoes** and **bell peppers**.
+a. **Formulate.** Write the LP in scalar and matrix form, including nonnegativity. Define $x$, $c$, $A$, and $b$, label the constraints, and state the units of the objective and constraint coefficients.
 
-- Each acre of tomatoes yields a **profit of \$60**, while each acre of peppers yields **\$40**.
-- The farm has **8 acres** of suitable land available in total.
-- Additionally, tomatoes require **twice as much irrigation** as peppers. Due to water availability, the total irrigation capacity is equivalent to **10 acre-units** of pepper irrigation.
+b. **Solve.** Graph the feasible region and an isoprofit line. Find the optimal vertex, verify it algebraically, and calculate profit. Identify binding constraints and unused resources.
 
-Let:
+c. **Follow the simplex logic.** Add slack variables and start at the origin with tomatoes entering first. Use the ratio test to identify the leaving variable and next vertex. Along the binding irrigation constraint, determine whether introducing peppers raises profit. Find the next vertex and justify optimality. Identify the basis at the origin and after each move. **No tableau is required.**
 
-- $x_1$ be the number of acres planted with tomatoes
-- $x_2$ be the number of acres planted with peppers
+d. **Value the resources.** Compute and interpret both baseline shadow prices, including their units. Verify irrigation's value by increasing availability from 10 to 11 units.
 
-Answer the following:
+e. **Change a profit coefficient.** Hold pepper profit at \$40. Derive the tomato-profit range over which the baseline plan remains optimal. Explain the endpoint solutions and identify the optimal plan just outside each end. Does an unchanged planting plan imply unchanged profit?
 
-a. Formulate the linear program to maximize profit subject to the land and irrigation constraints. Define the decision variables, objective function, and constraints clearly.
-b. Graph and indicate the feasible region and plot one of the isoprofit lines. Identify the optimal solution graphically.
-c. Determine the optimal solution algebraically. What is the optimal objective value?
-d. Identify the **binding** constraints at the optimum. 
-e. Write out the tableau for the initial simplex method iteration.
-f. Perform one pivot operation (select entering and leaving variables). Show the updated tableau. Continue iterating until the optimal solution is reached. Identify the optimal basis and solution values.
-g. Compute the **shadow prices** (dual values) associated with the constraints. Interpret the shadow prices in economic terms.
+f. **Check a prediction's limit.** With land fixed at 8 acres, derive the irrigation range over which the baseline basis remains optimal. Predict the profit gain from increasing irrigation from 10 to 18 units using its baseline shadow price, then solve the changed model. Explain any discrepancy and change in binding constraints.
 
+g. **Evaluate a shortcut.** A colleague claims irrigation's shadow price equals $60/2=30$, tomato profit divided by irrigation use per acre. Explain why this fails using the changes in both acreages when irrigation increases slightly. State conditions under which such a ratio correctly values an additional resource unit.
+
+\newpage
 
 # Distribution Optimization (Use Computer)
 
-You are managing logistics for a food distribution network. There are **2 warehouses** (W1 and W2) and **5 cities** (C1 to C5) that need weekly shipments of food. Each warehouse can ship to each city — a total of **10 possible routes**. You want to meet the cities' demands at minimum cost while respecting warehouse capacities and various restrictions.
+A food distribution network has **2 warehouses** (W1 and W2) and **5 cities** (C1 through C5). Each warehouse can ship to every city. Choose weekly shipments to meet minimum city demands at minimum cost while respecting warehouse capacities. Shipments may be fractional.
 
-The **shipping cost per unit** from each warehouse to each city is shown below:
+Shipping costs are in **dollars per unit**:
 
-|       | C1 | C2 | C3 | C4 | C5 |
-|-------|----|----|----|----|----|
-| W1    | 4  | 6  | 8  | 7  | 5  |
-| W2    | 5  | 4  | 7  | 6  | 6  |
+| Warehouse | C1 | C2 | C3 | C4 | C5 |
+|:----------|---:|---:|---:|---:|---:|
+| W1        | 4  | 6  | 8  | 7  | 5  |
+| W2        | 5  | 4  | 7  | 6  | 6  |
 
-Let $x_{ij}$ be the number of units shipped from warehouse $i$ to city $j$.
+Weekly minimum demands are **80, 70, 60, 90, and 50 units** for C1 through C5, respectively. Weekly warehouse capacities are **200 units at W1** and **180 units at W2**.
 
-Each **city has a minimum demand** that must be met (in units):
+a. **Formulate.** Let $x_{ij}$ denote units shipped from warehouse $i$ to city $j$ per week. Write the objective, the seven structural constraints (two capacity limits and five demand requirements), and the nonnegativity restrictions. Explain your inequality directions.
 
-- C1: 80, C2: 70, C3: 60, C4: 90, C5: 50
+b. **Solve and verify.** Use R (for example, `lpSolve`) or Excel Solver. Report an optimal shipment plan and weekly cost. Independently reconstruct the cost and verify all constraints from the reported shipments. Provide a table with each constraint's direction, right-hand side, left-hand side at the optimum, slack or surplus, and shadow price.
 
-Each **warehouse has a maximum capacity** (in units):
+c. **Interpret and predict.** Explain the city-demand and warehouse-capacity shadow prices to a nontechnical manager. Define a shadow price as the change in minimized weekly cost per unit increase in a constraint's right-hand side. Predict the cost saving from adding 10 units of capacity at W1 and, separately, from adding 10 units at W2. Re-solve each scenario and recommend which expansion is more valuable before paying for added capacity.
 
-- W1: 200, W2: 180
+d. **Find the limit of the prediction.** Starting from the baseline again, increase W2 capacity by 50 units. Compare the actual saving with the baseline shadow-price prediction. Determine how much W2 capacity can increase before the marginal saving changes, and explain the economic reason for that change. A full ranging table for every coefficient is not required.
 
-```{r}
-#| echo: false
-#| message: false
-#| warning: false
-library(igraph)
-library(ggraph)
-library(ggplot2)
+e. **Check uniqueness.** Determine whether the optimal shipment plan is unique. If it is not, construct a second optimal plan and verify feasibility and equal cost. Explain what the shipping-cost differences imply for reallocating shipments to C3 and C4 between warehouses.
 
-# Define nodes
-warehouses <- c("W1", "W2")
-cities <- c("C1", "C2", "C3", "C4", "C5")
-nodes <- data.frame(name = c(warehouses, cities),
-                    type = c(rep("Warehouse", 2), rep("City", 5)))
+**Solver guidance.** For a $\leq$ constraint, slack is RHS minus LHS; for a $\geq$ constraint, surplus is LHS minus RHS. Identify binding constraints from equality of LHS and RHS, allowing for numerical tolerance, rather than from the sign of a shadow price. The farm R example's sensitivity-table code assumes a maximization model with $\leq$ resource constraints and needs adaptation here. Check shadow-price signs against the cost changes from your re-solves.
 
-# Define edges with costs
-edges <- data.frame(
-  from = rep(warehouses, each = 5),
-  to = rep(cities, times = 2),
-  cost = c(4, 6, 8, 7, 5, 5, 4, 7, 6, 6)
-)
+\newpage
 
-# Create igraph object
-g <- graph_from_data_frame(edges, vertices = nodes, directed = TRUE)
+# Dual Formulation and Interpretation (On Paper)
 
-# Create manual layout: W1 and W2 centered, cities on cost-proportional ring
-angle <- seq(0, 2 * pi, length.out = length(cities) + 1)[-6]
-
-layout_df <- data.frame(name = V(g)$name, x = 0, y = 0)
-
-# Warehouses vertically centered
-layout_df$x[layout_df$name == "W1"] <- 0
-layout_df$y[layout_df$name == "W1"] <- 1
-layout_df$x[layout_df$name == "W2"] <- 0
-layout_df$y[layout_df$name == "W2"] <- -1
-
-# Cities on circle, radius proportional to average cost
-for (i in seq_along(cities)) {
-  city <- cities[i]
-  avg_cost <- mean(edges$cost[edges$to == city])
-  radius <- avg_cost * 0.4
-  layout_df$x[layout_df$name == city] <- radius * cos(angle[i])
-  layout_df$y[layout_df$name == city] <- radius * sin(angle[i])
-}
-
-# Use create_layout() with manual layout
-g_layout <- create_layout(g, layout = "manual", x = layout_df$x, y = layout_df$y)
-g_layout <- create_layout(g, layout = "igraph",algorithm = "nicely")
-
-# Plot
-ggraph(g_layout) +
-  geom_edge_link(aes(label = paste0("$", cost)),
-                 angle_calc = 'along',
-                 label_dodge = unit(2.5, 'mm'),
-                 arrow = arrow(length = unit(4, 'mm')),
-                 end_cap = circle(4, 'mm'),
-                 start_cap = circle(4, 'mm'),
-                 label_size = 3,
-                 color = "gray40") +
-  geom_node_point(aes(color = type), size = 8) +
-  geom_node_text(aes(label = name), color = "black", size = 4) +
-  scale_color_manual(values = c("Warehouse" = "skyblue", "City" = "salmon")) +
-  theme_void() +
-  ggtitle("Transportation Network") +
-  theme(legend.position = "none")
-```
-
----
-
-a. **Formulate** this as a linear program:
-
-  - Define all **decision variables**.
-  - Write out the **objective function**.
-  - Specify all **7 constraints** clearly. Don't forget the nonnegativity constraints.
-
-b. **Solve** the model using R (e.g., `lpSolve`, `ompr`) or Excel Solver.
-
-  - Report the optimal shipment plan and total cost.
-  - Conduct a sensitivity analysis including ranging analysis on the objective coefficients and  constraints.
-  - Insert a table summarizing the sensitivity analysis results.
-  - Provide your code or spreadsheet setup in an appendix.
-
-c. **Interpret** the dual values (shadow prices) for the city demand constraints.
-
-  - Generate a table showing the shadow prices for all constraints.
-  - What do the shadow price tell you? Imagine explaining to a non-technical manager.
-  - If you could increase the capacity of one warehouse by 10 units, which one would you choose and why?
-
-d. Suppose you could build a new warehouse with a capacity of 100 units at a fixed cost.
-
-  - Which cities should it serve to minimize total costs?
-  - Modify the LP to include this new warehouse and solve. You can make up new shipping costs.
-  - Re-solve and explain how the solution changes.
-  - Can you use your results to provide guidance on the amount the company should be willing to pay for the new warehouse?
-
----
-
-# Dual Formulation and Interpretation
-
-Consider the following primal LP:
+Consider the following primal LP. Interpret $x_1$ and $x_2$ as activity levels, the objective coefficients as profits per activity unit, and the two constraints as resource limits.
 
 $$
 \begin{aligned}
 \max \quad & 100x_1 + 150x_2 \\
-\text{s.t.} \quad 
+\text{s.t.} \quad
 & x_1 + 2x_2 \le 10 \\
 & 3x_1 + x_2 \le 12 \\
-& x_1, x_2 \ge 0
+& x_1, x_2 \ge 0.
 \end{aligned}
 $$
 
-a. Formulate the **dual** problem.
+a. **Formulate the dual.** Define its variables as per-unit resource valuations. Interpret the dual objective and explain why each dual constraint requires the value of an activity's resource bundle to cover its profit.
 
-b. Solve the **dual** using R or Excel. What are the optimal dual variable values?
+b. **Solve both problems.** Find the optimal primal activity levels and dual resource values algebraically. Verify primal and dual feasibility and calculate both objective values. You may use software to check your calculations.
 
-c. Verify **strong duality**: does the optimal value of the dual match the primal?
+c. **Explain the duality results.** Verify strong duality numerically. Explain how weak duality makes any feasible dual valuation an upper bound on attainable primal profit, and why equal objective values certify optimality when both solutions are feasible.
 
-d. Check **complementary slackness**. Which constraints are binding, and how does this relate to the dual?
+d. **Check complementary slackness.** Calculate the slack in each primal and dual constraint and verify both sets of complementary-slackness conditions. Relate resource use to resource values and activity levels to the values of their resource bundles.
 
+e. **Create a contrasting case.** Reduce the profit coefficient of $x_1$ from 100 to 50, keeping all other coefficients unchanged. Solve the modified primal and dual. Identify any unused activity and slack resource. Use complementary slackness to explain the zero resource price and why the unused activity's resource opportunity cost exceeds its profit. Verify that the two optimal objective values still agree.
+
+\newpage
+
+# Valuing a Land Package (On Paper)
+
+In the Stewart and Greenhalgh application, a planner minimizes agricultural production cost while meeting fixed output requirements. An additional acre of **group 2 land** changes four right-hand sides together. At the 100-acre baseline, the relevant restrictions are
+
+$$
+\begin{aligned}
+C_2+W_2+P_2 &\le 100 &&\text{(total land)},\\
+C_2 &\le 40 &&\text{(corn maximum)},\\
+W_2 &\le 30 &&\text{(wheat maximum)},\\
+P_2 &\ge 30 &&\text{(pasture minimum)},
+\end{aligned}
+$$
+
+where $C_2$, $W_2$, and $P_2$ are acres of corn, wheat, and pasture. All other model parameters remain fixed. Use the following valid set of baseline cost shadow prices:
+
+| Constraint | Cost shadow price | RHS change per added acre |
+|:-----------|------------------:|--------------------------:|
+| Total land | $-1.14917$ | $1.0$ |
+| Corn maximum | $-1.55083$ | $0.4$ |
+| Wheat maximum | $0$ | $0.3$ |
+| Pasture minimum | $+1.44250$ | $0.3$ |
+
+Each cost shadow price measures the change in minimized production cost per unit increase in that row's RHS. Monetary values refer to the model's accounting period. Individual multipliers can be nonunique; use the supplied values for this calculation.
+
+a. **Value the coordinated change.** Write the four restrictions after an expansion of $t$ acres. Derive the local change in minimized cost per added acre as a weighted sum of shadow prices, then calculate the marginal production-cost saving. Explain the sign difference between a cost change and a cost saving.
+
+b. **Interpret the package.** Explain why the total-land shadow price alone does not value this expansion, and why the pasture requirement offsets some benefits. The wheat maximum binds at the baseline but has a zero multiplier in the supplied solution. Does binding necessarily imply a nonzero shadow price? Explain.
+
+c. **Value a finite project.** A planner proposes multiplying the baseline marginal saving by 20 to value a 20-acre expansion. State when that calculation is valid and explain how to calculate the gross production-cost saving if the marginal value changes during the expansion. Describe which bounds must change together when re-solving the model. Explain how you would compare gross savings with development costs measured over the same accounting period.

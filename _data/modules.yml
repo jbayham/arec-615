@@ -30,6 +30,11 @@
       url: "R_lp_example.pdf"
     - title: "Shadow Price Challenge"
       url: "shadow_price_challenge.pdf"
+  ps:
+    - title: "Problem Set"
+      url: "problem_set.pdf"
+    - title: "Problem Set Solutions"
+      url: "problem_set_key.pdf"
   
   
 # - title: "Unconstrained and Constrained Nonlinear Programming"

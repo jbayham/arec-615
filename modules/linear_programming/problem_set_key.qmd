@@ -1,0 +1,767 @@
+---
+title: "AREC 615: Linear Programming Answer Key"
+subtitle: "Worked solutions and checks for independent review"
+format:
+  pdf:
+    fontsize: 11pt
+    geometry: margin=0.8in
+    number-sections: false
+    include-in-header:
+      text: |
+        \usepackage{needspace}
+        \usepackage{float}
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: verify-key
+#| include: false
+library(lpSolve)
+near <- function(x, y, tol = 1e-7) {
+  stopifnot(length(x) == length(y), max(abs(x - y)) < tol)
+}
+farm <- function(p = 60, water = 10, land = 8) {
+  f <- lp("max", c(p, 40), rbind(c(1, 1), c(2, 1)),
+          c("<=", "<="), c(land, water), compute.sens = TRUE)
+  stopifnot(f$status == 0)
+  f
+}
+near(farm()$solution, c(2, 6)); near(farm()$objval, 360)
+near(farm()$duals[1:2], c(20, 20))
+near(farm(water = 11)$solution, c(3, 5))
+near(farm(water = 11)$objval, 380)
+near(farm(water = 18)$solution, c(8, 0))
+near(farm(water = 18)$objval, 480)
+near(farm(land = 9)$solution, c(1, 8))
+for (p in c(30, 39.9, 40, 50, 60, 70, 80, 80.1, 90)) {
+  expected <- if (p < 40) 320 else if (p <= 80) 2*p + 240 else 5*p
+  near(farm(p)$objval, expected)
+}
+for (b in seq(0, 18, by = 0.25)) {
+  expected <- if (b <= 8) 40*b else if (b <= 16) 160 + 20*b else 480
+  near(farm(water = b)$objval, expected)
+}
+for (p in c(100, 50)) {
+  aa <- rbind(c(1, 2), c(3, 1))
+  primal <- lp("max", c(p, 150), aa, c("<=", "<="), c(10, 12))
+  dual <- lp("min", c(10, 12), t(aa), c(">=", ">="), c(p, 150))
+  stopifnot(primal$status == 0, dual$status == 0)
+  near(primal$objval, dual$objval)
+  near(primal$solution, if (p == 100) c(2.8, 3.6) else c(0, 5))
+  near(dual$solution, if (p == 100) c(70, 10) else c(75, 0))
+}
+near(-sum(c(-1.14917, -1.55083, 0, 1.44250) * c(1, .4, .3, .3)),
+     1.336752)
+```
+
+Compare **formulation, feasibility, arithmetic, and interpretation** separately. Different optimal shipment plans can be correct. Use each part's explanation and "Check your work" paragraph to diagnose errors; the appendix provides runnable R checks.
+
+# 1. Farm Allocation and Sensitivity
+
+## 1a. Formulate the LP
+
+Choose tomato acres $x_1$ and pepper acres $x_2$ to maximize profit:
+
+$$
+\begin{aligned}
+\max_{x_1,x_2}\quad &60x_1+40x_2\\
+\text{s.t.}\quad &x_1+x_2\le8 &&\text{(land)},\\
+&2x_1+x_2\le10 &&\text{(irrigation)},\\
+&x_1,x_2\ge0.
+\end{aligned}
+$$
+
+The compact form is $\max_{x\ge0}c^\top x$ subject to $Ax\le b$, with
+
+$$
+x=\begin{bmatrix}x_1\\x_2\end{bmatrix},\qquad
+c=\begin{bmatrix}60\\40\end{bmatrix},\qquad
+A=\begin{bmatrix}1&1\\2&1\end{bmatrix},\qquad
+b=\begin{bmatrix}8\\10\end{bmatrix}.
+$$
+
+Use the same crop order in $c$ and $A$, and the same resource order in $A$ and $b$.
+
+| Quantity | Units and meaning |
+|:---|:---|
+| $x_1,x_2$ | Acres of each crop |
+| $c_1,c_2$ | Dollars of profit per crop acre |
+| First row of $A$ | Land acres used per crop acre |
+| Second row of $A$ | Irrigation units used per crop acre |
+| $b_1,b_2$ | Available land acres; available irrigation units |
+| $c^\top x$ | Dollars of profit for the modeled production period |
+
+**Check your work.** Each row compares like units. Resource maxima require $\le$, not $\ge$. Equalities would incorrectly require full use; binding must be established after solving. Integer restrictions are unnecessary because fractional acreage is permitted.
+
+\newpage
+
+## 1b. Graph and solve
+
+The land boundary is $x_2=8-x_1$; the irrigation boundary is $x_2=10-2x_1$. The feasible region lies below both lines in the nonnegative quadrant. Its vertices are
+
+| Vertex $(x_1,x_2)$ | Profit $60x_1+40x_2$ |
+|:---|---:|
+| $(0,0)$ | $0$ |
+| $(5,0)$ | $300$ |
+| $(2,6)$ | **$360$** |
+| $(0,8)$ | $320$ |
+
+```{r}
+#| label: farm-feasible-region
+#| fig-width: 6.2
+#| fig-height: 3.1
+#| out-width: "90%"
+#| fig-pos: H
+#| fig-alt: "The feasible farm polygon has vertices (0,0), (5,0), (2,6), and (0,8). The optimal isoprofit line touches it at (2,6)."
+par(mar = c(4, 4, 0.4, 0.5), mgp = c(2.4, .7, 0), cex = .85)
+plot(NA, xlim = c(0, 8.5), ylim = c(0, 10.5),
+     xlab = "Tomato acres", ylab = "Pepper acres", xaxs = "i", yaxs = "i")
+polygon(c(0,5,2,0), c(0,0,6,8), col = "#E3EDF4", border = NA)
+abline(a = 8, b = -1, col = "#1B6B93", lwd = 2)
+abline(a = 10, b = -2, col = "#A45015", lwd = 2)
+abline(a = 9, b = -1.5, col = "#333333", lty = 2, lwd = 1.8)
+points(c(0,5,2,0), c(0,0,6,8), pch = 19)
+text(2.15, 6.25, "Optimum (2, 6)", pos = 4)
+legend("topright", c("Land", "Irrigation", "Profit = $360"),
+       col = c("#1B6B93", "#A45015", "#333333"),
+       lty = c(1,1,2), lwd = 2, bty = "n", cex = .85)
+```
+
+An isoprofit line has equation $x_2=z/40-(3/2)x_1$. Increasing $z$ moves it outward. Its last contact with the feasible set is at $(2,6)$.
+
+Solve the two binding resource equations:
+
+$$
+\begin{aligned}
+x_1+x_2&=8,\\
+2x_1+x_2&=10.
+\end{aligned}
+\qquad\Rightarrow\qquad x_1=2,\quad x_2=6.
+$$
+
+Land use is $2+6=8$; irrigation use is $2(2)+6=10$. Both resource constraints bind and both slacks are zero. Both crops are positive, so neither nonnegativity restriction binds. Maximum profit is $60(2)+40(6)=\boxed{\$360}$.
+
+**Check your work.** The point $(8,0)$ satisfies the land limit but violates irrigation. An intersection or axis intercept is not a feasible vertex until you check *every* constraint. The largest individual crop profit does not imply that growing only that crop maximizes total profit.
+
+\newpage
+
+## 1c. Follow the simplex logic
+
+Introduce unused-land and unused-irrigation variables $s_L,s_I\ge0$:
+
+$$
+x_1+x_2+s_L=8,\qquad 2x_1+x_2+s_I=10.
+$$
+
+**At the origin**, the basis is $\{s_L,s_I\}$, with values $(8,10)$. Let tomatoes enter and keep $x_2=0$. Increasing $x_1=t$ requires $t\le8$ from land and $t\le10/2=5$ from irrigation. The smaller ratio is 5, so $s_I$ leaves. The new basis is $\{s_L,x_1\}$, with $s_L=3$, $x_1=5$, and profit $300$.
+
+**The first corner is not optimal.** Keep irrigation binding and introduce peppers:
+
+$$
+x_1=5-\tfrac12x_2,\qquad
+s_L=3-\tfrac12x_2,\qquad
+z=60(5-\tfrac12x_2)+40x_2=300+10x_2.
+$$
+
+Each added pepper acre raises profit by $10$ after accounting for the half acre of tomatoes displaced. Feasibility requires $x_2\le10$ to keep $x_1\ge0$, and $x_2\le6$ to keep $s_L\ge0$. Thus $s_L$ leaves at $x_2=6$. The final basis is $\{x_1,x_2\}$, with $(x_1,x_2)=(2,6)$.
+
+**Why stop?** Express the final solution in terms of the nonbasic slacks:
+
+$$
+x_1=2+s_L-s_I,\qquad x_2=6-2s_L+s_I,
+\qquad z=360-20s_L-20s_I.
+$$
+
+Since both slacks must be nonnegative, no feasible solution can have profit above $360$. The final basis attains this bound with both slacks zero.
+
+**Check your work.** Use the smallest feasible ratio, not the largest. Reaching a corner is not a stopping rule: at $(5,0)$, the next feasible move still improves profit. A basis has two variables here because there are two independent resource equations.
+
+## 1d. Value land and irrigation
+
+At the optimum both crops are positive. Their profits equal the shadow value of the resources they use. If $y_L,y_I$ are resource prices, then
+
+$$
+y_L+2y_I=60,\qquad y_L+y_I=40
+\quad\Rightarrow\quad \boxed{y_L=20,\ y_I=20}.
+$$
+
+One additional land acre is locally worth **$20 per acre**; one additional irrigation unit is locally worth **$20 per irrigation unit**, before paying for either resource. Their numerical equality does not make their units interchangeable.
+
+With irrigation raised to 11, the binding equations give $x_1=3$, $x_2=5$, and profit $380$. The gain is $380-360=\boxed{\$20}$. As a separate check, adding one land acre while holding irrigation at 10 gives $(1,8)$ and the same $20 gain.
+
+**Check your work.** A shadow price describes a specified RHS change with other parameters fixed. It is neither observed market price nor average profit per unit of total resources.
+
+\newpage
+
+## 1e. Change tomato profit
+
+Write tomato profit per acre as $p$, with pepper profit fixed at $40$. At $(2,6)$, resource prices supporting the same basis must satisfy
+
+$$
+y_L+2y_I=p,\qquad y_L+y_I=40.
+$$
+
+Hence $y_I=p-40$ and $y_L=80-p$. Both must be nonnegative for this maximization problem with resource upper bounds. Therefore
+
+$$
+\boxed{40\le p\le80}.
+$$
+
+The same result follows from geometry: the isoprofit slope $-p/40$ must lie between the adjacent land and irrigation slopes, $-1$ and $-2$.
+
+| Tomato profit | Optimal planting plan |
+|:---|:---|
+| $p<40$ | $(0,8)$: peppers only |
+| $p=40$ | Every point on the segment from $(0,8)$ to $(2,6)$ |
+| $40<p<80$ | Unique optimum $(2,6)$ |
+| $p=80$ | Every point on the segment from $(2,6)$ to $(5,0)$ |
+| $p>80$ | $(5,0)$: tomatoes only |
+
+At $p=40$, profit is $40(x_1+x_2)$, so every feasible allocation using all 8 land acres is optimal. At $p=80$, profit is $40(2x_1+x_2)$, so every feasible allocation using all 10 irrigation units is optimal.
+
+The baseline planting plan remains optimal at the endpoints, but **it is no longer the only optimum**. Within the range, its profit is $z^*(p)=2p+240$. For example, raising $p$ from 60 to 70 leaves the acreage at $(2,6)$ but raises profit from $360$ to $380$.
+
+**Check your work.** The allowable decrease from the baseline coefficient is $20$; the allowable increase is $20$. Those *changes* differ from the absolute coefficient bounds $40$ and $80$. A solver may return any point on an optimal endpoint segment; a different endpoint allocation is not an error.
+
+## 1f. Change irrigation availability
+
+Let irrigation availability be $b$, keeping land at 8 and crop profits at their baseline levels. With both resource equations binding,
+
+$$
+x_1=b-8,\qquad x_2=16-b.
+$$
+
+These basic variables remain nonnegative exactly when $\boxed{8\le b\le16}$. Their objective is $z^*(b)=20b+160$, so the irrigation shadow price is $20$ in the interior of this interval. From $b=10$, the allowable decrease is 2 and the allowable increase is 6. At either endpoint a crop reaches zero; the same basis is still optimal there but becomes degenerate.
+
+Increasing availability from 10 to 18 would naively predict $20(8)=\$160$ in extra profit. But 18 exceeds the range: at $b=16$ all 8 acres grow tomatoes. Additional irrigation is then unused. At $b=18$, profit is $60(8)=480$, so the actual gain is $\boxed{\$120}$, not $160$.
+
+\newpage
+
+## 1f. Why the prediction changes (continued)
+
+For all nonnegative irrigation endowments, the value function is
+
+$$
+z^*(b)=
+\begin{cases}
+40b, & 0\le b\le8,\\
+160+20b, & 8\le b\le16,\\
+480, & b\ge16.
+\end{cases}
+$$
+
+Below 8, peppers alone use scarce irrigation most profitably and land has slack. Between 8 and 16, added irrigation replaces one pepper acre with one tomato acre, increasing profit by $20$. Above 16, land prevents further expansion, so irrigation has zero marginal value.
+
+For the proposed expansion, the first 6 added units earn $20 each; the last 2 earn nothing. At $b=18$, land binds, the pepper nonnegativity restriction binds, and irrigation has 2 units of slack. At $b=16$, the irrigation constraint still binds, although an increase beyond 16 has no value. At a breakpoint, specify the direction: the left and right marginal values can differ.
+
+**Check your work.** Staying in the same basis does not mean that crop acreages stay unchanged as the RHS changes. Here they move continuously from $(0,8)$ to $(8,0)$ across the range. Conversely, a binding constraint need not have a positive value for further relaxation.
+
+## 1g. Evaluate the profit-per-resource shortcut
+
+Near the baseline, an extra irrigation unit changes both optimal acreages:
+
+$$
+\frac{dx_1}{db}=1,\qquad \frac{dx_2}{db}=-1,\qquad
+\frac{dz^*}{db}=60(1)+40(-1)=\boxed{20}.
+$$
+
+The ratio $60/2=30$ imagines adding half an acre of tomatoes while leaving peppers unchanged. That would require half an acre of extra land, which the baseline farm does not have. It omits the opportunity cost of the crop that must be displaced.
+
+**When can the shortcut work?** A sufficient local condition is that an increase in resource $j$ expands only one optimal activity $i$, all other activities remain fixed, and no other restriction prevents the adjustment. If $a_{ji}>0$, the binding row then implies
+
+$$
+a_{ji}\,dx_i=db_j,\qquad
+\frac{dz^*}{db_j}=c_i\frac{dx_i}{db_j}=\frac{c_i}{a_{ji}}.
+$$
+
+For a positive activity in a canonical maximization LP, the equivalent valuation identity is $c_i=\sum_k a_{ki}y_k$. The ratio equals $y_j$ when the other resource-price contributions sum to zero. A common sufficient case is that all other resources used by the activity have zero shadow prices.
+
+For example, at 6 irrigation units, the farm grows 6 pepper acres and leaves 2 land acres unused. A small irrigation increase adds peppers one-for-one, so the correct ratio is $40/1=40$. That logic stops applying once irrigation reaches 8 and land becomes limiting.
+
+**Check your work.** A binding resource alone does not justify the shortcut. You must explain which activities adjust, which other resources they require, and how far that adjustment remains feasible.
+
+\newpage
+
+# 2. Distribution Optimization
+
+## 2a. Formulate the shipping problem
+
+Let $x_{ij}\ge0$ be units shipped from warehouse $i$ to city $j$ each week. In warehouse-major order, the objective is
+
+$$
+\begin{aligned}
+\min C={}&4x_{11}+6x_{12}+8x_{13}+7x_{14}+5x_{15}\\
+&+5x_{21}+4x_{22}+7x_{23}+6x_{24}+6x_{25}.
+\end{aligned}
+$$
+
+The seven structural constraints are
+
+$$
+\begin{aligned}
+x_{11}+x_{12}+x_{13}+x_{14}+x_{15}&\le200,\\
+x_{21}+x_{22}+x_{23}+x_{24}+x_{25}&\le180,\\
+x_{11}+x_{21}&\ge80,\\
+x_{12}+x_{22}&\ge70,\\
+x_{13}+x_{23}&\ge60,\\
+x_{14}+x_{24}&\ge90,\\
+x_{15}+x_{25}&\ge50.
+\end{aligned}
+$$
+
+Capacity is a maximum; demand is a minimum. Costs are dollars per shipment unit, so $C$ is dollars per week. Nonnegativity adds ten variable restrictions beyond the seven structural constraints.
+
+All shipping costs are positive. Oversupplying a city would raise cost and use capacity unnecessarily; reducing an excess shipment would remain feasible and save money. Therefore each minimum demand holds with equality at an optimum. Demand equalities give the same optimum here, but the stated minimum-demand formulation uses $\ge$.
+
+## 2b. Solve and audit the result
+
+One optimal shipment plan is:
+
+| Warehouse | C1 | C2 | C3 | C4 | C5 | Total |
+|:---|---:|---:|---:|---:|---:|---:|
+| W1 | 80 | 0 | 0 | 40 | 50 | 170 |
+| W2 | 0 | 70 | 60 | 50 | 0 | 180 |
+| City total | 80 | 70 | 60 | 90 | 50 | 350 |
+
+Reconstruct the objective directly:
+
+$$
+C=4(80)+7(40)+5(50)+4(70)+7(60)+6(50)
+=\boxed{\$1{,}850\text{ per week}}.
+$$
+
+All shipments are nonnegative, every city receives its demand, W1 uses 170 of 200 units, and W2 uses all 180. The appendix supplies runnable R code and checks. Other optimal allocations exist, as shown in part 2e.
+
+**Check your work.** Total network capacity exceeds demand, but this does not imply that both warehouses have slack: cheap routes make capacity at W2 scarce.
+
+\newpage
+
+## 2b. Constraint values and shadow prices (continued)
+
+Define a shadow price as the local change in minimized weekly cost from increasing a row's RHS by one shipment unit per week.
+
+| Constraint | Direction | RHS | LHS | Slack/surplus | Shadow price |
+|:---|:---:|---:|---:|---:|---:|
+| W1 capacity | $\le$ | 200 | 170 | 30 | $0$ |
+| W2 capacity | $\le$ | 180 | 180 | 0 | $-1$ |
+| C1 demand | $\ge$ | 80 | 80 | 0 | $4$ |
+| C2 demand | $\ge$ | 70 | 70 | 0 | $5$ |
+| C3 demand | $\ge$ | 60 | 60 | 0 | $8$ |
+| C4 demand | $\ge$ | 90 | 90 | 0 | $7$ |
+| C5 demand | $\ge$ | 50 | 50 | 0 | $5$ |
+
+Slack is RHS minus LHS for capacities; surplus is LHS minus RHS for demands. All quantities in the slack/surplus column are nonnegative. A capacity expansion relaxes a constraint, so it cannot raise minimized cost. A larger minimum demand tightens a constraint, so it cannot lower minimized cost.
+
+## 2c. Interpret and verify the 10-unit expansions
+
+**For a manager:** extra W1 capacity currently saves nothing because 30 units are unused. One extra unit of W2 capacity reduces weekly shipping cost by $1, locally. It moves a C3 or C4 shipment from W1 to W2, saving the $1 difference on that route.
+
+An additional unit of demand raises cost by the corresponding city shadow price. For C2, this is $5$, even though the cheapest direct shipping rate is $4$. W2 is full: sending one more C2 unit from W2 requires moving a C3 or C4 unit to W1, adding another $1$. Shadow prices capture this network adjustment, not just the direct route cost.
+
+| Separate scenario | Weekly cost | Saving from baseline |
+|:---|---:|---:|
+| Baseline capacities $(200,180)$ | $1,850$ | $0$ |
+| W1 capacity increases to 210 | $1,850$ | $0$ |
+| W2 capacity increases to 190 | $1,840$ | $10$ |
+
+The baseline plan remains feasible and optimal when only W1 capacity rises. One plan after increasing W2 to 190 is:
+
+| Warehouse | C1 | C2 | C3 | C4 | C5 | Total |
+|:---|---:|---:|---:|---:|---:|---:|
+| W1 | 80 | 0 | 0 | 30 | 50 | 160 |
+| W2 | 0 | 70 | 60 | 60 | 0 | 190 |
+
+Reconstructing its cost gives $320+210+250+280+420+360=1840$. **Choose W2** if comparing the benefits of these expansions before their costs. Its 10-unit expansion is worth at most $10 per week in shipping savings under this model.
+
+**Check your work.** The W2 cost change is $(-1)(10)=-10$; its *saving* is $+10$. Reversing the sign does not change the recommendation if you clearly distinguish these two quantities. A reported cost shadow price of $+1$ for added capacity would contradict the actual cost decrease.
+
+\newpage
+
+## 2d. Why 50 additional units save only $40
+
+Without restrictive warehouse capacities, the cheapest routing uses W1 for C1 and C5, and W2 for C2, C3, and C4. This requires
+
+$$
+\text{W1: }80+50=130,\qquad
+\text{W2: }70+60+90=220.
+$$
+
+At the baseline W2 has only 180 units of capacity, so 40 units that would ideally use W2 must use W1. They come from C3 or C4, where the cost penalty is only $1 per unit; displacing C2 would cost $2 per unit.
+
+Let $t\ge0$ be capacity added to W2. Each of the first 40 units eliminates a $1 penalty. After that, every city can use its cheapest warehouse. Thus
+
+$$
+C^*(180+t)=1850-\min(t,40),\qquad
+\text{saving}=\min(t,40).
+$$
+
+The baseline prediction for $t=50$ is a $50 saving. The actual saving is only $\boxed{40}$, giving cost $1810$. A plan at W2 capacity 230 is:
+
+| Warehouse | C1 | C2 | C3 | C4 | C5 | Total |
+|:---|---:|---:|---:|---:|---:|---:|
+| W1 | 80 | 0 | 0 | 0 | 50 | 130 |
+| W2 | 0 | 70 | 60 | 90 | 0 | 220 |
+
+Cost is $320+250+280+420+540=1810$. W1 has 70 units of slack; W2 has 10. The W2 marginal cost effect changes from $-1$ to zero at capacity 220. At 220 the row still binds, but further expansion has no value. One-sided marginal effects matter at that point.
+
+## 2e. Multiple optimal shipment plans
+
+An entire family of baseline optima is indexed by $0\le q\le40$:
+
+| Warehouse | C1 | C2 | C3 | C4 | C5 |
+|:---|---:|---:|---:|---:|---:|
+| W1 | 80 | 0 | $q$ | $40-q$ | 50 |
+| W2 | 0 | 70 | $60-q$ | $50+q$ | 0 |
+
+Warehouse totals stay at 170 and 180; every city total stays at its demand. The bounds on $q$ ensure all entries are nonnegative. Each unit increase in $q$ changes cost by
+
+$$
+\underbrace{8-7}_{\text{C3 moves to W1}}
++\underbrace{6-7}_{\text{C4 moves to W2}}=0.
+$$
+
+For example, choose $q=20$. The W1 row is $(80,0,20,20,50)$ and W2 is $(0,70,40,70,0)$. Their costs are $870$ and $980$, totaling $1850$.
+
+**Check your work.** A different solution from a solver is not automatically wrong. Check feasibility and the objective. Merely noting equal cost differences is not enough: your proposed reallocation must preserve demands, capacities, and nonnegativity. The parameterized family does all three.
+
+\newpage
+
+# 3. Dual Formulation and Interpretation
+
+## 3a. Formulate the dual
+
+Let $y_1,y_2\ge0$ be dollars per unit of resources 1 and 2. The dual is
+
+$$
+\begin{aligned}
+\min_{y_1,y_2}\quad &10y_1+12y_2\\
+\text{s.t.}\quad &y_1+3y_2\ge100 &&\text{(activity 1)},\\
+&2y_1+y_2\ge150 &&\text{(activity 2)},\\
+&y_1,y_2\ge0.
+\end{aligned}
+$$
+
+The objective values all available resources at the proposed prices. Activity 1 uses one unit of resource 1 and three of resource 2; its resource bundle must be worth at least its $100 profit. Activity 2 uses two units of resource 1 and one of resource 2; its bundle must cover $150.
+
+If an activity earned more than the value assigned to its resources, the proposed valuations would fail to cover that production opportunity. The dual finds the least expensive resource valuation that covers *every* activity.
+
+**Check your work.** Columns of the primal matrix become rows of the dual matrix: the coefficients are transposed. The primal RHS becomes the dual objective vector, and primal profits become dual RHS values. For this particular max/$\le$/nonnegative form, the dual is min/$\ge$/nonnegative.
+
+## 3b. Solve and verify both problems
+
+Setting the two primal resource constraints to equality gives
+
+$$
+x_1+2x_2=10,\qquad 3x_1+x_2=12.
+$$
+
+Substitute $x_1=10-2x_2$ into the second equation: $30-5x_2=12$, so $x_2=18/5=3.6$ and $x_1=14/5=2.8$. Both are nonnegative and both resources are fully used. Primal profit is
+
+$$
+100(2.8)+150(3.6)=280+540=\boxed{820}.
+$$
+
+Since both activities are positive at this candidate, complementary slackness suggests binding dual inequalities. Solve
+
+$$
+y_1+3y_2=100,\qquad 2y_1+y_2=150
+\quad\Rightarrow\quad y_1=70,\quad y_2=10.
+$$
+
+These valuations are nonnegative and satisfy both dual constraints. Their objective is $10(70)+12(10)=\boxed{820}$.
+
+This is more than solving two pairs of equations: **primal feasibility, dual feasibility, and equal objectives together certify optimality**. An arbitrary intersection of binding constraints need not be an optimum; the certificate supplies the missing justification.
+
+\newpage
+
+## 3c. Weak and strong duality
+
+For any feasible primal allocation $x$ and any feasible dual valuation $y$,
+
+$$
+c^\top x\ \le\ (A^\top y)^\top x
+=y^\top Ax\ \le\ y^\top b=b^\top y.
+$$
+
+The first inequality uses $A^\top y\ge c$ and $x\ge0$: each activity's resource valuation covers its profit. The second uses $Ax\le b$ and $y\ge0$: the value of resources used cannot exceed the value of resources available. This is **weak duality**.
+
+Our feasible dual valuation has objective $820$, so no feasible primal plan can earn more than $820$. Our feasible primal plan earns exactly $820$, so it attains that upper bound. Neither side can improve. **Strong duality** is verified numerically by equality of the two optimal objectives.
+
+**Check your work.** Weak duality applies to every feasible pair, not just optimal pairs. Equal objective values alone do not prove anything if one of the proposed solutions is infeasible. Strong duality equates objective values, not the primal and dual variable vectors.
+
+## 3d. Check both sets of complementary-slackness conditions
+
+Define primal resource slack $s=b-Ax$ and dual constraint surplus $r=A^\top y-c$. For feasible $x,y$, both vectors are nonnegative. At an optimum,
+
+$$
+y_i s_i=0\quad\text{for each resource }i,\qquad
+x_j r_j=0\quad\text{for each activity }j.
+$$
+
+For $x=(2.8,3.6)$ and $y=(70,10)$:
+
+| Resource | Primal slack $s_i$ | Price $y_i$ | Product $y_is_i$ |
+|:---|---:|---:|---:|
+| 1 | $10-(2.8+2\cdot3.6)=0$ | 70 | 0 |
+| 2 | $12-(3\cdot2.8+3.6)=0$ | 10 | 0 |
+
+| Activity | Dual surplus $r_j$ | Level $x_j$ | Product $x_jr_j$ |
+|:---|---:|---:|---:|
+| 1 | $(70+3\cdot10)-100=0$ | 2.8 | 0 |
+| 2 | $(2\cdot70+10)-150=0$ | 3.6 | 0 |
+
+Both resources have positive prices, so their primal constraints must bind. Both activities are positive, so their dual valuation constraints must bind: profit exactly covers resource opportunity cost.
+
+The general implications are **positive resource price implies zero resource slack**, and **positive activity implies zero dual surplus**. The converses need not hold: a binding resource can have a zero price, and a zero activity can have a binding dual constraint.
+
+**Check your work.** Checking only the resource rows checks only half of complementary slackness. Also check each activity against its corresponding *dual constraint*, not against a resource row with the same index.
+
+\newpage
+
+## 3e. Lower activity 1's profit to 50
+
+The modified primal objective is $50x_1+150x_2$ with unchanged constraints. For every primal-feasible allocation,
+
+$$
+50x_1+150x_2=75(x_1+2x_2)-25x_1\le750.
+$$
+
+The plan $\boxed{x=(0,5)}$ attains $750$, uses all 10 units of resource 1, and uses only 5 of resource 2's 12 units. Thus it is optimal; resource 2 has 7 units of slack.
+
+The modified dual is
+
+$$
+\begin{aligned}
+\min\quad &10y_1+12y_2\\
+\text{s.t.}\quad &y_1+3y_2\ge50,\\
+&2y_1+y_2\ge150,\\
+&y_1,y_2\ge0.
+\end{aligned}
+$$
+
+Resource 2's positive primal slack requires $y_2=0$. Positive production of activity 2 requires $2y_1+y_2=150$, so $\boxed{y=(75,0)}$. This is dual feasible: $75\ge50$ for activity 1, and $150=150$ for activity 2. Its objective is $10(75)+12(0)=\boxed{750}$, matching the primal.
+
+The complete slackness check is:
+
+| Resource | Primal slack | Price | Product |
+|:---|---:|---:|---:|
+| 1 | 0 | 75 | 0 |
+| 2 | 7 | 0 | 0 |
+
+| Activity | Dual surplus | Level | Product |
+|:---|---:|---:|---:|
+| 1 | $75-50=25$ | 0 | 0 |
+| 2 | $150-150=0$ | 5 | 0 |
+
+**Economic explanation.** One unit of activity 1 uses resources worth $75$ but earns only $50$. Its unit of resource 1 could instead support half a unit of activity 2, earning $75$. Activity 1 sacrifices $25 in profit per unit, so it is excluded. In the maximization convention $c_j-a_j^\top y$, its reduced cost is $-25$.
+
+The extra units of resource 2 have no local value because resource 1 prevents more profitable production. A zero resource price means unused capacity has no marginal value at this solution; it does not mean the resource could be removed entirely without consequence.
+
+**Check your work.** The resource constraints did not change, but the optimal corner did. Keeping the original intersection $(2.8,3.6)$ gives only $680$, below $750$. Keeping the original dual vector $(70,10)$ leaves a feasible but nonoptimal dual valuation of $820$.
+
+\newpage
+
+# 4. Valuing a Land Package
+
+## 4a. Value the coordinated change
+
+After adding $t\ge0$ acres, the four group 2 restrictions become
+
+$$
+\begin{aligned}
+C_2+W_2+P_2&\le100+t,\\
+C_2&\le40+0.4t,\\
+W_2&\le30+0.3t,\\
+P_2&\ge30+0.3t.
+\end{aligned}
+$$
+
+Corn and wheat bounds remain maxima; pasture remains a minimum. The coefficients $0.4,0.3,0.3$ describe how the bounds expand, not three equalities fixing crop shares.
+
+Let $K^*(t)$ denote minimized production cost for this expansion. Write $\lambda_L,\lambda_C,\lambda_W,\lambda_P$ for cost shadow prices of the four rows. Within a range where these prices value the coordinated change,
+
+$$
+\frac{dK^*}{dt}
+=\lambda_L+0.4\lambda_C+0.3\lambda_W+0.3\lambda_P.
+$$
+
+| Row | Cost effect per added acre |
+|:---|---:|
+| Total land | $-1.14917(1)=-1.14917$ |
+| Corn maximum | $-1.55083(0.4)=-0.620332$ |
+| Wheat maximum | $0(0.3)=0$ |
+| Pasture minimum | $1.44250(0.3)=+0.432750$ |
+| **Total** | **$-1.336752$** |
+
+An added acre locally **reduces cost by about $1.33675**. Its marginal saving is the negative of the cost change. Rounding to $1.34$ is sufficient:
+
+$$
+\boxed{MV(t)=-\frac{dK^*(t)}{dt}\approx\$1.33675\text{ per added acre}}
+$$
+
+## 4b. Interpret the package
+
+The land price alone predicts a saving of $1.14917$ per acre, holding crop bounds fixed. The actual package also permits more corn and wheat and requires more pasture. More permitted corn saves $0.620332$; the pasture obligation adds $0.432750$ in cost. Raising a minimum tightens a restriction, explaining its positive cost multiplier.
+
+The wheat cap can bind with a zero multiplier: permission to plant more wheat need not reduce cost given the other restrictions. Complementary slackness requires multiplier times slack to equal zero; zero slack permits a zero or nonzero multiplier. Here individual multipliers can also be nonunique. Do not infer symmetric effects of tightening and relaxing a row from one reported value.
+
+**Check your work.** This is a weighted **sum**, not an average: do not divide by $1+0.4+0.3+0.3$. The weights are the changes in the four bounds caused by one acre.
+
+\newpage
+
+## 4c. Value a finite development project
+
+Multiplying the initial marginal saving by 20 gives
+
+$$
+20(1.336752)=\$26.73504\approx\$26.74.
+$$
+
+This is a **conditional prediction**, not an established value for the project. It is valid only if that marginal saving remains applicable along the whole coordinated expansion from $t=0$ to $t=20$. A sufficient condition is that the same optimal basis and its shadow-price valuation remain valid throughout. A basis change need not always change the slope, but the initial prices alone cannot establish this.
+
+**The reliable finite-change calculation** compares optimized costs at the two endowments:
+
+$$
+\boxed{B(20)=K^*(0)-K^*(20).}
+$$
+
+At $t=20$, the group 2 bounds must be updated together to
+
+$$
+C_2+W_2+P_2\le120,\quad C_2\le48,\quad
+W_2\le36,\quad P_2\ge36.
+$$
+
+Re-solve the full production model with the same yields, costs, output requirements, and other land-group restrictions. Changing only the total-land row to 120 would answer a different question.
+
+Alternatively, trace the marginal saving as the package expands. If breakpoints divide the expansion into intervals $[t_{k-1},t_k]$ with marginal savings $m_k$, then
+
+$$
+B(20)=\int_0^{20}MV(s)\,ds
+=\sum_k m_k(t_k-t_{k-1}).
+$$
+
+This is the sum of the areas under the marginal-value steps, including any negative steps. Added acres can eventually raise cost because the package also raises a compulsory pasture minimum; it is not a pure relaxation of all constraints.
+
+**What can you calculate from the problem statement?** The supplied local multipliers determine the initial slope. They do not provide the full model or the later breakpoints needed to calculate the actual $K^*(20)$. A complete answer explains the condition and the re-solving or integration procedure; it need not invent a numerical 20-acre benefit. The full model in the Stewart notes could be used for an additional computation.
+
+**Compare benefits and development costs.** If total development cost, measured on the same accounting-period basis, is $D(20)$, net benefit is
+
+$$
+NB(20)=K^*(0)-K^*(20)-D(20).
+$$
+
+For constant development cost $k$ per acre, $D(20)=20k$. A fixed-size project is worthwhile on the modeled production-cost criterion when its gross saving exceeds its cost. If acreage is a choice, compare marginal savings with marginal development costs and the feasible project sizes. Environmental benefits or other unmodeled effects require separate evidence.
+
+**Check your work.** Separate one-at-a-time RHS ranges cannot simply be combined to justify a coordinated 20-acre change. Likewise, a saving per production period cannot be compared directly with a one-time purchase price without putting both on a consistent time basis.
+
+\newpage
+
+# Appendix. Reproduce the shipping results in R
+
+Run these chunks in order. They require `lpSolve` (install once with `install.packages("lpSolve")`). The code uses warehouse-major variable order throughout. The reported shadow prices apply to the original inequality directions.
+
+## A1. Set up, solve, and audit the baseline
+
+```{r}
+#| label: shipping-baseline
+#| echo: true
+#| results: hide
+library(lpSolve)
+cost <- c(4, 6, 8, 7, 5, 5, 4, 7, 6, 6)
+A <- rbind(
+  W1 = c(rep(1, 5), rep(0, 5)),
+  W2 = c(rep(0, 5), rep(1, 5)),
+  cbind(diag(5), diag(5))
+)
+rownames(A) <- c("W1", "W2", paste0("C", 1:5))
+dir <- c("<=", "<=", rep(">=", 5))
+b <- c(200, 180, 80, 70, 60, 90, 50)
+
+solve_ship <- function(rhs = b) {
+  fit <- lp("min", cost, A, dir, rhs, compute.sens = TRUE)
+  stopifnot(fit$status == 0)
+  lhs <- drop(A %*% fit$solution)
+  residual <- ifelse(dir == "<=", rhs - lhs, lhs - rhs)
+  stopifnot(all(fit$solution >= -1e-7),
+            all(residual >= -1e-7),
+            abs(sum(cost * fit$solution) - fit$objval) < 1e-7)
+  fit
+}
+s <- solve_ship()
+shipments <- matrix(s$solution, nrow = 2, byrow = TRUE,
+                    dimnames = list(c("W1", "W2"), paste0("C", 1:5)))
+lhs <- drop(A %*% s$solution)
+constraint_table <- data.frame(
+  constraint = rownames(A), direction = dir, rhs = b, lhs = lhs,
+  slack_surplus = ifelse(dir == "<=", b - lhs, lhs - b),
+  shadow_price = s$duals[seq_len(nrow(A))]
+)
+shipments
+s$objval
+constraint_table
+```
+
+The final three expressions display a shipment matrix, a cost of $1850$, and the constraint table from part 2b. `lpSolve` includes reduced costs after the row duals in `s$duals`; selecting only the first seven entries keeps those quantities separate. The residual calculation works for both capacity and demand inequalities in this model.
+
+\newpage
+
+## A2. Re-solve the capacity experiments
+
+```{r}
+#| label: shipping-scenarios
+#| echo: true
+#| results: hide
+rhs_w1 <- b; rhs_w1[1] <- 210
+rhs_w2_10 <- b; rhs_w2_10[2] <- 190
+rhs_w2_40 <- b; rhs_w2_40[2] <- 220
+rhs_w2_50 <- b; rhs_w2_50[2] <- 230
+rhs_cases <- list(b, rhs_w1, rhs_w2_10, rhs_w2_40, rhs_w2_50)
+fits <- lapply(rhs_cases, solve_ship)
+scenario_table <- data.frame(
+  scenario = c("Baseline", "W1 +10", "W2 +10", "W2 +40", "W2 +50"),
+  cost = vapply(fits, function(f) f$objval, numeric(1))
+)
+scenario_table$saving <- s$objval - scenario_table$cost
+scenario_table
+stopifnot(max(abs(scenario_table$cost -
+                 c(1850, 1850, 1840, 1810, 1810))) < 1e-7)
+```
+
+Each scenario resets to the original RHS vector before changing one capacity. Applying changes cumulatively would not reproduce the separate experiments in the question.
+
+## A3. Check the alternative plan and the shadow-price interpretation
+
+```{r}
+#| label: shipping-independent-checks
+#| echo: true
+#| results: hide
+alternative <- c(80, 0, 20, 20, 50, 0, 70, 40, 70, 0)
+alt_lhs <- drop(A %*% alternative)
+stopifnot(all(alternative >= 0),
+          all(alt_lhs[1:2] <= b[1:2] + 1e-7),
+          all(alt_lhs[3:7] >= b[3:7] - 1e-7),
+          abs(sum(cost * alternative) - 1850) < 1e-7)
+
+# Check each stated marginal cost effect by a small RHS increase.
+expected_duals <- c(0, -1, 4, 5, 8, 7, 5)
+eps <- 0.01
+finite_difference <- vapply(seq_along(b), function(i) {
+  changed <- b
+  changed[i] <- changed[i] + eps
+  (solve_ship(changed)$objval - s$objval) / eps
+}, numeric(1))
+stopifnot(max(abs(finite_difference - expected_duals)) < 1e-6)
+
+# Check the cost curve across and beyond the W2 breakpoint.
+for (extra in seq(0, 60, by = 2)) {
+  changed <- b; changed[2] <- 180 + extra
+  stopifnot(abs(solve_ship(changed)$objval -
+               (1850 - min(extra, 40))) < 1e-7)
+}
+```
+
+The alternative-plan check does not require the solver to return a particular optimum. The finite-difference check verifies the meaning and sign of each stated shadow price directly. At a breakpoint, use an explicitly chosen direction rather than assuming one reported multiplier applies on both sides.

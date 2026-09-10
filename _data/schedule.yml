@@ -21,25 +21,30 @@
   reading: ''
 - date: '2026-09-17'
   topic: LP Application
-  reading: ''
+  reading: Schlachtberger et al (2017)
 - date: '2026-09-22'
   topic: Presentation/discussion
   reading: ''
-- date: '2026-09-24'
+- date: '2026-09-23'
   topic: Review
   reading: ''
-- date: '2026-09-29'
+- date: '2026-09-24'
   topic: Midterm 1
   reading: ''
-- date: '2026-10-01'
-  topic: 'Unconstrained and constrained nonlinear optimization + Numerical foundations:
-    roots, diagnostics, and convergence'
+- date: '2026-09-29'
+  topic: Nonlinear optimization
   reading: ''
+- date: '2026-10-01'
+  topic: Numeric Methods
+  reading: Build your own
 - date: '2026-10-06'
   topic: Presentation/discussion
   reading: ''
-- date: '2026-10-08'
+- date: '2026-10-07'
   topic: Karush Kuhn Tucker and corner solutions
+  reading: ''
+- date: '2026-10-08'
+  topic: Application
   reading: ''
 - date: '2026-10-13'
   topic: Presentation/discussion
@@ -57,21 +62,27 @@
   topic: Midterm 2
   reading: ''
 - date: '2026-10-29'
-  topic: Finite-horizon dynamic programming and backward induction
+  topic: Intro dynamic programming
   reading: ''
 - date: '2026-11-03'
-  topic: Presentation/discussion
+  topic: 'Discrete time finite horizon: formulation'
+  reading: ''
+- date: '2026-11-04'
+  topic: 'Discrete time finite horizon: solution concepts'
   reading: ''
 - date: '2026-11-05'
-  topic: Infinite-horizon Bellman equation and value function iteration
+  topic: Application
   reading: ''
 - date: '2026-11-10'
   topic: Presentation/discussion
   reading: ''
 - date: '2026-11-12'
-  topic: Flex Day
+  topic: Infinite-horizon Bellman equation and value function iteration
   reading: ''
 - date: '2026-11-17'
+  topic: Presentation/discussion
+  reading: ''
+- date: '2026-11-18'
   topic: Review
   reading: ''
 - date: '2026-11-19'
