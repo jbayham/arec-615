@@ -36,14 +36,15 @@ history <- read_history(history_path)
 saved <- presenters_for_date(history, today)
 
 if (is.null(absent_name)) {
-  if (length(saved) > 0L) {
+  if (length(saved) >= count) {
     cat(sprintf("Presenters already selected for %s:\n", today_text))
     cat(paste0("  - ", saved), sep = "\n")
     cat(sprintf("\nReused saved result from %s\n", history_path))
   } else {
-    presenters <- draw_presenters(roster, history, count, today)
-    history <- record_draw(history, presenters, today)
+    additional <- draw_presenters(roster, history, count - length(saved), today, exclude = saved)
+    history <- record_draw(history, additional, today)
     write_history(history, history_path)
+    presenters <- c(saved, additional)
     cat(sprintf("Presenters for %s:\n", today_text))
     cat(paste0("  - ", presenters), sep = "\n")
     cat(sprintf("\nSaved result to %s\n", history_path))

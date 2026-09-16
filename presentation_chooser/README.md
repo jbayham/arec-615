@@ -20,9 +20,9 @@ At the beginning of class, from this directory, run (for example):
 Rscript ~/Documents/git_projects/arec-615/presentation_chooser/choose_presenters.R 3
 ```
 
-The number is how many presenters to select. The script prints the selection and stores it in `presentation_history.csv`. Re-running the same command on the same calendar date prints the saved result instead of drawing again.
+The number is the desired total number of presenters. The script prints the selection and stores it in `presentation_history.csv`. Re-running the same command on the same calendar date prints the saved result instead of drawing again. You may rerun the command with an increased count to add more presenters for that day.
 
-Each student begins with equal probability. After each presentation day a student is not selected, their sampling weight rises by 10%. A student selected on the most recent presentation day has weight 1.0; a student who missed two presentation days has weight 1.2.
+Each student begins with equal probability. After each presentation day a student is not selected, their sampling weight rises by 10%. A student selected on the most recent presentation day has weight 1.0; a student not chosen for two presentation days has weight 1.2.
 
 ## Replace an absent presenter
 
