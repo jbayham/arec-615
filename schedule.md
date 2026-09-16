@@ -15,7 +15,9 @@ permalink: /schedule/
   <tbody>
     {% for item in site.data.schedule %}
     {% assign topic_lower = item.topic | downcase %}
-    {% if topic_lower contains "exam" %}
+    {% if topic_lower contains "wagar 107" %}
+      <tr class="wagar-row">
+    {% elsif topic_lower contains "exam" %}
       <tr class="exam-row">
     {% elsif topic_lower contains "no class" %}
       <tr class="noclass-row">

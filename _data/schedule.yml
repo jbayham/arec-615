@@ -26,10 +26,10 @@
   topic: Presentation/discussion
   reading: ''
 - date: '2026-09-23'
-  topic: Review
+  topic: 'Wagar 107: Review'
   reading: ''
 - date: '2026-09-24'
-  topic: Midterm 1
+  topic: Exam 1
   reading: ''
 - date: '2026-09-29'
   topic: Nonlinear optimization
@@ -41,7 +41,7 @@
   topic: Presentation/discussion
   reading: ''
 - date: '2026-10-07'
-  topic: Karush Kuhn Tucker and corner solutions
+  topic: 'Wagar 107: Karush Kuhn Tucker and corner solutions'
   reading: ''
 - date: '2026-10-08'
   topic: Application
@@ -59,7 +59,7 @@
   topic: Review
   reading: ''
 - date: '2026-10-27'
-  topic: Midterm 2
+  topic: Exam 2
   reading: ''
 - date: '2026-10-29'
   topic: Intro dynamic programming
@@ -68,7 +68,7 @@
   topic: 'Discrete time finite horizon: formulation'
   reading: ''
 - date: '2026-11-04'
-  topic: 'Discrete time finite horizon: solution concepts'
+  topic: 'Wagar 107: Discrete time finite horizon: solution concepts'
   reading: ''
 - date: '2026-11-05'
   topic: Application
@@ -83,8 +83,8 @@
   topic: Presentation/discussion
   reading: ''
 - date: '2026-11-18'
-  topic: Review
+  topic: 'Wagar 107: Review'
   reading: ''
 - date: '2026-11-19'
-  topic: Final
+  topic: Final Exam
   reading: ''
