@@ -1,0 +1,1149 @@
+---
+title: "Building an Electricity-Planning LP in R"
+subtitle: "An annotated two-location, two-period example inspired by Schlachtberger et al."
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: false
+    code-fold: false
+    code-tools: true
+    code-copy: true
+    embed-resources: true
+    theme: cosmo
+    fig-width: 8
+    fig-height: 4.5
+execute:
+  echo: true
+  message: false
+  warning: false
+  cache: false
+editor: source
+---
+
+## How to use this notebook
+
+Run the R blocks **in order**, pausing to inspect each object and predict the
+next result. You can use the Run button on each block in RStudio, or render
+the whole notebook to see its code, output, formulas, and figures together.
+The computations are written directly in the blocks; there is no hidden
+model-building or solution function and no need to source the companion script.
+
+This notebook implements the same model as `Schlachtberger_example.R`.
+`dplyr`, `tidyr`, and `tibble` organize the inputs and results; base R builds
+the coefficient matrix; `lpSolve` solves the LP; `ggplot2` illustrates it.
+When changing an input, rerun the blocks below it so that the matrix and
+results reflect the new assumptions.
+
+**Scope.** This is a teaching example, not a replication of the full paper.
+All costs are fictional cost units for the **two-hour horizon**, not annual
+costs or observed electricity prices. The two hours are consecutive and
+cyclic. They do not represent a complete day, season, or year.
+
+## 1. Describe the planning problem and enter the data
+
+North (N) can build wind turbines; South (S) can build solar panels. Both can
+build gas turbines and batteries. A lossless transmission line connects them.
+Each location needs 4 MW in each of two one-hour periods. Solar is available
+only in period 1; North's wind is stronger in period 2.
+
+The planner chooses **installed capacities and hourly operations together**
+to minimize cost. A carbon budget limits gas generation, and a transmission
+volume cap limits the connection. Demand, weather, efficiencies, and costs
+are inputs rather than choices.
+
+### Load packages
+
+Uncomment the installation line only if these packages are missing. The
+color vector keeps each technology's color consistent across figures.
+
+```{r}
+#| label: packages
+# Run once if needed:
+# install.packages(c("lpSolve", "dplyr", "tidyr", "tibble", "ggplot2"))
+library(lpSolve)
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(ggplot2)
+
+theme_set(theme_minimal(base_size = 12))
+# Use the same technology colors across figures.
+technology_colors <- c(wind = "#397CA8", solar = "#E3AC36", gas = "#777777",
+                       battery = "#8865A8", line = "#26998C")
+```
+
+### Demand, weather, and policy parameters
+
+Each row of `demand` is one location-hour. Each row of `renewables` supplies
+the paper's availability coefficient $\bar g_{n,s,t}$. For example,
+$\bar g_{N,\mathrm{wind},1}=0.4$: a 5 MW wind installation can produce at
+most 2 MW in period 1.
+
+The gas emissions coefficient is already $e_s/\eta_s$, in tonnes per MWh of
+**electricity**. Do not divide it by efficiency again. The one-tonne budget
+therefore permits at most $1/0.5=2$ MWh of gas generation.
+
+Line length is one normalized distance unit. Thus $lF\le\mathrm{CAP}_{LV}$
+is numerically $F\le\mathrm{CAP}_{LV}$ in this example.
+
+```{r}
+#| label: inputs
+# Every row is one location-hour: 4 balances, not one annual balance.
+demand <- tribble(
+  ~location, ~period, ~demand_MW,
+  "N",       1,       4,
+  "N",       2,       4,
+  "S",       1,       4,
+  "S",       2,       4
+)
+
+# Availability is the paper's g_bar: output available per MW of capacity.
+# These are coefficients, not decision variables.
+renewables <- tribble(
+  ~location, ~technology, ~period, ~g_bar,
+  "N",       "wind",     1,       0.4,
+  "N",       "wind",     2,       1.0,
+  "S",       "solar",    1,       1.0,
+  "S",       "solar",    2,       0.0
+)
+
+eta_1 <- 0.9                 # Battery charging efficiency
+eta_2 <- 0.9                 # Battery discharging efficiency
+h_max <- 1                  # One MWh of energy capacity per MW of battery
+line_length <- 1            # One normalized distance unit, NOT an actual km
+CAP_LV <- 1                 # Baseline: F * line_length <= 1
+CAP_CO2 <- 1                # Tonnes permitted over the two hours
+emissions_per_MWh <- 0.5    # e_gas / eta_gas, already per MWh of electricity
+# Thus gas can supply at most 2 MWh out of 16 MWh of demand (before losses).
+```
+
+### Capacity costs
+
+Capacity costs are charged once over this horizon. Battery cost includes its
+energy capacity, which is tied to power capacity through
+$E_{n,\mathrm{battery}}=h_{\max}G_{n,\mathrm{battery}}$ with $h_{\max}=1$ hour.
+Gas also incurs a dispatch cost, entered in the next section.
+
+```{r}
+#| label: capacity-inputs
+# Investment cost per MW for the modeled horizon.
+# Battery cost includes its fixed one-hour energy capacity.
+capacity_variables <- tribble(
+  ~variable,       ~location, ~technology, ~cost,
+  "G_N_wind",      "N",       "wind",      2.0,
+  "G_S_solar",     "S",       "solar",     1.0,
+  "G_N_gas",       "N",       "gas",       0.2,
+  "G_S_gas",       "S",       "gas",       0.2,
+  "G_N_battery",   "N",       "battery",   0.5,
+  "G_S_battery",   "S",       "battery",   0.5,
+  "F",            "N-S",     "line",      0.5
+)
+capacity_variables
+```
+
+### See the availability pattern before solving
+
+The bars show coefficients, **not generation**: installed capacities have not
+been chosen yet. Predict where a unit of electricity might move in each period.
+Would a line be useful if both locations had identical production patterns?
+
+```{r}
+#| label: weather
+# Plot the exogenous weather inputs before solving anything.
+# Prediction: Where might electricity move in each period?
+plot_weather <- ggplot(renewables,
+                       aes(factor(period), g_bar, fill = technology)) +
+  geom_col(width = 0.6) +
+  facet_wrap(~location) +
+  scale_fill_manual(values = technology_colors) +
+  labs(x = "Period (1 = sunny; 2 = evening)",
+       y = "Available MW per MW installed", fill = NULL,
+       title = "The weather coefficients are inputs to the LP")
+print(plot_weather)
+```
+
+## 2. Translate the choices into variables and an objective
+
+The notation follows the paper, with explicit labels for technologies and
+storage operations:
+
+| Mathematical notation | Example R column | Interpretation |
+|---|---|---|
+| $G_{N,\mathrm{wind}}$ | `G_N_wind` | Installed wind power capacity, MW |
+| $g_{N,\mathrm{wind},1}$ | `g_N_wind_1` | Wind dispatch in period 1, MW |
+| $G_{S,\mathrm{battery}}$ | `G_S_battery` | Battery power capacity, MW |
+| $g_{S,\mathrm{battery},1,\mathrm{charge}}$ | `g_S_charge_1` | Electricity used to charge, MW |
+| $g_{S,\mathrm{battery},1,\mathrm{discharge}}$ | `g_S_discharge_1` | Electricity delivered from storage, MW |
+| $soc_{S,\mathrm{battery},1}$ | `soc_S_1` | Stored energy after period 1, MWh |
+| $F$ | `F` | Capacity of the single line, MW |
+| $f_{1}^{NS},f_{1}^{SN}$ | `f_NS_1`, `f_SN_1` | Nonnegative directional flows, MW |
+
+Because there is only one storage technology, the code omits `battery` from
+its operating variable names. The paper's net battery dispatch is
+$g_{n,\mathrm{battery},t}=g_{n,\mathrm{battery},t,\mathrm{discharge}}
+-g_{n,\mathrm{battery},t,\mathrm{charge}}$.
+
+`lpSolve` assumes nonnegative decision variables. The paper's signed line
+flow is represented by $f_t=f_t^{NS}-f_t^{SN}$. These directional variables
+are an implementation choice, not two separate transmission lines.
+
+### Enumerate each operating decision
+
+`crossing()` enumerates combinations of location, period, and operation.
+The `capacity` column tells us which investment bounds each generator's
+output. Inspect `generation_variables` before moving on.
+
+```{r}
+#| label: operating-variables
+# Build a table so each matrix column has a name and an economic meaning.
+# Each generator needs a dispatch decision in each of the two periods.
+gas <- crossing(location = c("N", "S"), period = 1:2) |>
+  mutate(technology = "gas", g_bar = 1)
+
+generation_variables <- bind_rows(renewables, gas) |>
+  mutate(variable = paste("g", location, technology, period, sep = "_"),
+         capacity = paste("G", location, technology, sep = "_"),
+         cost = if_else(technology == "gas", 1, 0))
+
+# Charge and discharge are electricity entering/leaving the battery (MW).
+# soc is energy INSIDE the battery at the end of each period (MWh).
+storage_variables <- crossing(location = c("N", "S"), period = 1:2,
+                              operation = c("charge", "discharge", "soc")) |>
+  mutate(variable = if_else(operation == "soc",
+                            paste("soc", location, period, sep = "_"),
+                            paste("g", location, operation, period, sep = "_")),
+         cost = 0)
+
+flow_variables <- crossing(direction = c("NS", "SN"), period = 1:2) |>
+  mutate(variable = paste("f", direction, period, sep = "_"), cost = 0)
+```
+
+### Write the objective before passing it to the solver
+
+The paper's objective combines capacity and dispatch costs:
+
+$$
+\min\;\sum_{n,s}c_{n,s}G_{n,s}+c_\ell F
++\sum_{n,s,t}o_{n,s}g_{n,s,t}.
+$$
+
+For our technology menu and numerical assumptions this becomes
+
+$$
+\begin{aligned}
+\min\quad
+&2G_{N,\mathrm{wind}}+G_{S,\mathrm{solar}}
++0.2(G_{N,\mathrm{gas}}+G_{S,\mathrm{gas}})\\
+&+0.5(G_{N,\mathrm{battery}}+G_{S,\mathrm{battery}})+0.5F\\
+&+\sum_{n\in\{N,S\}}\sum_{t=1}^{2}g_{n,\mathrm{gas},t}.
+\end{aligned}
+$$
+
+Renewable dispatch, storage operation, and flows have zero variable cost in
+this example. Every hour lasts one hour, so dispatch in MW multiplies one hour
+to give the MWh used in operating costs.
+
+We stack all 31 decisions into $x$ and put these cost coefficients into $c$.
+The solver sees $\min c^\top x$. **Column order is part of the formulation**:
+`variables`, `objective`, the matrix, and the solution must use the same order.
+
+```{r}
+#| label: objective
+# This column order must be identical in the objective, matrix, and solution.
+variables <- bind_rows(
+  capacity_variables |> select(variable, cost),
+  generation_variables |> select(variable, cost),
+  storage_variables |> select(variable, cost),
+  flow_variables |> select(variable, cost)
+)
+print(variables, n = Inf)
+nrow(variables)              # 31 nonnegative decision variables
+
+objective <- setNames(variables$cost, variables$variable)
+objective
+# Capacity costs appear once. Dispatch cost appears for each hour.
+# Each period lasts one hour, so MW * 1 hour = MWh in operating costs.
+```
+
+## 3. Translate physical and policy restrictions into matrix rows
+
+Each row of $A$ is a restriction; each column is one decision in $x$.
+The vector `constraint_direction` says whether a row is an equality or an
+upper bound. `rhs` contains demand levels, policy caps, or zero after terms
+have been moved to the left-hand side.
+
+### Start with an empty matrix
+
+We create 34 named rows, initialize their coefficients to zero, and fill them
+by economic meaning. Repeated operations use visible loops. No solver is
+called until the entire LP has been assembled.
+
+```{r}
+#| label: empty-matrix
+# Rows = constraints. Columns = decisions. Start with zeros, then fill entries.
+# Loops below repeat transparent row-writing steps; they do not hide a solve.
+balance_rows <- paste("balance", demand$location, demand$period, sep = "_")
+generation_rows <- paste0("limit_", generation_variables$variable)
+storage_rows <- paste0("limit_", storage_variables$variable)
+stock_rows <- paste("stock", rep(c("N", "S"), each = 2), rep(1:2, 2), sep = "_")
+flow_rows <- paste0("limit_", flow_variables$variable)
+row_names <- c(balance_rows, generation_rows, storage_rows, stock_rows,
+               flow_rows, "line_volume", "carbon")
+
+A <- matrix(0, nrow = length(row_names), ncol = nrow(variables),
+            dimnames = list(row_names, variables$variable))
+constraint_direction <- setNames(rep("<=", nrow(A)), row_names)
+rhs <- setNames(rep(0, nrow(A)), row_names)
+```
+
+### Electricity balances: four equalities
+
+The paper writes $\sum_s g_{n,s,t}-d_{n,t}=\sum_\ell K_{n\ell}f_{\ell,t}$,
+where storage contributes its signed net dispatch. Expanding the terms in
+our model gives, for each $t=1,2$,
+
+$$
+\begin{aligned}
+g_{N,\mathrm{wind},t}+g_{N,\mathrm{gas},t}
++g_{N,\mathrm{battery},t,\mathrm{discharge}}
+-g_{N,\mathrm{battery},t,\mathrm{charge}}-f_t^{NS}+f_t^{SN}&=4,\\
+g_{S,\mathrm{solar},t}+g_{S,\mathrm{gas},t}
++g_{S,\mathrm{battery},t,\mathrm{discharge}}
+-g_{S,\mathrm{battery},t,\mathrm{charge}}+f_t^{NS}-f_t^{SN}&=4.
+\end{aligned}
+$$
+
+Imports have a positive sign, exports a negative sign. Charging consumes
+local electricity. When we add the two countries' balances, trade cancels.
+An annual or horizon-wide balance alone would not ensure either hour works.
+
+The four rows below are written explicitly. The printed matrix shows a
+selected set of columns so that the flow signs remain easy to inspect.
+
+```{r}
+#| label: power-balances
+# 3a. Supply + discharge - charge + imports - exports = demand.
+# Write all FOUR balances explicitly so students can check the flow signs.
+A["balance_N_1", c("g_N_wind_1", "g_N_gas_1", "g_N_discharge_1",
+                    "g_N_charge_1", "f_NS_1", "f_SN_1")] <- c(1, 1, 1, -1, -1, 1)
+A["balance_N_2", c("g_N_wind_2", "g_N_gas_2", "g_N_discharge_2",
+                    "g_N_charge_2", "f_NS_2", "f_SN_2")] <- c(1, 1, 1, -1, -1, 1)
+A["balance_S_1", c("g_S_solar_1", "g_S_gas_1", "g_S_discharge_1",
+                    "g_S_charge_1", "f_NS_1", "f_SN_1")] <- c(1, 1, 1, -1, 1, -1)
+A["balance_S_2", c("g_S_solar_2", "g_S_gas_2", "g_S_discharge_2",
+                    "g_S_charge_2", "f_NS_2", "f_SN_2")] <- c(1, 1, 1, -1, 1, -1)
+constraint_direction[balance_rows] <- "="
+rhs[balance_rows] <- demand$demand_MW
+A[balance_rows, c("g_N_wind_1", "g_N_gas_1", "f_NS_1", "f_SN_1")]
+```
+
+### Generator limits: dispatch requires available capacity
+
+For generation technologies,
+
+$$
+0\le g_{n,s,t}\le\bar g_{n,s,t}G_{n,s}
+\quad\Longleftrightarrow\quad
+g_{n,s,t}-\bar g_{n,s,t}G_{n,s}\le0.
+$$
+
+The nonnegative lower bound is supplied by `lpSolve`. The matrix row contains
+$1$ on output and $-\bar g$ on installed capacity. Weather is a fixed
+coefficient, so this is linear. Gas uses $\bar g=1$.
+
+**What does 0.4 mean?** It encodes the assumed less favorable wind conditions
+in period 1: output can reach at most 40% of installed capacity. Period 2's
+coefficient of 1.0 represents conditions permitting 100% of installed capacity.
+These weather assumptions are fixed inputs, not decisions made by the optimizer.
+
+Both periods use the same installed-capacity variable:
+
+$$
+\begin{aligned}
+g_{N,\mathrm{wind},1}-0.4G_{N,\mathrm{wind}}&\le0,\\
+g_{N,\mathrm{wind},2}-1.0G_{N,\mathrm{wind}}&\le0.
+\end{aligned}
+$$
+
+With 5 MW installed, output is limited to **2 MW in period 1** and
+**5 MW in period 2**. The negative coefficients result from moving available
+capacity to the left: $g\le0.4G$ becomes $g-0.4G\le0$.
+Thus each matrix row has $+1$ on hourly output, minus availability on installed
+capacity, and zero on unrelated decisions; its right-hand side is zero.
+
+**Full availability permits full generation; it does not require it.**
+Actual output can be lower if electricity is not needed, stored, or exported.
+For South's period-2 solar, it is simply $g_{S,\mathrm{solar},2}\le0$.
+The inequality allows curtailment; no siting upper bounds on $G$ are imposed here.
+
+```{r}
+#| label: generation-limits
+# 3b. Generator output <= g_bar * G. Rearrange as g - g_bar * G <= 0.
+for (i in seq_len(nrow(generation_variables))) {
+  row <- generation_rows[i]
+  A[row, generation_variables$variable[i]] <- 1
+  A[row, generation_variables$capacity[i]] <- -generation_variables$g_bar[i]
+}
+A["limit_g_N_wind_1", A["limit_g_N_wind_1", ] != 0]       # g_N_wind_1 - 0.4 G_N_wind <= 0
+A["limit_g_S_solar_2", A["limit_g_S_solar_2", ] != 0]      # No sunlight: g_S_solar_2 <= 0
+# No upper siting limits are imposed on installed generation in this toy model.
+```
+
+### Battery limits: distinguish power from energy
+
+For each location and period,
+
+$$
+\begin{aligned}
+0\le g_{n,\mathrm{battery},t,\mathrm{charge}}&\le G_{n,\mathrm{battery}},\\
+0\le g_{n,\mathrm{battery},t,\mathrm{discharge}}&\le G_{n,\mathrm{battery}},\\
+0\le soc_{n,\mathrm{battery},t}&\le h_{\max}G_{n,\mathrm{battery}}.
+\end{aligned}
+$$
+
+The first two rows limit charging and discharging power. The third limits
+stored energy. With $h_{\max}=1$, their right-hand-side coefficients happen
+to match numerically, but their physical units and roles differ.
+
+```{r}
+#| label: storage-limits
+# 3c. Battery charge/discharge <= G_battery; soc <= h_max * G_battery.
+for (i in seq_len(nrow(storage_variables))) {
+  row <- storage_rows[i]
+  capacity <- paste("G", storage_variables$location[i], "battery", sep = "_")
+  A[row, storage_variables$variable[i]] <- 1
+  A[row, capacity] <- if (storage_variables$operation[i] == "soc") -h_max else -1
+}
+```
+
+### Storage accounting: connect the two periods
+
+With no natural inflow or spillage for our batteries, the paper's storage
+balance is
+
+$$
+soc_{n,\mathrm{battery},t}=soc_{n,\mathrm{battery},t-1}
++\eta_1g_{n,\mathrm{battery},t,\mathrm{charge}}
+-\eta_2^{-1}g_{n,\mathrm{battery},t,\mathrm{discharge}}.
+$$
+
+The power terms implicitly multiply one hour. Rearranging gives coefficients
+$+1,-1,-\eta_1,+1/\eta_2$ on current stock, previous stock, charge, and discharge.
+
+We impose $soc_{n,\mathrm{battery},0}=soc_{n,\mathrm{battery},2}$ by using
+period 2 as period 1's previous stock. This eliminates a separate initial
+stock variable; it does **not** impose an initial stock of zero. The horizon
+is a repeating two-hour cycle, so any energy drawn from its initial stock
+must be replenished by the end.
+
+**Check the efficiency:** storing 1 MWh of input adds 0.9 MWh to the battery;
+returning it to the grid delivers $0.9\times0.9=0.81$ MWh.
+
+```{r}
+#| label: storage-accounting
+# 3d. soc_t = soc_previous + eta_1 * charge_t - discharge_t / eta_2.
+# CYCLIC boundary: soc_0 = soc_2. Thus period 1's previous stock is soc_2.
+# This does not fix starting stocks to zero. It requires them to be replenished.
+# Both hours are solved together, so starting stored energy is never free.
+for (location in c("N", "S")) {
+  for (period in 1:2) {
+    previous_period <- if (period == 1) 2 else 1
+    row <- paste("stock", location, period, sep = "_")
+    A[row, paste("soc", location, period, sep = "_")] <- 1
+    A[row, paste("soc", location, previous_period, sep = "_")] <- -1
+    A[row, paste("g", location, "charge", period, sep = "_")] <- -eta_1
+    A[row, paste("g", location, "discharge", period, sep = "_")] <- 1 / eta_2
+  }
+}
+constraint_direction[stock_rows] <- "="
+A[stock_rows, storage_variables$variable]
+```
+
+### Transmission limits: one line, either direction
+
+The paper imposes $-F\le f_t\le F$. Our nonnegative implementation uses
+
+$$
+0\le f_t^{NS}\le F,\qquad 0\le f_t^{SN}\le F,
+\qquad f_t=f_t^{NS}-f_t^{SN}.
+$$
+
+This gives the same feasible net flows. If both directional variables are
+positive, cancel their common part, so it is just the net flow that must remain under capacity. 
+
+```{r}
+#| label: transmission-limits
+# 3e. Each directional flow <= F.
+# The physically meaningful signed flow is f_NS - f_SN.
+# Counterflows can be canceled without changing any balance or objective value.
+for (i in seq_len(nrow(flow_variables))) {
+  A[flow_rows[i], flow_variables$variable[i]] <- 1
+  A[flow_rows[i], "F"] <- -1
+}
+```
+
+### Policy caps: line volume and emissions
+
+For our one line and gas-only fossil generation,
+
+$$
+lF\le\mathrm{CAP}_{LV},\qquad
+0.5\sum_{n\in\{N,S\}}\sum_{t=1}^{2}g_{n,\mathrm{gas},t}
+\le\mathrm{CAP}_{\mathrm{CO}_2}.
+$$
+
+Line cost remains in the objective even when its volume is capped. The
+emissions cap limits gas **energy**, not installed gas power capacity.
+These are the final two rows of the matrix.
+
+```{r}
+#| label: policy-caps
+# 3f. These are the paper's two policy constraints.
+A["line_volume", "F"] <- line_length
+rhs["line_volume"] <- CAP_LV
+
+gas_columns <- generation_variables |>
+  filter(technology == "gas") |>
+  pull(variable)
+A["carbon", gas_columns] <- emissions_per_MWh
+rhs["carbon"] <- CAP_CO2
+```
+
+### Inspect the completed LP
+
+All decisions in our implemented vector are nonnegative. There are four
+power balances, eight generator limits, twelve battery power/energy limits,
+four stock equations, four directional line limits, and two policy caps.
+That is 34 constraints on 31 variables.
+
+The following reshapes $A$ into a long table containing only nonzero entries.
+Read one row as an algebraic equation and check it against the formulas above.
+`View(constraint_terms)` is useful during an interactive session.
+
+```{r}
+#| label: inspect-matrix
+# Inspect a readable version of A: show only the nonzero coefficients.
+# In RStudio, View(constraint_terms) is useful here.
+constraint_terms <- as_tibble(A, rownames = "constraint") |>
+  pivot_longer(-constraint, names_to = "variable", values_to = "coefficient") |>
+  filter(coefficient != 0)
+constraint_terms
+constraint_terms |> filter(constraint == "balance_N_1")
+constraint_terms |> filter(constraint == "stock_S_1")
+```
+
+## 4. Solve, reconstruct cost, and check feasibility
+
+Everything the optimizer needs is now visible: `objective`, `A`,
+`constraint_direction`, and `rhs`. `compute.sens = TRUE` also requests dual
+values. A status of zero means the solver found an optimal solution.
+
+The returned vector has the same ordering as `variables`. Multiplying each
+choice by its coefficient reconstructs cost without relying on the solver's
+reported objective.
+
+```{r}
+#| label: solve
+# 4. Solve ONCE and inspect what the solver returned ------------------------
+fit <- lp(direction = "min", objective.in = objective,
+          const.mat = A, const.dir = constraint_direction, const.rhs = rhs,
+          compute.sens = TRUE)
+fit$status                    # 0 means an optimal solution was found
+stopifnot(fit$status == 0)
+fit$objval                    # Minimum cost over the two-hour horizon
+
+solution <- variables |>
+  mutate(value = fit$solution, cost_contribution = cost * value)
+solution
+solution |> filter(value > 1e-7)
+sum(solution$cost_contribution)  # Reconstruct the objective independently
+```
+
+With the supplied inputs, optimized cost is
+**$`r sprintf("%.3f", fit$objval)`**. This is the cost of
+meeting demand over the two-hour cycle.
+
+### Check the original restrictions
+
+Compute $Ax$ using the returned solution. For upper bounds, `rhs - lhs` is
+unused room; for equality rows it should be zero. The assertions allow a
+small numerical tolerance. A binding row has approximately zero slack,
+but binding alone does not imply a nonzero shadow price.
+
+```{r}
+#| label: verify
+# Check EVERY original constraint, not just the solver's status code.
+lhs <- drop(A %*% fit$solution)
+constraint_check <- tibble(
+  constraint = row_names, direction = unname(constraint_direction),
+  lhs = lhs, rhs = unname(rhs),
+  # For <= rows, positive slack is unused room. Equalities should have zero gap.
+  slack = rhs - lhs,
+  dual = fit$duals[seq_len(nrow(A))]
+)
+stopifnot(all(fit$solution >= -1e-7),
+          all(abs(constraint_check$slack[constraint_direction == "="]) < 1e-7),
+          all(constraint_check$slack[constraint_direction == "<="] >= -1e-7),
+          abs(sum(solution$cost_contribution) - fit$objval) < 1e-7)
+```
+
+The checks above validate the full model. Below, inspect the rows by their
+economic role. Values are displayed to three decimal places; the checks use
+the unrounded values. `dual` is the solver's marginal change in minimum cost
+when that row's right-hand side increases by one unit.
+
+#### Electricity balances: is demand met in every location and period?
+
+Each row adds generation, battery discharge, and imports, then subtracts
+charging and exports. `lhs` must equal the 4 MW demand in `rhs`. Zero slack
+confirms that the electricity balance holds. These are equalities, so zero
+slack is required, not evidence by itself of an economic bottleneck.
+
+```{r}
+#| label: check-balances
+constraint_check |>
+  filter(constraint %in% balance_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Generator limits: is output within weather-adjusted capacity?
+
+These rows are written as $g-\bar gG\le0$, so `lhs` is **output minus
+available output**, not generation alone. Slack is $\bar gG-g$: the MW of
+available output left unused. Zero slack means the generator is at its
+available limit. For nighttime solar, both availability and output are zero;
+that row binds even though building more solar would not help in that hour.
+
+```{r}
+#| label: check-generators
+constraint_check |>
+  filter(constraint %in% generation_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Battery power limits: can the battery charge or discharge this fast?
+
+Charging and discharging each satisfy $g_{\mathrm{operation}}-G_{\mathrm{battery}}
+\le0$. Slack measures unused charging or discharging power in MW. A zero
+slack row means that operation reaches the installed power limit. If no
+battery is built, both capacity and operation are zero, so these rows also
+bind; that alone does not mean the system needs a battery there.
+
+```{r}
+#| label: check-battery-power
+battery_power_rows <- storage_variables |>
+  filter(operation != "soc") |>
+  mutate(constraint = paste0("limit_", variable)) |>
+  pull(constraint)
+
+constraint_check |>
+  filter(constraint %in% battery_power_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Battery energy limits: does the stored energy fit?
+
+These rows impose $soc-h_{\max}G_{\mathrm{battery}}\le0$. Slack is unused
+energy capacity in **MWh**, rather than unused power in MW. A battery may
+have room for more energy while already charging as fast as its power limit
+allows. Compare South's period-1 energy slack with its charging-power slack
+in the preceding table.
+
+```{r}
+#| label: check-battery-energy
+battery_energy_rows <- storage_variables |>
+  filter(operation == "soc") |>
+  mutate(constraint = paste0("limit_", variable)) |>
+  pull(constraint)
+
+constraint_check |>
+  filter(constraint %in% battery_energy_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Storage accounting: do stocks reconcile across periods?
+
+Each equality checks current stock minus previous stock minus efficient
+charging plus the energy withdrawn to discharge. Its `lhs` must be zero.
+For period 1, the previous stock is period 2's stock because the horizon is
+cyclic. Zero residuals confirm that charging, discharge, losses, and the
+boundary condition are consistent; these rows do not measure unused capacity.
+
+```{r}
+#| label: check-storage-accounting
+constraint_check |>
+  filter(constraint %in% stock_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Transmission operating limits: do flows fit on the installed line?
+
+Each row imposes $f^{\mathrm{direction}}_t-F\le0$. Slack is the unused MW
+in that directional bound. In the baseline, South-to-North flow reaches the
+limit in period 1, and North-to-South flow reaches it in period 2. Both
+directions use the same installed line. These bounds restrict **operation**;
+the next table contains the separate limit on how much line can be built.
+
+```{r}
+#| label: check-transmission
+constraint_check |>
+  filter(constraint %in% flow_rows) |>
+  knitr::kable(digits = 3)
+```
+
+#### Policy caps: how much of each allowance is used?
+
+For `line_volume`, `lhs` is installed capacity times line length; slack is
+unused transmission-volume allowance. For `carbon`, `lhs` is total emissions;
+slack is unused tonnes of CO$_2$. Both caps bind in the baseline. Their
+negative duals mean that a small increase in the corresponding allowance
+would lower cost. Negate a dual to express that change as a positive saving.
+The two rows have different physical units, so their dual magnitudes should
+not be compared as if they priced the same resource.
+
+```{r}
+#| label: check-policy-caps
+constraint_check |>
+  filter(constraint %in% c("line_volume", "carbon")) |>
+  knitr::kable(digits = 3)
+```
+
+### Extract the transmission cap's marginal value
+
+The solver reports the change in minimized cost per unit increase in a
+right-hand side. For our upper cap, this derivative is nonpositive. The
+paper's positive value of relaxing the cap is its negative:
+
+$$
+\mu_{LV}=-\frac{dC^*}{d\mathrm{CAP}_{LV}}.
+$$
+
+Here $C^*$ denotes optimized two-hour cost. We verify the interpretation
+with a separate small re-solve later.
+
+```{r}
+#| label: baseline-dual
+# For this minimization problem a <= cap's dual is d(cost*)/d(cap), usually <= 0.
+# The positive value of relaxing the cap is its NEGATIVE.
+line_dual <- constraint_check |> filter(constraint == "line_volume") |> pull(dual)
+mu_LV <- -line_dual
+mu_LV
+```
+
+## 5. Read the optimal system through its plots
+
+### Installed capacities
+
+The bars show investments, not hourly output. With the baseline inputs,
+South builds a battery and North does not. Gas capacity can be useful even
+though its use over the horizon is restricted by the emissions budget.
+
+```{r}
+#| label: capacity-results
+# 5. Plot the baseline: where does each MW come from and go? ---------------
+installed <- capacity_variables |>
+  left_join(solution |> select(variable, value), by = "variable")
+installed
+
+plot_capacity <- ggplot(installed, aes(technology, value, fill = technology)) +
+  geom_col(width = 0.65) + facet_wrap(~location) +
+  scale_fill_manual(values = technology_colors) +
+  labs(x = NULL, y = "Installed power capacity (MW)",
+       title = "Investment decisions at the baseline transmission cap") +
+  guides(fill = "none")
+print(plot_capacity)
+```
+
+### Recover hourly operation and signed flows
+
+Join the numerical solution to the variable descriptions. `pivot_wider()`
+puts each flow direction into a column so we can compute $f_t^{NS}-f_t^{SN}$.
+A positive net flow means North exports; a negative value means South exports.
+
+```{r}
+#| label: operating-results
+# Generator output and battery operations, with charging below zero.
+generation <- generation_variables |>
+  left_join(solution |> select(variable, value), by = "variable")
+battery <- storage_variables |>
+  left_join(solution |> select(variable, value), by = "variable")
+flows <- flow_variables |>
+  left_join(solution |> select(variable, value), by = "variable") |>
+  select(period, direction, value) |>
+  pivot_wider(names_from = direction, values_from = value) |>
+  mutate(net_NS = NS - SN)  # Positive means North -> South
+```
+
+The baseline line carries solar electricity from South to North in period 1
+and wind electricity from North to South in period 2. Its capacity is used
+in both directions at different times.
+
+```{r}
+#| label: flow-plot
+# The direction can reverse: the same line shares solar in period 1 and
+# wind in period 2. The dashed bounds show the installed line capacity.
+line_capacity <- installed |> filter(variable == "F") |> pull(value)
+plot_flow <- ggplot(flows, aes(factor(period), net_NS)) +
+  geom_hline(yintercept = 0, color = "grey55") +
+  geom_hline(yintercept = c(-line_capacity, line_capacity), linetype = "dashed") +
+  geom_col(width = 0.6, fill = "#397CA8") +
+  labs(x = "Period", y = "Signed flow (MW; positive = North to South)",
+       title = "One line can carry electricity in either direction",
+       subtitle = "Dashed lines = installed transfer limits")
+print(plot_flow)
+```
+
+### Electricity accounting in each location
+
+To visualize the balance, put generation, discharge, and imports above zero.
+Put charging and exports below zero. The positive stack minus the magnitude
+of the negative stack equals demand, shown by the black diamond.
+
+In period 1, South produces extra solar electricity to serve its own demand,
+export, and charge its battery. In period 2, South combines imports, gas,
+and battery discharge. Explain each bar using the corresponding balance row.
+
+```{r}
+#| label: balance-plot
+trade <- bind_rows(
+  flows |> transmute(location = "N", period, value = -net_NS),
+  flows |> transmute(location = "S", period, value = net_NS)
+) |> mutate(component = if_else(value >= 0, "Imports", "Exports"))
+
+balance_plot_data <- bind_rows(
+  generation |> transmute(location, period, component = technology, value),
+  battery |> filter(operation != "soc") |>
+    transmute(location, period,
+              component = if_else(operation == "charge", "Charging", "Discharging"),
+              value = if_else(operation == "charge", -value, value)),
+  trade |> select(location, period, component, value)
+)
+
+# Bars above zero are supplies; bars below zero are charging and exports.
+# Positive stack minus negative stack magnitude must equal the demand marker.
+plot_balance <- ggplot(balance_plot_data,
+                       aes(factor(period), value, fill = component)) +
+  geom_hline(yintercept = 0, color = "grey55") +
+  geom_col(width = 0.65) +
+  geom_point(data = demand, aes(factor(period), demand_MW),
+             inherit.aes = FALSE, shape = 18, size = 3) +
+  facet_wrap(~location) +
+  scale_fill_manual(values = c(technology_colors, Charging = "#8865A8",
+                               Discharging = "#B6A0CD", Imports = "#26998C",
+                               Exports = "#C65A48")) +
+  labs(x = "Period", y = "Power supplied (+) or used (-), MW", fill = NULL,
+       title = "Read each country's electricity balance",
+       subtitle = "Black diamond = demand; net of all bars = demand")
+print(plot_balance)
+```
+
+### Available generation versus used generation
+
+For renewables, curtailment is
+
+$$
+\text{curtailment}_{n,s,t}=\bar g_{n,s,t}G_{n,s}-g_{n,s,t}\ge0.
+$$
+
+The baseline happens to use all available renewable output. The chart still
+separates availability from use and will reveal curtailment if changed inputs
+make it optimal. Zero curtailment in this solution does not mean the model
+requires all available generation to be used.
+
+```{r}
+#| label: curtailment-plot
+# Actual output can be below availability: this difference is curtailment.
+renewable_output <- generation |> filter(technology != "gas") |>
+  left_join(installed |> select(capacity = variable, G = value), by = "capacity") |>
+  mutate(available = g_bar * G, curtailed = available - value)
+renewable_output |> select(location, period, available, value, curtailed)
+
+plot_curtailment <- renewable_output |>
+  select(location, period, Used = value, Curtailed = curtailed) |>
+  pivot_longer(c(Used, Curtailed), names_to = "component", values_to = "MW") |>
+  ggplot(aes(factor(period), MW, fill = component)) +
+  geom_col(width = 0.65) + facet_wrap(~location) +
+  scale_fill_manual(values = c(Used = "#397CA8", Curtailed = "grey75")) +
+  labs(x = "Period", y = "Renewable power (MW)", fill = NULL,
+       title = "Available renewable output need not all be used")
+print(plot_curtailment)
+```
+
+### The path of stored energy
+
+Add time zero to the plot using the cyclic condition. The dashed line is
+$E=h_{\max}G$. Notice that South's peak stock is below this line: its charging
+power requirement, rather than its stock limit, determines baseline battery
+size. The lines connect end-of-period observations; they are not a simulation
+of within-hour operation.
+
+```{r}
+#| label: storage-plot
+# Include time zero explicitly so students can see the cyclic boundary.
+stocks <- battery |> filter(operation == "soc") |>
+  select(location, period, soc = value)
+stocks <- bind_rows(stocks, stocks |> filter(period == 2) |> mutate(period = 0)) |>
+  arrange(location, period)
+energy_capacity <- installed |> filter(technology == "battery") |>
+  transmute(location, E = h_max * value)
+
+plot_storage <- ggplot(stocks, aes(period, soc)) +
+  geom_line(color = "#397CA8", linewidth = 1) + geom_point(size = 2) +
+  geom_hline(data = energy_capacity, aes(yintercept = E), linetype = "dashed") +
+  facet_wrap(~location) + scale_x_continuous(breaks = 0:2) +
+  labs(x = "End of period (0 = starting stock)", y = "Stored energy (MWh)",
+       title = "Batteries shift energy between periods",
+       subtitle = "Dashed line = energy capacity; starting stock = final stock")
+print(plot_storage)
+```
+
+### Check energy conservation over the horizon
+
+Adding the two locations' balances cancels transmission. Summing over both
+hours and using the cyclic stocks gives
+
+$$
+\text{total generation}-\text{total demand}
+=\text{total charging}-\text{total discharging}
+=\text{storage losses}.
+$$
+
+All terms here are MWh because the periods each last one hour. This is an
+independent check that the sign conventions and efficiencies are consistent.
+
+```{r}
+#| label: energy-check
+# Storage must use more electricity in charging than it returns in discharge.
+# This independent energy accounting also checks that imports cancel globally.
+energy_totals <- battery |> filter(operation != "soc") |>
+  group_by(operation) |> summarise(MWh = sum(value), .groups = "drop")
+energy_totals
+storage_loss <- sum(battery$value[battery$operation == "charge"]) -
+  sum(battery$value[battery$operation == "discharge"])
+stopifnot(abs(sum(generation$value) - sum(demand$demand_MW) - storage_loss) < 1e-7)
+```
+
+## 6. Sensitivity analysis: how valuable is more transmission?
+
+Change only $\mathrm{CAP}_{LV}$ in $lF\le\mathrm{CAP}_{LV}$, holding costs,
+weather, demand, and the carbon budget fixed. **Re-optimize every investment
+and dispatch decision at each cap.** Holding the generation portfolio fixed
+would answer a different question.
+
+The loop below visibly copies `rhs`, replaces one entry, calls the same
+solver, and records the objective, dual, and decisions. `A` and `objective`
+do not change. Predict the sign of the cost change before running it.
+
+```{r}
+#| label: scenario-sweep
+# 6. Change ONE right-hand side: the transmission-volume cap ---------------
+# Stop first: predict the sign of the cost change. What can the model rebuild?
+# Every capacity and dispatch variable is re-optimized, just as in the paper.
+# A visible loop replaces a custom solve_model() function.
+cap_grid <- seq(0, 3, by = 0.05)
+scenario_rows <- list()
+scenario_choices <- list()
+
+for (i in seq_along(cap_grid)) {
+  scenario_rhs <- rhs
+  scenario_rhs["line_volume"] <- cap_grid[i]
+
+  scenario_fit <- lp(direction = "min", objective.in = objective,
+                     const.mat = A, const.dir = constraint_direction,
+                     const.rhs = scenario_rhs, compute.sens = TRUE)
+  stopifnot(scenario_fit$status == 0)
+
+  # Check feasibility using the SAME A and the new right-hand side.
+  scenario_gap <- scenario_rhs - drop(A %*% scenario_fit$solution)
+  stopifnot(all(abs(scenario_gap[constraint_direction == "="]) < 1e-7),
+            all(scenario_gap[constraint_direction == "<="] >= -1e-7))
+
+  scenario_rows[[i]] <- tibble(
+    CAP_LV = cap_grid[i], total_cost = scenario_fit$objval,
+    mu_LV = -scenario_fit$duals[match("line_volume", row_names)]
+  )
+  scenario_choices[[i]] <- tibble(CAP_LV = cap_grid[i],
+                                 variable = variables$variable,
+                                 value = scenario_fit$solution)
+}
+scenarios <- bind_rows(scenario_rows)
+choices <- bind_rows(scenario_choices)
+scenarios |> filter(CAP_LV %in% c(0, 1, 2, 3))
+
+# A relaxed UPPER bound cannot increase minimum cost: the old plan is feasible.
+stopifnot(all(diff(scenarios$total_cost) <= 1e-7))
+```
+
+### The cost curve
+
+A larger upper bound expands the feasible set. The old solution remains
+available, so minimized cost cannot increase. The displayed curve connects
+solves on a 0.05-unit grid; an exact corner can lie between sampled points.
+For this LP, the underlying value function is piecewise linear and convex.
+
+```{r}
+#| label: cost-plot
+plot_cost <- ggplot(scenarios, aes(CAP_LV, total_cost)) +
+  geom_line(color = "#397CA8", linewidth = 1) +
+  geom_vline(xintercept = CAP_LV, linetype = "dashed") +
+  labs(x = "Allowed line volume (MW x normalized distance)",
+       y = "Minimum two-hour cost (teaching cost units)",
+       title = "Relaxing the transmission cap expands the feasible set",
+       subtitle = "Dashed line = baseline cap; every point is a new LP solve")
+print(plot_cost)
+```
+
+### Explain the curve with investment changes
+
+More transmission permits a shift in the generation portfolio and reduces
+battery investment. Gas generation can also relocate while the common
+emissions budget stays fixed. Individual decisions need not be monotone,
+and alternative optimal plans can tie.
+
+Once the allowance exceeds the preferred line size, the model does not build
+extra capacity just because it is permitted. This is why both investments
+and total cost eventually stop changing.
+
+```{r}
+#| label: investment-plot
+capacity_path <- choices |>
+  inner_join(capacity_variables |> select(variable, location, technology), by = "variable")
+plot_investment <- ggplot(capacity_path, aes(CAP_LV, value, color = technology)) +
+  geom_line(linewidth = 0.9) + facet_wrap(~location) +
+  scale_color_manual(values = technology_colors) +
+  labs(x = "Allowed line volume", y = "Installed power capacity (MW)", color = NULL,
+       title = "The generation and storage portfolio adjusts with the grid")
+print(plot_investment)
+```
+
+### The marginal saving
+
+For a differentiable part of the cost curve,
+
+$$
+\Delta C^*\approx-\mu_{LV}\,\Delta\mathrm{CAP}_{LV}.
+$$
+
+The value is net of the line's construction cost, which is already in the
+objective. When the cap is slack, complementary slackness implies
+
+$$
+\mu_{LV}(\mathrm{CAP}_{LV}-lF)=0,
+\qquad \mu_{LV}=0\ \text{if }\mathrm{CAP}_{LV}>lF.
+$$
+
+At a corner the marginal value can depend on the direction of change, and
+optimal dual values need not be unique.
+
+```{r}
+#| label: shadow-plot
+plot_shadow <- ggplot(scenarios, aes(CAP_LV, mu_LV)) +
+  geom_point(size = 1.4, color = "#397CA8") +
+  labs(x = "Allowed line volume", y = "Marginal cost saving per extra line-volume unit",
+       title = "A shadow price is a local value",
+       subtitle = "At LP corners, the marginal value may not be unique")
+print(plot_shadow)
+```
+
+## 7. Verify the shadow price by changing the cap a little
+
+Choose 0.55, which is away from a corner for the supplied inputs. Solve at
+that cap and again after adding $\varepsilon=0.0001$. Compare
+
+$$
+\mu_{LV}\quad\text{with}\quad
+\frac{C^*(0.55)-C^*(0.55+\varepsilon)}{\varepsilon}.
+$$
+
+The two values should agree within numerical tolerance. After changing model
+inputs, reconsider whether this comparison point still lies away from a
+corner; a mismatch at a corner is not automatically a solver error.
+
+```{r}
+#| label: finite-difference
+# 7. Verify one shadow price with a small, explicit re-solve ----------------
+# Choose a point away from a kink after looking at plot_cost/plot_shadow.
+# Keep this separate from the scenario loop so every step is visible.
+check_cap <- 0.55
+small_change <- 0.0001
+rhs_before <- rhs
+rhs_before["line_volume"] <- check_cap
+fit_before <- lp("min", objective, A, constraint_direction, rhs_before,
+                 compute.sens = TRUE)
+
+rhs_after <- rhs_before
+rhs_after["line_volume"] <- check_cap + small_change
+fit_after <- lp("min", objective, A, constraint_direction, rhs_after)
+stopifnot(fit_before$status == 0, fit_after$status == 0)
+
+marginal_saving_from_dual <- -fit_before$duals[match("line_volume", row_names)]
+marginal_saving_from_resolve <- (fit_before$objval - fit_after$objval) / small_change
+shadow_check <- tibble(
+  method = c("Negative of cap dual", "Small relaxation and re-solve"),
+  marginal_saving = c(marginal_saving_from_dual, marginal_saving_from_resolve)
+)
+shadow_check
+stopifnot(abs(marginal_saving_from_dual - marginal_saving_from_resolve) < 1e-5)
+```
+
+### Distinguish total savings from marginal savings
+
+The cost difference between two distant scenarios is a total benefit. One
+local shadow price cannot be extrapolated across all capacity values. Total cost savings from relaxing the cap from $\mathrm{CAP}_{LV}^{(0)}$ to $\mathrm{CAP}_{LV}^{(1)}$ is:
+
+$$
+C^*(\mathrm{CAP}_{LV}^{(0)})-C^*(\mathrm{CAP}_{LV}^{(1)})
+=\int_{\mathrm{CAP}_{LV}^{(0)}}^{\mathrm{CAP}_{LV}^{(1)}}\mu_{LV}(u)\,du.
+$$
+
+```{r}
+#| label: total-saving
+# Compare total savings with a single marginal value. They are different objects.
+scenarios |> summarise(no_trade_cost = first(total_cost),
+                       expanded_grid_cost = last(total_cost),
+                       total_saving = first(total_cost) - last(total_cost))
+# Do NOT multiply one shadow price by a large change in the cap unless you
+# have checked that the same slope remains valid throughout that interval.
+```
+
+
+
+## 8. Optional plot export
+
+The notebook already embeds all figures. This last block is disabled on
+render to avoid writing extra files. Run it manually if you want the same
+PNG exports as the script. Paths are relative to the working directory;
+using this notebook's directory places them alongside the example.
+
+```{r}
+#| label: export-plots
+#| eval: false
+# 8. Optional: save the plots you have already displayed --------------------
+# Run from this Schlachtberger directory to place these alongside the script.
+# Set save_plots <- FALSE to skip saving. Plot objects always remain available.
+save_plots <- TRUE
+if (save_plots) {
+  dir.create("Schlachtberger_example_output", showWarnings = FALSE)
+  ggsave("Schlachtberger_example_output/01_weather.png", plot_weather, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/02_capacity.png", plot_capacity, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/03_balance.png", plot_balance, width = 8, height = 5)
+  ggsave("Schlachtberger_example_output/04_curtailment.png", plot_curtailment, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/05_storage.png", plot_storage, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/06_cost.png", plot_cost, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/07_investment.png", plot_investment, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/08_shadow.png", plot_shadow, width = 8, height = 4)
+  ggsave("Schlachtberger_example_output/09_flow.png", plot_flow, width = 8, height = 4)
+}
+```
+
+## Connection to the reading
+
+Schlachtberger, D. P., Brown, T., Schramm, S., and Greiner, M. (2017).
+[The benefits of cooperation in a highly renewable European electricity network](https://arxiv.org/abs/1704.05492).
+*Energy* 134: 469–481.
+
+The objective, storage accounting, and transmission-cap experiment follow
+the structure of the paper. The locations, horizon, technology menu, costs,
+emissions budget, and normalized line length are simplified teaching inputs.
+No published European results are being replicated here.

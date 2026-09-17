@@ -1,0 +1,518 @@
+---
+title: "Schlachtberger et al.: Formulating an Electricity Planning LP"
+subtitle: "From the planning problem to the value of transmission"
+format:
+  pdf:
+    papersize: letter
+    geometry: margin=0.8in
+    fontsize: 11pt
+    number-sections: false
+    colorlinks: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| include: false
+# Published scenario results, Table 2. This document does not re-solve
+# the European model. The calculations and plot use these four observations.
+volume <- c(0, 31.25, 125, 285.70)
+cost <- c(84.1, 75.7, 67.5, 64.8)
+benefit_share <- (cost[1] - cost[3]) / (cost[1] - cost[4])
+volume_share <- volume[3] / volume[4]
+slopes <- diff(cost) / diff(volume)
+stopifnot(all(diff(volume) > 0), all(diff(cost) < 0),
+          all(diff(slopes) > 0),
+          abs(benefit_share - 0.8601036) < 1e-6)
+```
+
+## 1. Start with the planning problem
+
+**Reading:** Schlachtberger, D. P., Brown, T., Schramm, S., and Greiner, M.
+(2017). "The benefits of cooperation in a highly renewable European
+electricity network." *Energy* 134: 469--481.
+[Public manuscript](https://arxiv.org/abs/1704.05492).
+
+European countries must supply electricity in every hour while sharply
+reducing carbon emissions. Wind and solar are low-emission sources, but
+their available output varies with weather and time of day. Three ways to
+cover a local shortfall are to generate dispatchable electricity, discharge
+stored energy, or import electricity from another country. Each requires
+infrastructure and incurs costs or uses a limited resource.
+
+**The planning question:** What generation, storage, and international
+transmission capacities should be built, and how should they operate, to
+meet demand at minimum annual cost subject to an emissions limit?
+
+The paper represents 30 countries with one node per country, hourly demand
+and weather from 2011, and a CO$_2$ cap 95% below 1990 electricity-sector
+emissions. The network connects countries along the existing topology.
+The model chooses capacities and operations together. It does not prescribe
+a wind or solar share and then calculate its cost.
+
+### Separate choices from information
+
+Demand, renewable availability, costs, efficiencies, connection lengths,
+resource potentials, and policy caps are **given**. Infrastructure capacities,
+hourly production, storage operation, and electricity flows are **chosen**.
+
+Existing hydro and pumped-hydro capacities are fixed in the paper. New
+hydro capacity is not an investment choice.
+
+### Define variables before writing equations
+
+Use $n$ for countries, $s$ for **generation and storage technologies**,
+$t$ for hours, and $\ell$ for international connections, as in the paper.
+
+| Variable | Meaning | Units |
+|:--|:--|:--|
+| $G_{n,s}$ | Generation or storage power capacity | MW |
+| $g_{n,s,t}$ | Generation or net storage dispatch | MW |
+| $soc_{n,s,t}$ | Storage state of charge | MWh |
+| $F_\ell,f_{\ell,t}$ | Line capacity and signed flow | MW |
+
+Storage uses the same $G_{n,s}$ and $g_{n,s,t}$ notation as generation.
+For storage, positive dispatch supplies the grid; negative dispatch charges it.
+
+\newpage
+
+## 2. Translate electricity supply into constraints
+
+### "Demand must be met in every country in every hour"
+
+Let $d_{n,t}$ be demand. Define $K_{n\ell}=+1$ where positive flow leaves
+country $n$, $-1$ where it enters, and zero otherwise. Then
+
+$$
+\underbrace{\sum_s g_{n,s,t}}_{\text{generation and net storage dispatch}}
+-d_{n,t}
+=\underbrace{\sum_\ell K_{n\ell}f_{\ell,t}}_{\text{net exports}}
+\qquad \forall n,t.
+$$
+
+This is the paper's equation (2). Charging enters $g_{n,s,t}$ negatively;
+discharging enters positively. Exports reduce supply available for domestic
+demand. Conservation requires equality.
+
+**Check the signs.** If country A generates 80 MW, serves 60 MW of demand,
+and charges storage at 5 MW, it can export 15 MW. At country B, that same
+flow enters with the opposite sign. Summing balances over countries cancels
+international flows: transmission redistributes electricity rather than
+creating it.
+
+**Why not impose just an annual balance?** Annual production can equal
+annual demand while production falls short on a particular evening. Every
+hour must be feasible, including hours of high demand and little wind.
+
+### "A generator cannot produce more than its available capacity"
+
+Let $\bar g_{n,s,t}$ denote available output per MW of installed capacity:
+
+$$
+0\le g_{n,s,t}\le \bar g_{n,s,t}G_{n,s}\qquad\forall n,s,t.
+$$
+
+These bounds apply to generators, not signed storage dispatch.
+For gas turbines, use $\bar g=1$ in this formulation. For wind and solar,
+availability is determined by weather.
+
+**Connection to the R example:** North's wind availability is 0.4 in period 1
+and 1.0 in period 2. These fixed inputs encode less favorable wind in the
+first period and conditions permitting full output in the second. The same
+5 MW installation can therefore produce **up to 2 MW**, then **up to 5 MW**.
+The model chooses capacity and actual output; it does not choose the weather.
+
+Output may be below the available amount. The inequality permits
+**curtailment** when additional renewable output cannot be used or stored.
+Requiring equality would force all available renewable energy onto the grid.
+
+### "Suitable locations are limited"
+
+$$
+0\le G_{n,s}\le G^{\max}_{n,s}.
+$$
+
+The upper bound represents geographic installation potential. Omit a finite
+upper bound where the model assumes no such limit; fix capacity for existing
+hydro facilities. These restrictions apply to installed capacity, while
+weather availability restricts its hourly use.
+
+**Formulation check:** $g\le\bar gG$ is linear. The weather coefficient $\bar g$ is
+known. Rewriting it as $g-\bar gG\le0$ makes the linear structure explicit.
+
+\newpage
+
+## 3. Translate storage, networks, and policy limits
+
+### "Electricity can be shifted across hours, with losses"
+
+The paper denotes charging and discharging efficiencies by $\eta_1$ and
+$\eta_2$. Its equation (6) is
+
+$$
+\begin{aligned}
+soc_{n,s,t}={}&soc_{n,s,t-1}
++\eta_1 g_{n,s,t,\mathrm{charge}}
+-\eta_2^{-1}g_{n,s,t,\mathrm{discharge}}\\
+&+g_{n,s,t,\mathrm{inflow}}-g_{n,s,t,\mathrm{spillage}}.
+\end{aligned}
+$$
+
+Time steps are one hour: each power term implicitly multiplies one hour to
+give energy. Charging at 10 MW with $\eta_1=0.9$ adds 9 MWh; delivering
+9 MWh with $\eta_2=0.9$ removes 10 MWh from storage.
+
+For a storage technology, the dispatch in the electricity balance is
+$g_{n,s,t}=g_{n,s,t,\mathrm{discharge}}-g_{n,s,t,\mathrm{charge}}$.
+Both component rates are nonnegative and bounded by $G_{n,s}$.
+
+$$
+0\le soc_{n,s,t}\le E_{n,s}=h_{s,\max}G_{n,s},\qquad
+soc_{n,s,0}=soc_{n,s,T}.
+$$
+
+The fixed duration $h_{s,\max}$ is 6 hours for batteries and 168 hours for
+hydrogen. A 100 MW battery therefore has 600 MWh of energy capacity.
+The cyclic condition prevents a free annual withdrawal from the initial stock.
+
+Natural inflow and spillage apply to reservoir hydro; electrical charging
+is zero there. Reservoir and pumped-hydro capacities are fixed. Batteries
+and hydrogen have no natural inflow. No binary charge/discharge switch is used.
+
+### "Each connection has a carrying capacity"
+
+$$
+-F_\ell\le f_{\ell,t}\le F_\ell\qquad\forall\ell,t,
+\qquad F_\ell\ge0.
+$$
+
+Flows can reverse direction. Capacity cannot be negative. Two linear
+inequalities implement the bound $|f_{\ell,t}|\le F_\ell$.
+The paper uses a controllable transport network, without modeling the full
+electrical power-flow physics or bottlenecks within each country.
+
+### "Total international transmission development is restricted"
+
+$$
+\sum_\ell l_\ell F_\ell\le \mathrm{CAP}_{LV}.
+$$
+
+Line length $l_\ell$ is fixed. The cap $\mathrm{CAP}_{LV}$ is measured in MWkm; a 1,000 MW
+connection spanning 500 km uses 500,000 MWkm. This is a physical development
+limit, separate from the construction costs in the objective.
+
+### "Total carbon emissions cannot exceed a budget"
+
+$$
+\sum_{n,s,t}\frac{e_s}{\eta_s}g_{n,s,t}\le \mathrm{CAP}_{\mathrm{CO}_2}.
+$$
+
+Here $e_s$ is tonnes of CO$_2$ per MWh of fuel and $\eta_s$ is generation
+efficiency. Electrical output divided by efficiency gives fuel use. For
+non-emitting generation, $e_s=0$. The carbon budget limits annual fuel use;
+it does not directly specify gas capacity or a renewable capacity share.
+
+\newpage
+
+## 4. Assemble the LP
+
+### "Choose the least-cost feasible electricity system"
+
+The paper uses $c_{n,s}$ for annualized generation and storage capacity
+costs, $c_\ell$ for annualized line costs, and $o_{n,s}$ for variable dispatch
+costs. Storage capacity costs include energy capacity through the fixed
+ratio $h_{s,\max}$. Existing fixed infrastructure adds constant costs.
+
+Using the paper's notation, the objective and constraints are
+
+$$
+\begin{aligned}
+\min_{G,F,g,f,soc}\quad
+&\sum_{n,s}c_{n,s}G_{n,s}+\sum_\ell c_\ell F_\ell
++\sum_{n,s,t}o_{n,s}g_{n,s,t}\\
+\text{subject to}\quad
+&\sum_s g_{n,s,t}-d_{n,t}=\sum_\ell K_{n\ell}f_{\ell,t},\\
+&0\le g_{n,s,t}\le\bar g_{n,s,t}G_{n,s}
+\quad\text{(generators)},\\
+&0\le G_{n,s}\le G^{\max}_{n,s},\\
+&soc_{n,s,t}=soc_{n,s,t-1}
++\eta_1g_{n,s,t,\mathrm{charge}}
+-\eta_2^{-1}g_{n,s,t,\mathrm{discharge}}\\
+&\hspace{2cm}+g_{n,s,t,\mathrm{inflow}}-g_{n,s,t,\mathrm{spillage}},\\
+&g_{n,s,t}=g_{n,s,t,\mathrm{discharge}}-g_{n,s,t,\mathrm{charge}}
+\quad\text{(storage)},\\
+&0\le g_{n,s,t,\mathrm{charge}},g_{n,s,t,\mathrm{discharge}}\le G_{n,s},\\
+&0\le soc_{n,s,t}\le h_{s,\max}G_{n,s},\qquad soc_{n,s,0}=soc_{n,s,T},\\
+&-F_\ell\le f_{\ell,t}\le F_\ell,\qquad F_\ell\ge0,\\
+&\sum_\ell l_\ell F_\ell\le\mathrm{CAP}_{LV},\\
+&\sum_{n,s,t}(e_s/\eta_s)g_{n,s,t}\le\mathrm{CAP}_{\mathrm{CO}_2}.
+\end{aligned}
+$$
+
+Apply generator and storage rows only to the corresponding technologies.
+Storage component flows are included in the choices summarized by $g$;
+inflow is given and spillage is nonnegative. Fix existing hydro capacities,
+use $\bar g=1$ for gas, and omit capacity upper bounds where unrestricted.
+All sums over time use the paper's implicit one-hour steps.
+
+### Check the formulation before solving
+
+1. **Units:** Each balance is in MW; each storage balance is in MWh;
+   emissions are in tonnes; every objective term is in euros per year.
+2. **Signs and domains:** Charging and exports use local electricity.
+   Generator output, stocks, and capacities are nonnegative; net storage
+   dispatch and line flows are signed.
+3. **Linearity:** Costs, availability, efficiencies, durations, and lengths
+   are parameters. There are no products of decision variables.
+4. **Completeness:** Capacity constraints link investments to hourly operation.
+   The storage recurrence links hours. The network links countries.
+
+Stacking variables gives $\min c^\top x$ subject to linear equalities and
+inequalities. If a solver requires nonnegative variables, write
+$f=f^+-f^-$, with $f^+,f^-\ge0$. The time dimension adds rows and columns;
+it does not make this a nonlinear program.
+
+**Ask students:** What becomes possible if we accidentally omit
+$g_{n,s,t}\le \bar g_{n,s,t}G_{n,s}$? The model could produce electricity without
+paying for the capacity needed to generate it.
+
+\newpage
+
+## 5. Motivate the solution: compare complete ways to meet demand
+
+The cheapest generator in isolation need not be part of the cheapest
+electricity system. The relevant comparison includes the infrastructure
+needed to deliver electricity at the time and place of demand.
+
+### A two-country thought experiment
+
+Suppose each country needs 1 MW in each of two one-hour periods. Existing
+wind capacity could produce the following outputs:
+
+| Available wind output (MW) | Hour 1 | Hour 2 |
+|:--|--:|--:|
+| Country A | 2 | 0 |
+| Country B | 0 | 2 |
+| Combined demand | 2 | 2 |
+
+This is a teaching example, not a scenario from the paper. With a 1 MW
+connection, A exports 1 MW in hour 1 and B exports 1 MW in hour 2. No
+storage or backup is needed in these two hours. Without the connection,
+each country must bridge its own shortfall using storage or backup. With
+lossy storage, the given wind energy alone is insufficient over a cyclic
+two-hour horizon: additional generation is needed to cover storage losses.
+
+**Change the example:** Put both wind surpluses in hour 1. A connection
+cannot move electricity to hour 2. Storage or dispatchable generation is
+now necessary even with unrestricted trade. The value of transmission
+depends on the spatial correlation of generation, not just its annual sum.
+
+### What the optimizer trades off
+
+- **More local renewables:** reduce dependence on imports, but may require
+  storage, backup, or curtailment during high-output hours.
+- **More storage:** shift supply across hours, paying capacity costs and
+  losing some energy in each cycle.
+- **More transmission:** share geographically diverse output and access
+  productive sites, paying construction costs and using the line-volume cap.
+- **More gas generation:** cover difficult hours, but use the emissions budget.
+
+The optimizer evaluates these options jointly across all hours. Building
+capacity that is attractive in one hour can be unattractive over the year;
+rare shortfalls can nevertheless justify capacity with low utilization.
+
+The paper solves this sparse LP with PyPSA and Gurobi's barrier algorithm.
+Students do not need to reproduce the large solve to understand its logic:
+the primal solution identifies a feasible least-cost plan, and the dual
+values measure the costs of tightening its constraints.
+
+### Predict before seeing the results
+
+If the transmission cap is relaxed while demand, weather, costs, and the
+carbon budget remain fixed, minimum total cost cannot rise: the previous
+solution remains feasible. Predict more use of productive wind locations
+and less reliance on local storage. Individual countries or technologies
+need not change monotonically even though minimum total cost does.
+
+\newpage
+
+## 6. Follow one sensitivity analysis: relax the transmission cap
+
+The experiment changes only $\mathrm{CAP}_{LV}$ in $\sum_\ell l_\ell F_\ell\le \mathrm{CAP}_{LV}$.
+For each value, **re-optimize all investment and operating decisions**.
+Keep weather, demand, technology costs, resource bounds, and the CO$_2$
+budget fixed. Do not hold the generation portfolio at its initial optimum.
+
+| Scenario | Line volume (TWkm) | Average system cost (EUR/MWh) |
+|:--|--:|--:|
+| No international transmission | 0.00 | 84.1 |
+| Existing-grid-equivalent volume | 31.25 | 75.7 |
+| Compromise grid | 125.00 | 67.5 |
+| Economically optimal grid | 285.70 | 64.8 |
+
+Source: paper, Table 2. The existing-grid-equivalent scenario optimally
+allocates the historical aggregate volume; individual line capacities need
+not match the actual grid. TWkm denotes a million MWkm.
+
+```{r}
+#| label: fig-transmission-sensitivity
+#| fig-cap: "Four published scenarios from Table 2. Dashed segments connect observations as visual guides; they do not reconstruct the full model's sensitivity curve or its LP breakpoints."
+#| fig-width: 6.3
+#| fig-height: 2.5
+#| fig-pos: H
+#| dev: pdf
+par(mar = c(4, 4.4, 0.4, 0.5), mgp = c(2.6, 0.8, 0))
+plot(volume, cost, type = "o", pch = 19, lty = 2,
+     col = "#246080", lwd = 1.5, xlim = c(0, 305), ylim = c(62, 88),
+     xlab = "Allowed transmission volume (TWkm)",
+     ylab = "System cost (EUR/MWh)", las = 1, cex.lab = 0.9)
+text(volume, cost, labels = c("Zero", "Existing volume", "Compromise", "Optimum"),
+     pos = c(4, 4, 3, 3), cex = 0.8, offset = 0.5)
+```
+
+### Quantify the compromise
+
+Relative to the zero-transmission benchmark, the maximum reported reduction
+is $84.1-64.8=19.3$ EUR/MWh. The compromise captures $84.1-67.5=16.6$:
+
+$$
+\text{Savings share}=\frac{16.6}{19.3}\approx86\%,\qquad
+\text{Volume share}=\frac{125}{285.7}\approx44\%.
+$$
+
+The paper reports approximately 85% of savings; 86% follows from its rounded
+table entries. Against the existing-volume benchmark instead, the savings
+share is $(75.7-67.5)/(75.7-64.8)\approx75\%$. State the benchmark.
+
+**Interpretation:** Much of the gain is available before the economic
+optimum. Restricting transmission sharply favors solar and local storage;
+relaxing the cap permits more wind and geographic balancing. These are
+endogenous responses to the cap, not imposed changes in technology shares.
+
+\newpage
+
+## 7. Use the shadow price to explain the sensitivity result
+
+For the sensitivity derivation, let $C^*(\mathrm{CAP}_{LV})$ be minimized **annual total cost** (teaching notation). Collect the transmission-cap
+term in the Lagrangian, with nonnegative multiplier $\mu_{LV}$:
+
+$$
+\mathcal L=C(x)+\mu_{LV}\left(\sum_\ell l_\ell F_\ell-\mathrm{CAP}_{LV}\right)
++\text{terms for the other constraints}.
+$$
+
+Where the value function is differentiable, the envelope result gives
+
+$$
+\frac{dC^*(\mathrm{CAP}_{LV})}{d\mathrm{CAP}_{LV}}=-\mu_{LV},\qquad
+\Delta C^*\approx-\mu_{LV}\,\Delta\mathrm{CAP}_{LV}.
+$$
+
+The multiplier measures annual euros saved by permitting one additional
+MWkm. Construction costs are already in the objective: this is a **net
+system saving**, not avoided storage cost alone.
+
+### Why the marginal value falls
+
+First, more allowed line volume expands the feasible set, so
+$C^*(\mathrm{CAP}_{LV})$ is nonincreasing. Second, an LP's value function is piecewise
+linear and convex in this right-hand-side parameter. Its slope becomes
+less negative as $\mathrm{CAP}_{LV}$ increases; correspondingly, the marginal saving
+$\mu_{LV}$ weakly declines. At a corner there may be multiple optimal dual
+values, so use the appropriate one-sided slope.
+
+The paper's many-scenario curve can look smooth even though the underlying
+LP value function is piecewise linear. **A changing slope across scenarios
+does not make the optimization problem nonlinear.**
+
+Complementary slackness gives
+
+$$
+\mu_{LV}\left(\mathrm{CAP}_{LV}-\sum_\ell l_\ell F_\ell\right)=0.
+$$
+
+Once the cap is above the unconstrained cost-optimal line volume, it is
+slack and $\mu_{LV}=0$. Permitting still more capacity has no value because
+the model can already build its preferred network. A binding constraint
+does not, by itself, guarantee a strictly positive multiplier.
+
+### Finite changes require more than one local shadow price
+
+For a large relaxation, re-solve as the active constraints change:
+
+$$
+C^*(\mathrm{CAP}_{LV}^{(0)})-C^*(\mathrm{CAP}_{LV}^{(1)})=\int_{\mathrm{CAP}_{LV}^{(0)}}^{\mathrm{CAP}_{LV}^{(1)}}\mu_{LV}(u)\,du.
+$$
+
+The Table 2 endpoints give finite changes in reported average costs, not
+raw dual values. Neither a secant slope between those scenarios nor its
+units should be confused with the annual EUR/MWkm multiplier above.
+To check a solver's dual numerically, compare annual objective values from
+nearby re-solves using a consistent MWkm scale and sign convention.
+
+**Connection to the previous application:** A right-hand-side change alters
+the feasible set and the optimal allocation. Its value depends on what is
+allowed to adjust. Here a simple upper-bound relaxation always preserves
+the old feasible choices; it carries no obligation to build the extra grid.
+
+\newpage
+
+## 8. Interpret the result and check understanding
+
+### What can be concluded?
+
+Under the paper's assumptions, international cooperation reduces the cost
+of meeting a stringent emissions target. It allows countries to share
+resources and manage variability across space. The benefits diminish, so a
+grid smaller than the least-cost optimum can retain most of the savings.
+
+The line-volume cap represents a restriction on development. It does not
+estimate public opposition or environmental damages in euros. Consequently,
+the compromise is an economically informative alternative, not a demonstrated
+social optimum after accounting for all external costs.
+
+The magnitude depends on the aggregation of each country to one node,
+one year of known weather and demand, fixed storage durations, and the
+technology menu and costs. The model omits internal network bottlenecks,
+demand response, and flexibility from other energy sectors. These limitations
+affect the numerical prescription while leaving the LP reasoning useful.
+
+### Questions for discussion
+
+1. If we require wind output to equal available output in every hour,
+   which flexibility do we remove? How could that change feasibility?
+2. Why can a carbon cap bind even when gas generation capacity is not fully
+   used in most hours?
+3. Why must generation and storage be re-optimized when $\mathrm{CAP}_{LV}$ changes?
+4. If a more permissive transmission cap produces a higher minimized annual
+   cost, what should we check before interpreting the result?
+5. Can a country face a higher electricity price after integration even
+   though Europe-wide total cost falls?
+
+### Instructor checkpoints
+
+1. Equality removes curtailment. Surplus output must be consumed, stored,
+   or exported; otherwise the constraints can become infeasible.
+2. Emissions restrict annual fossil energy, whereas capacity restricts
+   instantaneous power. Gas capacity can serve rare shortage hours.
+3. Holding other investments fixed values a different, narrower adjustment.
+   The paper compares complete least-cost systems at each cap.
+4. Check that only the upper bound changed, the previous plan remains
+   feasible, both solves reached comparable optima, and the comparison uses
+   the same annual objective rather than differently normalized measures.
+5. Yes. An exporting region can face greater demand for its inexpensive
+   resources. Aggregate savings do not establish how gains are distributed.
+
+### Source and interpretation notes
+
+- Model: paper Section 2, equations (1)--(10); assumptions: Section 3.
+  Symbols follow the paper, including $G_{n,s}$ for generation and storage
+  capacity, $soc_{n,s,t}$, $\bar g_{n,s,t}$, and $\mathrm{CAP}_{LV}$.
+- Sensitivity: Section 4.1, Figure 2, and Table 2. The manuscript prose gives
+  79.9 EUR/MWh for the compromise; these notes use Table 2's 67.5, which
+  agrees with the stated savings relationship.
+- Figure 8 expresses transmission value as an equivalent overnight capital
+  cost. It is not directly the raw annual net multiplier derived here.
+  The notes use the cap experiment and Table 2 to keep that distinction clear.
