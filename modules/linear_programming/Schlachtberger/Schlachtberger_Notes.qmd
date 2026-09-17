@@ -35,12 +35,12 @@ stopifnot(all(diff(volume) > 0), all(diff(cost) < 0),
 electricity network." *Energy* 134: 469--481.
 [Public manuscript](https://arxiv.org/abs/1704.05492).
 
-European countries must supply electricity in every hour while sharply
-reducing carbon emissions. Wind and solar are low-emission sources, but
-their available output varies with weather and time of day. Three ways to
-cover a local shortfall are to generate dispatchable electricity, discharge
-stored energy, or import electricity from another country. Each requires
-infrastructure and incurs costs or uses a limited resource.
+- European countries must supply electricity in every hour while sharply
+reducing carbon emissions. 
+- Wind and solar are low-emission sources, but their available output varies with weather and time of day. 
+- Three ways to cover a local shortfall are to generate dispatchable electricity, discharge
+stored energy, or import electricity from another country. 
+- Each requires infrastructure and incurs costs or uses a limited resource.
 
 **The planning question:** What generation, storage, and international
 transmission capacities should be built, and how should they operate, to
@@ -49,8 +49,7 @@ meet demand at minimum annual cost subject to an emissions limit?
 The paper represents 30 countries with one node per country, hourly demand
 and weather from 2011, and a CO$_2$ cap 95% below 1990 electricity-sector
 emissions. The network connects countries along the existing topology.
-The model chooses capacities and operations together. It does not prescribe
-a wind or solar share and then calculate its cost.
+The model chooses capacities and operations together. 
 
 ### Separate choices from information
 
@@ -76,6 +75,8 @@ $t$ for hours, and $\ell$ for international connections, as in the paper.
 Storage uses the same $G_{n,s}$ and $g_{n,s,t}$ notation as generation.
 For storage, positive dispatch supplies the grid; negative dispatch charges it.
 
+30 countries, 4 technologies, and 8,760 hours give 1,051,200 $g$ variables.
+
 \newpage
 
 ## 2. Translate electricity supply into constraints
@@ -92,7 +93,7 @@ $$
 \qquad \forall n,t.
 $$
 
-This is the paper's equation (2). Charging enters $g_{n,s,t}$ negatively;
+Equation (2). Charging enters $g_{n,s,t}$ negatively;
 discharging enters positively. Exports reduce supply available for domestic
 demand. Conservation requires equality.
 
@@ -101,6 +102,10 @@ and charges storage at 5 MW, it can export 15 MW. At country B, that same
 flow enters with the opposite sign. Summing balances over countries cancels
 international flows: transmission redistributes electricity rather than
 creating it.
+
+$$
+80-60-5=15
+$$
 
 **Why not impose just an annual balance?** Annual production can equal
 annual demand while production falls short on a particular evening. Every
@@ -114,19 +119,11 @@ $$
 0\le g_{n,s,t}\le \bar g_{n,s,t}G_{n,s}\qquad\forall n,s,t.
 $$
 
-These bounds apply to generators, not signed storage dispatch.
-For gas turbines, use $\bar g=1$ in this formulation. For wind and solar,
+- These bounds apply to generators, not signed storage dispatch.
+- For gas turbines, use $\bar g=1$ in this formulation. 
+- For wind and solar,
 availability is determined by weather.
-
-**Connection to the R example:** North's wind availability is 0.4 in period 1
-and 1.0 in period 2. These fixed inputs encode less favorable wind in the
-first period and conditions permitting full output in the second. The same
-5 MW installation can therefore produce **up to 2 MW**, then **up to 5 MW**.
-The model chooses capacity and actual output; it does not choose the weather.
-
-Output may be below the available amount. The inequality permits
-**curtailment** when additional renewable output cannot be used or stored.
-Requiring equality would force all available renewable energy onto the grid.
+- Output may be below the available amount. The inequality permits **curtailment** when additional renewable output cannot be used or stored.
 
 ### "Suitable locations are limited"
 
@@ -134,13 +131,12 @@ $$
 0\le G_{n,s}\le G^{\max}_{n,s}.
 $$
 
-The upper bound represents geographic installation potential. Omit a finite
-upper bound where the model assumes no such limit; fix capacity for existing
-hydro facilities. These restrictions apply to installed capacity, while
+- The upper bound represents geographic installation potential. 
+- Omit a finite upper bound where the model assumes no such limit; fix capacity for existing hydro facilities. 
+- These restrictions apply to installed capacity, while
 weather availability restricts its hourly use.
 
-**Formulation check:** $g\le\bar gG$ is linear. The weather coefficient $\bar g$ is
-known. Rewriting it as $g-\bar gG\le0$ makes the linear structure explicit.
+
 
 \newpage
 
@@ -149,7 +145,7 @@ known. Rewriting it as $g-\bar gG\le0$ makes the linear structure explicit.
 ### "Electricity can be shifted across hours, with losses"
 
 The paper denotes charging and discharging efficiencies by $\eta_1$ and
-$\eta_2$. Its equation (6) is
+$\eta_2$. Equation (6) is
 
 $$
 \begin{aligned}
@@ -160,26 +156,24 @@ soc_{n,s,t}={}&soc_{n,s,t-1}
 \end{aligned}
 $$
 
-Time steps are one hour: each power term implicitly multiplies one hour to
-give energy. Charging at 10 MW with $\eta_1=0.9$ adds 9 MWh; delivering
+- Time steps are one hour: each power term implicitly multiplies one hour to
+give energy. 
+- Charging at 10 MW with $\eta_1=0.9$ adds 9 MWh; delivering
 9 MWh with $\eta_2=0.9$ removes 10 MWh from storage.
+- Loss or leakage in and out of storage. Like a tax
 
-For a storage technology, the dispatch in the electricity balance is
-$g_{n,s,t}=g_{n,s,t,\mathrm{discharge}}-g_{n,s,t,\mathrm{charge}}$.
-Both component rates are nonnegative and bounded by $G_{n,s}$.
+
 
 $$
 0\le soc_{n,s,t}\le E_{n,s}=h_{s,\max}G_{n,s},\qquad
 soc_{n,s,0}=soc_{n,s,T}.
 $$
 
-The fixed duration $h_{s,\max}$ is 6 hours for batteries and 168 hours for
-hydrogen. A 100 MW battery therefore has 600 MWh of energy capacity.
-The cyclic condition prevents a free annual withdrawal from the initial stock.
+- The fixed duration $h_{s,\max}$ is 6 hours for batteries and 168 hours for
+hydrogen. 
+- A 100 MW battery therefore has 600 MWh of energy capacity.
+- The cyclic condition prevents a free annual withdrawal from the initial stock.
 
-Natural inflow and spillage apply to reservoir hydro; electrical charging
-is zero there. Reservoir and pumped-hydro capacities are fixed. Batteries
-and hydrogen have no natural inflow. No binary charge/discharge switch is used.
 
 ### "Each connection has a carrying capacity"
 
@@ -188,10 +182,9 @@ $$
 \qquad F_\ell\ge0.
 $$
 
-Flows can reverse direction. Capacity cannot be negative. Two linear
-inequalities implement the bound $|f_{\ell,t}|\le F_\ell$.
-The paper uses a controllable transport network, without modeling the full
-electrical power-flow physics or bottlenecks within each country.
+- Flows can reverse direction. 
+- Capacity cannot be negative. 
+- Two linear inequalities implement the bound $|f_{\ell,t}|\le F_\ell$.
 
 ### "Total international transmission development is restricted"
 
@@ -199,9 +192,8 @@ $$
 \sum_\ell l_\ell F_\ell\le \mathrm{CAP}_{LV}.
 $$
 
-Line length $l_\ell$ is fixed. The cap $\mathrm{CAP}_{LV}$ is measured in MWkm; a 1,000 MW
-connection spanning 500 km uses 500,000 MWkm. This is a physical development
-limit, separate from the construction costs in the objective.
+- Line length $l_\ell$ is fixed. The cap $\mathrm{CAP}_{LV}$ is measured in MWkm; a 1,000 MW connection spanning 500 km uses 500,000 MWkm. 
+- This is a physical development limit, separate from the construction costs in the objective.
 
 ### "Total carbon emissions cannot exceed a budget"
 
@@ -209,10 +201,10 @@ $$
 \sum_{n,s,t}\frac{e_s}{\eta_s}g_{n,s,t}\le \mathrm{CAP}_{\mathrm{CO}_2}.
 $$
 
-Here $e_s$ is tonnes of CO$_2$ per MWh of fuel and $\eta_s$ is generation
-efficiency. Electrical output divided by efficiency gives fuel use. For
-non-emitting generation, $e_s=0$. The carbon budget limits annual fuel use;
-it does not directly specify gas capacity or a renewable capacity share.
+- Here $e_s$ is tonnes of CO$_2$ per MWh of fuel and $\eta_s$ is generation
+efficiency. 
+- Electrical output divided by efficiency gives fuel use. For non-emitting generation, $e_s=0$. 
+- The carbon budget limits annual fuel use; it does not directly specify gas capacity or a renewable capacity share.
 
 \newpage
 
@@ -220,10 +212,11 @@ it does not directly specify gas capacity or a renewable capacity share.
 
 ### "Choose the least-cost feasible electricity system"
 
-The paper uses $c_{n,s}$ for annualized generation and storage capacity
-costs, $c_\ell$ for annualized line costs, and $o_{n,s}$ for variable dispatch
-costs. Storage capacity costs include energy capacity through the fixed
-ratio $h_{s,\max}$. Existing fixed infrastructure adds constant costs.
+- The paper uses $c_{n,s}$ for annualized generation and storage capacity
+costs, 
+- $c_\ell$ for annualized line costs, and 
+- $o_{n,s}$ for variable dispatch costs. 
+- Storage capacity costs include energy capacity through the fixed ratio $h_{s,\max}$ i.e., $E_{n,s}=h_{s,\max}G_{n,s}$.
 
 Using the paper's notation, the objective and constraints are
 
@@ -233,8 +226,8 @@ $$
 &\sum_{n,s}c_{n,s}G_{n,s}+\sum_\ell c_\ell F_\ell
 +\sum_{n,s,t}o_{n,s}g_{n,s,t}\\
 \text{subject to}\quad
-&\sum_s g_{n,s,t}-d_{n,t}=\sum_\ell K_{n\ell}f_{\ell,t},\\
-&0\le g_{n,s,t}\le\bar g_{n,s,t}G_{n,s}
+&\sum_s g_{n,s,t}-d_{n,t}=\sum_\ell K_{n\ell}f_{\ell,t} \quad \text{(demand)},\\
+&0\le g_{n,s,t}\le\bar g_{n,s,t}G_{n,s} 
 \quad\text{(generators)},\\
 &0\le G_{n,s}\le G^{\max}_{n,s},\\
 &soc_{n,s,t}=soc_{n,s,t-1}
@@ -245,9 +238,9 @@ $$
 \quad\text{(storage)},\\
 &0\le g_{n,s,t,\mathrm{charge}},g_{n,s,t,\mathrm{discharge}}\le G_{n,s},\\
 &0\le soc_{n,s,t}\le h_{s,\max}G_{n,s},\qquad soc_{n,s,0}=soc_{n,s,T},\\
-&-F_\ell\le f_{\ell,t}\le F_\ell,\qquad F_\ell\ge0,\\
-&\sum_\ell l_\ell F_\ell\le\mathrm{CAP}_{LV},\\
-&\sum_{n,s,t}(e_s/\eta_s)g_{n,s,t}\le\mathrm{CAP}_{\mathrm{CO}_2}.
+&-F_\ell\le f_{\ell,t}\le F_\ell,\qquad F_\ell\ge0. \quad \text{(transmission capacity)},\\
+&\sum_\ell l_\ell F_\ell\le\mathrm{CAP}_{LV} \quad  \text{(line capacity)},\\
+&\sum_{n,s,t}(e_s/\eta_s)g_{n,s,t}\le\mathrm{CAP}_{\mathrm{CO}_2} \quad \text{(carbon budget)}.
 \end{aligned}
 $$
 
@@ -271,43 +264,58 @@ All sums over time use the paper's implicit one-hour steps.
 
 Stacking variables gives $\min c^\top x$ subject to linear equalities and
 inequalities. If a solver requires nonnegative variables, write
-$f=f^+-f^-$, with $f^+,f^-\ge0$. The time dimension adds rows and columns;
-it does not make this a nonlinear program.
+$f=f^+-f^-$, with $f^+,f^-\ge0$. 
 
-**Ask students:** What becomes possible if we accidentally omit
-$g_{n,s,t}\le \bar g_{n,s,t}G_{n,s}$? The model could produce electricity without
-paying for the capacity needed to generate it.
+> **Question:** What becomes possible if we accidentally omit $g_{n,s,t}\le \bar g_{n,s,t}G_{n,s}$? The model could produce electricity without paying for the capacity needed to generate it.
 
 \newpage
 
 ## 5. Motivate the solution: compare complete ways to meet demand
 
-The cheapest generator in isolation need not be part of the cheapest
-electricity system. The relevant comparison includes the infrastructure
-needed to deliver electricity at the time and place of demand.
+- The cheapest generator in isolation need not be part of the cheapest
+electricity system. 
+- The relevant comparison includes the infrastructure needed to deliver electricity at the time and place of demand.
 
 ### A two-country thought experiment
 
 Suppose each country needs 1 MW in each of two one-hour periods. Existing
 wind capacity could produce the following outputs:
 
-| Available wind output (MW) | Hour 1 | Hour 2 |
+| Available wind output (MW) | Morning | Evening |
+| :------------------------- | ------: | ---: |
+| Country A                  |       1 |    1 |
+| Country B                  |       1 |    1 |
+| Combined demand            |       2 |    2 |
+
+- System is right-sized for each country. Stable production and demand
+
+Suppose instead that the two countries have complementary production patterns (renewables):
+
+| Available wind output (MW) | Morning | Evening |
 |:--|--:|--:|
 | Country A | 2 | 0 |
 | Country B | 0 | 2 |
 | Combined demand | 2 | 2 |
 
-This is a teaching example, not a scenario from the paper. With a 1 MW
-connection, A exports 1 MW in hour 1 and B exports 1 MW in hour 2. No
-storage or backup is needed in these two hours. Without the connection,
-each country must bridge its own shortfall using storage or backup. With
-lossy storage, the given wind energy alone is insufficient over a cyclic
-two-hour horizon: additional generation is needed to cover storage losses.
+- A produces 2 MW in the morning and 0 MW in the evening.
+- B produces 0 MW in the morning and 2 MW in the evening.
+- With a 1 MW connection, A exports 1 MW in hour 1 and B exports 1 MW in hour 2. 
+- No storage or backup is needed in these two hours. 
+- Without the connection, each country must bridge its own shortfall using storage or backup. 
+- With lossy storage, the given wind energy alone is insufficient over a cyclic
+two-hour horizon: 
 
 **Change the example:** Put both wind surpluses in hour 1. A connection
 cannot move electricity to hour 2. Storage or dispatchable generation is
 now necessary even with unrestricted trade. The value of transmission
 depends on the spatial correlation of generation, not just its annual sum.
+
+| Available wind output (MW) | Morning | Evening |
+|:--|--:|--:|
+| Country A | 2 | 2 |
+| Country B | 0 | 0 |
+| Combined demand | 2 | 2 |
+
 
 ### What the optimizer trades off
 
