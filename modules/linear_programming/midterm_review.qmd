@@ -1,0 +1,568 @@
+---
+title: "Linear Programming: Midterm Review"
+toc: false
+---
+
+Lecture skeleton, following the [unit lecture notes](notes.qmd).
+Use the watershed restoration example below throughout; add solution walkthroughs after revising the outline.
+
+# LP Overview
+
+- What makes a problem a linear program? 
+
+## LP assumptions 
+
+- **Objective-function appropriateness:** one stated objective is sufficient to rank feasible choices.
+- **Decision-variable appropriateness:** all relevant choices are included and controlled by the decision maker.
+- **Constraint appropriateness:** the constraints accurately represent the relevant limits, requirements, and units.
+- **Proportionality:** each activity's per-unit contribution and resource use do not change with its level.
+- **Additivity:** the contribution of one activity does not depend on the level of another activity.
+- **Divisibility:** decision variables may take fractional values.
+- **Certainty:** objective, technical, and right-hand-side coefficients are known fixed values.
+
+# Formulating an LP
+
+- Define decision variables and units; identify the objective, constraints, and sign restrictions.
+- Translate between scalar and matrix forms: identify $x$, $c$, $A$, and $b$.
+
+## Example: Watershed Restoration
+
+A watershed district wants to meet annual sediment and phosphorus reduction targets at
+the lowest annual cost. It can establish vegetated buffer strips or restore wetlands.
+For this hypothetical example, assume constant reductions and costs per acre:
+
+| Practice | Annual cost (dollars/acre) | Sediment reduction (tons/acre/year) | Phosphorus reduction (kg/acre/year) |
+|---|---:|---:|---:|
+| Buffer strips | 400 | 6 | 2 |
+| Restored wetlands | 600 | 3 | 6 |
+
+The district must reduce sediment by at least 120 tons per year and phosphorus by at
+least 90 kg per year. Only 16 acres are suitable for wetland restoration. Assume that
+buffer-strip acreage has no additional upper limit, that the two practices occupy
+separate sites, and that fractional acres are allowed.
+
+**Formulation prompt.** Define the choices and their units, write the objective and
+all constraints, and identify which constraints represent minimum requirements and
+which represent resource limits.
+
+### Scalar form
+
+Let $B$ be acres of buffer strips and $W$ be acres of restored wetlands. Annual cost is
+
+$$
+\begin{aligned}
+\min_{B,W}\quad & 400B + 600W \\
+\text{s.t.}\quad
+& 6B + 3W \geq 120 && \text{(sediment reduction)},\\
+& 2B + 6W \geq 90 && \text{(phosphorus reduction)},\\
+& W \leq 16 && \text{(suitable wetland acreage)},\\
+& B,W \geq 0.
+\end{aligned}
+$$
+
+The first two constraints require **at least** the target reductions; the third
+permits **at most** the available wetland acreage. Each constraint compares quantities
+with matching units, and the objective is measured in dollars per year.
+
+### Matrix form
+
+To write all structural constraints with the same inequality direction, multiply
+$W\leq16$ by $-1$, giving $-W\geq-16$. Then
+
+$$
+\min_{x\geq0}\;c^\top x
+\qquad\text{s.t.}\qquad Ax\geq b,
+$$
+
+$$
+x=\begin{bmatrix}B\\W\end{bmatrix},\qquad
+c=\begin{bmatrix}400\\600\end{bmatrix},\qquad
+A=\begin{bmatrix}6&3\\2&6\\0&-1\end{bmatrix},\qquad
+b=\begin{bmatrix}120\\90\\-16\end{bmatrix}.
+$$
+
+> Why would replacing the first two inequalities with
+equalities change the model? Which LP assumptions justify adding the reductions
+across practices and allowing fractional acres?
+
+# Graphical and Algebraic Solutions
+
+## Plot the constraints and feasible region
+
+Place buffer-strip acreage $B$ on the horizontal axis and wetland acreage $W$ on
+the vertical axis. Rewrite the reduction requirements as
+
+$$
+W\geq40-2B \quad\text{(sediment)},\qquad
+W\geq15-\frac{1}{3}B \quad\text{(phosphorus)}.
+$$
+
+The feasible region lies **above both reduction lines**, **below $W=16$**, and in
+the nonnegative quadrant. The sediment boundary has intercepts $(20,0)$ and
+$(0,40)$; the phosphorus boundary has intercepts $(45,0)$ and $(0,15)$.
+
+```{r}
+#| label: fig-watershed-lp
+#| echo: false
+#| warning: false
+#| message: false
+#| fig-width: 7
+#| fig-height: 4.5
+#| fig-pos: H
+#| fig-cap: "Watershed restoration LP. The shaded feasible region continues to the right without bound. The sediment line's vertical intercept, (0, 40), is above the plotted window. The dashed line represents annual cost of $12,000."
+
+library(ggplot2)
+
+feasible <- data.frame(
+  B = c(12, 58, 58, 45, 15),
+  W = c(16, 16, 0, 0, 10)
+)
+vertices <- data.frame(B = c(12, 15, 45), W = c(16, 10, 0))
+boundaries <- data.frame(
+  constraint = c("Sediment", "Phosphorus", "Wetland limit", "Cost = $12,000"),
+  intercept = c(40, 15, 16, 20),
+  slope = c(-2, -1/3, 0, -2/3)
+)
+
+ggplot() +
+  geom_polygon(data = feasible, aes(B, W), fill = "#DCECD9") +
+  geom_abline(data = boundaries,
+              aes(intercept = intercept, slope = slope,
+                  color = constraint, linetype = constraint), linewidth = 0.8) +
+  geom_point(data = vertices, aes(B, W), size = 2.6) +
+  annotate("text", x = 10.5, y = 17.2, label = "(12, 16)", hjust = 1) +
+  annotate("text", x = 16, y = 11, label = "(15, 10)", hjust = 0) +
+  annotate("text", x = 46, y = 1.2, label = "(45, 0)", hjust = 0) +
+  annotate("text", x = 38, y = 11.5, label = "Feasible region", color = "#315B2B") +
+  annotate("segment", x = 49, xend = 56, y = 8, yend = 8,
+           arrow = grid::arrow(length = grid::unit(0.12, "inches")),
+           color = "#315B2B") +
+  scale_color_manual(values = c("Sediment" = "#0072B2",
+                               "Phosphorus" = "#D55E00",
+                               "Wetland limit" = "#009E73",
+                               "Cost = $12,000" = "#333333")) +
+  scale_linetype_manual(values = c("Sediment" = "solid",
+                                  "Phosphorus" = "solid",
+                                  "Wetland limit" = "solid",
+                                  "Cost = $12,000" = "dashed")) +
+  scale_x_continuous(breaks = seq(0, 50, 10)) +
+  scale_y_continuous(breaks = c(0, 5, 10, 15, 16, 20)) +
+  coord_cartesian(xlim = c(0, 58), ylim = c(-0.4, 22), expand = FALSE) +
+  labs(x = "Buffer strips, B (acres)", y = "Restored wetlands, W (acres)",
+       color = NULL, linetype = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom", panel.grid.minor = element_blank())
+```
+
+The feasible region is **convex**: a line segment between any two feasible plans
+remains feasible. It is also **unbounded** because buffer acreage has no upper
+limit. An unbounded feasible region does not imply an unbounded objective: adding
+unnecessary buffer acreage increases cost, so it cannot improve this minimization problem.
+
+## Plot the objective function
+
+Graphically, a line of constant cost $Z$ is
+
+$$
+W=\frac{Z}{600}-\frac{2}{3}B.
+$$
+
+Move this line toward the origin to lower cost. The lowest-cost line that still
+touches the feasible region passes through $(15,10)$. Its slope, $-2/3$, lies
+strictly between the slopes of the two reduction boundaries, $-2$ and $-1/3$,
+so this optimum is unique. If a supporting cost line instead coincided with a
+feasible edge, every point on that edge would be optimal.
+
+## Find the vertices algebraically
+
+In two dimensions, find candidate vertices by setting two independent constraint
+boundaries to equality. Nonnegativity boundaries count too. Then check each
+candidate against **every** constraint; an intersection alone is not enough.
+
+### Sediment requirement and wetland limit
+
+Set $W=16$ and make the sediment constraint bind:
+
+$$
+6B+3(16)=120
+\quad\Rightarrow\quad
+6B=72
+\quad\Rightarrow\quad
+B=12.
+$$
+
+At $(B,W)=(12,16)$, phosphorus reduction is $2(12)+6(16)=120\geq90$.
+Both acreages are nonnegative, so **$(12,16)$ is a feasible vertex**.
+
+
+
+### Sediment and phosphorus requirements
+
+Set both reduction constraints to equality and simplify:
+
+$$
+\begin{aligned}
+6B+3W&=120 &&\Rightarrow\quad 2B+W=40,\\
+2B+6W&=90.
+\end{aligned}
+$$
+
+Subtract the first simplified equation from the second:
+
+$$
+5W=50\quad\Rightarrow\quad W=10,
+\qquad
+2B+10=40\quad\Rightarrow\quad B=15.
+$$
+
+Both acreages are nonnegative and $10\leq16$, so **$(15,10)$ is a feasible vertex**.
+
+### Phosphorus requirement and zero wetlands
+
+Set $W=0$ and make the phosphorus constraint bind:
+
+$$
+2B+6(0)=90\quad\Rightarrow\quad B=45.
+$$
+
+Sediment reduction is $6(45)+3(0)=270\geq120$, and $0\leq16$.
+Thus **$(45,0)$ is a feasible vertex**. Here the nonnegativity constraint on
+wetlands supplies one of the two binding boundaries.
+
+
+
+# Simplex Intuition
+
+- **Start at a feasible vertex.** Suppose simplex starts at $(B,W)=(45,0)$,
+  with annual cost $400(45)=\$18{,}000$. The origin is infeasible because it meets
+  neither reduction target; a solver first needs a feasible starting basis
+  (often found through a preliminary phase called Phase I).
+
+- **Choose an improving direction.** Let wetlands enter the solution while the
+  phosphorus requirement remains binding. Since $2B+6W=90$, each additional acre
+  of wetlands replaces three acres of buffers. With $W=t$,
+
+  $$
+  B=45-3t,\qquad Z=400(45-3t)+600t=18{,}000-600t.
+  $$
+
+  Cost falls by \$600 for each acre of wetlands added along this edge.
+
+- **Move until another constraint binds.** Along this edge, sediment reduction is
+  $6(45-3t)+3t=270-15t$. Feasibility requires
+
+  $$
+  t\leq10\quad\text{(sediment)},\qquad
+  t\leq16\quad\text{(wetland limit)},\qquad
+  t\leq15\quad\text{(nonnegative buffers)}.
+  $$
+
+  The smallest limit is $t=10$: the sediment requirement binds first. This is the
+  **ratio-test logic**. The pivot reaches $(15,10)$ at a cost of \$12,000;
+  wetlands enter the basis and the sediment surplus variable leaves it.
+
+- **Check whether another move improves cost.** Returning toward $(45,0)$ raises
+  cost. Moving toward $(12,16)$ along the sediment boundary replaces only
+  half an acre of buffers per added wetland acre, raising cost by
+  $600-400(1/2)=\$400$ per acre. Neither adjacent edge offers an improvement,
+  so simplex stops at $(15,10)$.
+
+- **General idea.** Simplex uses this same sequence in larger problems: choose an
+  improving entering variable, use the ratio test to preserve feasibility, pivot
+  to a neighboring basic feasible solution, and check for optimality. This example
+  needs just one improving pivot from the chosen starting vertex.
+
+# Sensitivity Analysis and Economic Interpretation
+
+
+## Objective-coefficient sensitivity
+
+Let $c_B$ and $c_W$ denote annual costs per acre. Changing these coefficients
+rotates the cost line but leaves the feasible region unchanged:
+
+$$
+Z=c_B B+c_W W,
+\qquad
+W=\frac{Z}{c_W}-\frac{c_B}{c_W}B.
+$$
+
+For positive costs, the current vertex stays optimal when the cost-line slope
+lies between the slopes of the two binding boundaries:
+
+$$
+-2\leq-\frac{c_B}{c_W}\leq-\frac{1}{3}
+\qquad\Longleftrightarrow\qquad
+\frac{1}{3}\leq\frac{c_B}{c_W}\leq2.
+$$
+
+- **Buffer cost:** hold $c_W=600$. Then $1/3\leq c_B/600\leq2$, so
+  $200\leq c_B\leq1200$.
+- **Wetland cost:** hold $c_B=400$. Then $1/3\leq400/c_W\leq2$, so
+  $200\leq c_W\leq1200$.
+
+| Annual cost coefficient | Current | Allowable decrease | Allowable increase |
+|---|---:|---:|---:|
+| Buffers, $c_B$ (dollars/acre) | 400 | 200 | 800 |
+| Wetlands, $c_W$ (dollars/acre) | 600 | 400 | 600 |
+
+Inside these ranges, the unique optimal plan remains $(15,10)$, but its cost changes.
+
+
+At a range endpoint, the current plan remains optimal but is no longer unique:
+
+- If $c_B/c_W=1/3$, the cost line coincides with the phosphorus edge between
+  $(15,10)$ and $(45,0)$.
+- If $c_B/c_W=2$, it coincides with the sediment edge between $(15,10)$ and $(12,16)$.
+
+Every point on the corresponding edge has the same cost. Beyond an endpoint,
+another vertex becomes better. If both costs change, check their **ratio** rather
+than applying the two one-at-a-time ranges independently.
+
+## RHS ranging
+
+Let $S$ be the sediment target (tons/year), $P$ the phosphorus target (kg/year),
+and $H$ the wetland acreage limit. Keep the original costs, $c_B=400$ and $c_W=600$.
+As long as the current basis remains optimal, both reduction requirements bind:
+
+$$
+\begin{aligned}
+6B+3W&=S,\\
+2B+6W&=P.
+\end{aligned}
+\qquad\Rightarrow\qquad
+B=\frac{2S-P}{10},\quad W=\frac{3P-S}{15}.
+$$
+
+The basic variables are $B$, $W$, and unused wetland capacity $H-W$.
+RHS changes leave the objective and technical coefficients unchanged, so the
+current basis remains optimal as long as these three quantities stay nonnegative.
+
+### Range for the sediment target
+
+Hold $P=90$ and $H=16$. Substituting gives
+
+$$
+B=\frac{S-45}{5},\qquad W=18-\frac{S}{15}.
+$$
+
+Check all three feasibility conditions:
+
+$$
+\begin{aligned}
+B\geq0&\quad\Rightarrow\quad S\geq45,\\
+W\geq0&\quad\Rightarrow\quad S\leq270,\\
+W\leq16&\quad\Rightarrow\quad S\geq30.
+\end{aligned}
+$$
+
+The tightest bounds give **$45\leq S\leq270$**. From the baseline target of 120,
+the allowable decrease is 75 tons/year and the allowable increase is 150 tons/year.
+At the lower endpoint buffers reach zero; at the upper endpoint wetlands reach zero.
+
+### Ranges for phosphorus and wetland capacity
+
+Hold $S=120$ and $H=16$ while changing $P$:
+
+$$
+B=24-\frac{P}{10},\qquad W=\frac{P}{5}-8.
+$$
+
+Nonnegative buffers require $P\leq240$; nonnegative wetlands require $P\geq40$;
+and $W\leq16$ requires $P\leq120$. Together these give **$40\leq P\leq120$**.
+At the lower endpoint wetlands reach zero; at the upper endpoint the wetland cap binds.
+
+For changes to $H$ alone, the reduction targets still imply $(B,W)=(15,10)$.
+Unused capacity is $H-10$, so the range is **$H\geq10$**. The district can lose six
+acres of suitable wetland capacity before the plan must change.
+
+| RHS parameter | Current | Range for current basis | Allowable decrease | Allowable increase |
+|---|---:|---:|---:|---:|
+| Sediment, $S$ (tons/year) | 120 | $[45,270]$ | 75 | 150 |
+| Phosphorus, $P$ (kg/year) | 90 | $[40,120]$ | 50 | 30 |
+| Wetland limit, $H$ (acres) | 16 | $[10,\infty)$ | 6 | $\infty$ |
+
+These are one-at-a-time ranges. With simultaneous RHS changes, check
+$B=(2S-P)/10\geq0$, $W=(3P-S)/15\geq0$, and $W\leq H$ directly.
+
+## Shadow prices: the marginal cost of a tighter requirement
+
+Substitute the optimal acreages into the objective:
+
+$$
+\begin{aligned}
+Z^*(S,P,H)
+&=400\left(\frac{2S-P}{10}\right)
+ +600\left(\frac{3P-S}{15}\right)\\
+&=40S+80P.
+\end{aligned}
+$$
+
+This expression holds while the current basis remains optimal. Its slopes are the
+**shadow prices**, measured as the change in minimum annual cost per unit increase
+in the original RHS parameter:
+
+| RHS change | Change in minimum annual cost | Interpretation |
+|---|---:|---|
+| Sediment target rises by 1 ton/year | $+\$40$ | Additional required abatement raises cost. |
+| Phosphorus target rises by 1 kg/year | $+\$80$ | Additional required abatement raises cost. |
+| Wetland cap rises by 1 acre | $\$0$ | Extra capacity is unused at the baseline. |
+
+The positive target prices measure the **cost of stricter requirements**, not
+the environmental benefits of reducing pollution. Increasing a capacity limit
+relaxes a constraint, so its effect on minimum cost is nonpositive; the value of
+extra capacity is the resulting **cost saving**.
+
+### Use the ranges before using the prices
+
+- **Raise the sediment target from 120 to 150.** This is within its range.
+  The plan becomes $B=(150-45)/5=21$, $W=18-150/15=8$, and annual cost rises by
+  $40(30)=\$1{,}200$ to \$13,200. The basis stays the same even though acreages change.
+
+- **Raise the phosphorus target from 90 to 100.** The new plan is $(14,12)$,
+  and annual cost rises by $80(10)=\$800$ to \$12,800.
+
+- **Raise the phosphorus target from 90 to 130.** This exceeds the range.
+  At $P=120$, wetlands reach their 16-acre cap and annual cost is \$14,400.
+  Beyond that point, each additional kg/year must come from buffers: half an acre
+  costs \$200. At $P=130$, $W=16$ and $2B+6(16)=130$ imply $B=17$, with annual
+  cost $400(17)+600(16)=\$16{,}400$. Applying \$80 to all 40 additional units
+  would understate cost.
+
+- **Acquire more suitable wetland acreage.** Raising the baseline cap from 16 to
+  17 saves nothing, so the district should not pay for it solely to reduce this
+  model's restoration costs. If capacity instead falls to 8 acres, re-solving gives
+  $(B,W)=(21,8)$ and cost \$13,200. Increasing that cap from 8 to 9 gives $(18,9)$
+  and cost \$12,600: the extra acre now saves \$600 per year. An annual access fee
+  below \$600 would be worthwhile for that acre, holding restoration costs fixed.
+
+At a range endpoint, the marginal cost can differ on either side. A shadow price
+is valid for changes within its range, not indefinitely. Objective-coefficient
+ranges preserve the current optimal acreages; RHS ranges preserve the current
+basis and shadow prices, while acreages may change.
+
+\newpage
+
+# Duality and Complementary Slackness
+
+## Economic motivation: hire a contractor
+
+Suppose the district considers paying someone else to take over its cleanup
+obligations. The economic question is:
+
+> What is the most the district should pay a contractor to meet its pollution-reduction
+> targets, if the district also gives the contractor access to its suitable wetland land?
+
+Imagine the contractor submits an annual bill with:
+
+- A charge $y_S$ for each ton of required sediment reduction per year.
+- A charge $y_P$ for each kilogram of required phosphorus reduction per year.
+- A credit $y_H$ for each acre of wetland capacity the district supplies.
+
+The total annual bill is
+
+$$
+120y_S+90y_P-16y_H.
+$$
+
+The district can challenge the contractor's prices using its own restoration
+options: "An acre of buffers supplies six tons of sediment reduction and two
+kilograms of phosphorus reduction per year for \$400. You cannot justify charging
+more than \$400 for that package." Thus,
+
+$$
+6y_S+2y_P\leq400.
+$$
+
+The wetland option imposes the analogous restriction, including the land-capacity
+credit: $3y_S+6y_P-y_H\leq600$.
+
+**The dual finds the largest contractor bill consistent with those alternatives.**
+At the optimal rates $(40,80,0)$, that bill is \$12,000, exactly what the district
+would spend doing the work itself.
+
+
+## Write the dual
+
+For the minimization form used above, the primal and dual are
+
+$$
+\underbrace{\min_{x\geq0}\;c^\top x\quad\text{s.t.}\quad Ax\geq b}_{\text{primal}}
+\qquad\longleftrightarrow\qquad
+\underbrace{\max_{y\geq0}\;b^\top y\quad\text{s.t.}\quad A^\top y\leq c}_{\text{dual}}.
+$$
+
+Introduce one dual variable per primal constraint: $y_S$ for sediment reduction,
+$y_P$ for phosphorus reduction, and $y_H$ for the transformed wetland constraint
+$-W\geq-16$. Each primal activity supplies one dual constraint:
+
+$$
+\begin{aligned}
+\max_{y_S,y_P,y_H}\quad &120y_S+90y_P-16y_H\\
+\text{s.t.}\quad
+&6y_S+2y_P\leq400 &&\text{(buffers)},\\
+&3y_S+6y_P-y_H\leq600 &&\text{(wetlands)},\\
+&y_S,y_P,y_H\geq0.
+\end{aligned}
+$$
+
+The negative signs on $y_H$ come from multiplying the wetland cap by $-1$.
+$y_S$ and $y_P$ value additional required pollution reduction. $y_H$ measures
+the annual cost saving from an extra acre of wetland capacity; the shadow price
+with respect to the **original cap** $H$ is $-y_H$.
+
+## Find the dual solution using complementary slackness
+
+Start from the primal solution $(B,W)=(15,10)$. The wetland cap has six acres of
+slack, so complementary slackness requires
+
+$$
+y_H(16-W)=0\quad\Rightarrow\quad6y_H=0\quad\Rightarrow\quad y_H=0.
+$$
+
+Both activities are positive, so both dual constraints must bind:
+
+$$
+\begin{aligned}
+6y_S+2y_P&=400,\\
+3y_S+6y_P&=600.
+\end{aligned}
+$$
+
+Divide the first equation by two and subtract it from the second:
+
+$$
+5y_P=400\quad\Rightarrow\quad y_P=80,
+\qquad
+3y_S+80=200\quad\Rightarrow\quad y_S=40.
+$$
+
+Thus the candidate dual solution is **$(y_S,y_P,y_H)=(40,80,0)$**, matching the
+shadow prices obtained from RHS sensitivity. It is dual feasible: all variables
+are nonnegative, $6(40)+2(80)=400$, and $3(40)+6(80)-0=600$.
+
+The remaining complementary slackness conditions also hold: the sediment and
+phosphorus requirements have zero surplus, so
+$y_S(6B+3W-120)=0$ and $y_P(2B+6W-90)=0$.
+
+## Verify strong duality
+
+For any primal-feasible $x$ and dual-feasible $y$, **weak duality** gives
+
+$$
+b^\top y\leq y^\top Ax\leq c^\top x.
+$$
+
+Thus any feasible dual value is a lower bound on the cost of every feasible
+restoration plan. Evaluate both objectives at our feasible solutions:
+
+$$
+\begin{aligned}
+\text{Primal cost:}\quad &400(15)+600(10)=\$12{,}000,\\
+\text{Dual value:}\quad &120(40)+90(80)-16(0)=\$12{,}000.
+\end{aligned}
+$$
+
+The feasible plan costs exactly as much as the dual lower bound, proving that
+**both solutions are optimal and the duality gap is zero**. This verifies strong
+duality. Economically, the targets valued at their shadow prices exactly account
+for minimum restoration cost; unused wetland capacity has no scarcity value.

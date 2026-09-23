@@ -22,6 +22,8 @@
     - title: "Baumol - Duality"
     - title: "Stewart and Greenhalgh (1977)"
   materials:
+    - title: "Midterm Review"
+      url: "midterm_review.pdf"
     - title: "LP Example"
       url: "lp_example.html"
     - title: "LP_land_alloc.xlsx"
