@@ -32,16 +32,16 @@
   topic: Exam 1
   reading: ''
 - date: '2026-09-29'
-  topic: Nonlinear optimization
+  topic: Nonlinear optimization (unconstrained)
   reading: ''
 - date: '2026-10-01'
-  topic: Numeric Methods
-  reading: Build your own
+  topic: Numerical Methods
+  reading: ''
 - date: '2026-10-06'
-  topic: Presentation/discussion
+  topic: Constrained NLP (KKT conditions)
   reading: ''
 - date: '2026-10-07'
-  topic: 'Wagar 107: Karush Kuhn Tucker and corner solutions'
+  topic: 'Wagar 107: Constrained NLP Numerical Methods'
   reading: ''
 - date: '2026-10-08'
   topic: Application
@@ -50,7 +50,7 @@
   topic: Presentation/discussion
   reading: ''
 - date: '2026-10-15'
-  topic: Risk, uncertainty, and scenario analysis in static models
+  topic: Risk and uncertainty
   reading: ''
 - date: '2026-10-20'
   topic: Presentation/discussion

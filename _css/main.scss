@@ -42,6 +42,15 @@ $grey-color-dark:  darken($grey-color, 25%);
   background-color: #ffe0b2; /* light orange */
 }
 
+#course-schedule .past-day > td,
+#course-schedule .past-day a {
+  color: #6b6b6b;
+}
+
+#course-schedule .next-class > td {
+  font-weight: 700;
+}
+
 
 // Width of the content area
 $content-width:    950px;
