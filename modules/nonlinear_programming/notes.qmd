@@ -4,8 +4,6 @@ title: Nonlinear Programming
 
 - Nonlinear programming (NLP) is a branch of mathematical optimization that deals with problems where the objective function or constraints are nonlinear. 
 
-- NLP is widely used in various fields such as engineering, economics, finance, and machine learning. 
-
 - **LP vs NLP**: linear programming assumes constant marginal contributions and fixed input requirements. Nonlinear programming lets those change with the decisions we make.
   - How much fertilizer should a farmer apply? Yield gains diminish as fertilizer increases. Profit depends on a curved yield response. 
   - How much should a firm invest in R&D? The marginal returns to R&D are decreasing, and the cost of R&D may increase with scale.
@@ -15,7 +13,8 @@ title: Nonlinear Programming
 # Unconstrained Optimization
 
 ## Motivation
-Unconstrained optimization involves finding the maximum or minimum of a function without any restrictions on the variable values. This is a common problem in economics, where we often want to maximize utility or profit, or minimize cost.
+
+- Unconstrained optimization involves finding the maximum or minimum of a function without any restrictions on the variable values. 
 
 - Many economic models can first be understood in a frictionless, unconstrained environment before constraints are introduced.
 
@@ -28,7 +27,7 @@ Unconstrained optimization involves finding the maximum or minimum of a function
   where $p(q)$ is the inverse demand function and $C(q)$ is the cost function.  If there are no capacity or policy restrictions, this is an unconstrained problem.
 
 - Plot to build intuition:
-  - Draw the demand curve and show how we are taking the area of the rectangle under the curve (revenue). Assume linear $p(q) = a - bq$.
+  - Draw the demand curve and show how we are calculating the area of the rectangle under the curve (revenue). Assume linear $p(q) = a - bq$.
   - Then draw the cost curve. Assume constant marginal cost $C(q) = cq$.
   - Profit is the difference
 
@@ -44,7 +43,7 @@ $$
 
 where $f:\mathbb{R}^n \to \mathbb{R}$ is the objective function.  
 
-The solution $x^*$ is called an **optimum** if $f(x^*) \geq f(x)$ for all $x$ in some neighborhood of $x^*$.
+- **The solution $x^*$ is called an optimum if $f(x^*) \geq f(x)$ for all $x$ in some neighborhood of $x^*$.**
 
 ### Assumptions for tractability
 
@@ -100,7 +99,7 @@ $$
 \max_q \; \pi(q) = 100 - (q-3)^4.
 $$
 
-Find the profit-maximizing quantity and show that it is indeed a maximum.
+> Find the profit-maximizing quantity and show that it is indeed a maximum.
 
 
 ## Multivariate Optimization
@@ -126,7 +125,7 @@ $$
 
 $\nabla f(x^*)$ is the **gradient vector** of first derivatives. It is also called the **Jacobian** in the multivariate case.
 
-> Suppose the gradient is [0,5]. Have we found an optimum because one marginal return is zero? What small change would improve the objective?
+> Suppose the gradient vector is [0,5]. Have we found an optimum because one marginal return is zero? What small change would improve the objective?
 
 ### Hessian and Second-Order Conditions
 
@@ -246,14 +245,15 @@ ggplot(grid, aes(x=x,y=y,z=z)) +
   geom_point(aes(x=50/3,y=66.67),color="red",size=3) +
   labs(title="Contours of f(x,y) with Optimum Marked",
        x="x", y="y") +
-  coord_equal()
+  coord_equal() +
+  theme_minimal()
 
 ```
 
 
 ## Global vs. Local Optimality
 
-When analyzing optimization problems, it is essential to distinguish between **local** and **global** optima.
+Finding an optimum is not enough to guarantee that it is the **best possible solution**. We need to distinguish between **local** and **global** optima.
 
 ### Local optimum
 
