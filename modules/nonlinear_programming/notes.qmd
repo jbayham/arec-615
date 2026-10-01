@@ -352,34 +352,27 @@ ggplot(df, aes(x, y)) +
 Economists typically assume concavity (utility, production, profit functions) to avoid the difficulty of distinguishing between local and global solutions. This ensures that solving the FOC is sufficient for finding the true economic optimum.
 
 
+
+
+
 \newpage
 
 # Numeric Foundations
-This section covers the numeric foundations necessary for understanding and solving nonlinear programming problems. It includes topics such as numerical optimization techniques, gradient descent methods, and convergence criteria.
 
-## Motivation
-
-Many economic problems involve solving nonlinear equations. For example, utility maximization and cost minimization often lead to nonlinear optimization problems. Understanding the numeric foundations of NLP is crucial for effectively addressing these challenges.
-
-**Example 1: Inverting a Nonlinear Demand Function**
-
-Consider a nonlinear demand function given by:
-
-$$q(p) = a - bp^2$$
-
-Find the price that corresponds to a given quantity $q=2$. Now consider a more complex demand function which is the sum of domestic and foreign demand:
-
-$$q(p) = 0.5p^{-0.2} + 0.5p^{-0.5}$$
-Finding the price for a given quantity in this case may not have a closed-form solution, necessitating numerical methods to approximate the solution. Realistic models are often nonlinear and rarely have closed-form solutions. 
+- Numerical methods provide approximate solutions when analytical approaches are not feasible.
+- They can work even when the function is not differentiable.
+- Topics include rootfinding, gradient descent methods, and convergence criteria.
 
 
------
+## FOC to Rootfinding
 
-## Types of Problems
+Many optimization and equilibrium problems in economics reduce to **solving equations**. 
 
-Many optimization and equilibrium problems in economics reduce to **solving equations**. These are the three core problem types:
+$$\max_x f(x) \quad \Rightarrow \quad f'(x^*) = 0$$
 
-### Nonlinear Rootfinding
+this tells us what the solution looks like; it doesn't necessarily tell us how to find it.
+
+For $f(x)=-(x-4)^2+10$, solving $f'(x)=0$ analytically is trivial. But for more complicated functions, we may not be able to solve the FOC analytically. In these cases, we can use **numerical methods** to find a solution.
 
 We want to find a solution $x^*$ such that:
 
@@ -396,7 +389,8 @@ This is the most general formulation. Economic examples include:
 - Finding market-clearing prices
 
 
-### Fixed-Point Problems
+
+:::{.callout-note title="Quick digression on Fixed-Point Problems"}
 
 A **fixed point** of a function $g(x)$ is a solution to:
 
@@ -408,11 +402,10 @@ This is equivalent to rootfinding if we define $f(x) = x - g(x)$. Many economic 
 - Nash equilibria in games
 
 
-Fixed-point methods often rely on contraction mappings, which guarantee convergence under certain conditions.
+Fixed-point methods often rely on contraction mappings, which guarantee convergence under certain conditions. More on this in dynamic programming.
+:::
 
-
-
-**Also complementarity problems are a more general form of fixed point problem, but we won't cover those here.**
+<!-- **Also complementarity problems are a more general form of fixed point problem, but we won't cover those here.** -->
 
 -------
 
@@ -422,10 +415,10 @@ The **bisection method** is a simple and robust way to solve nonlinear equations
 
 $\quad f(x) = 0$
 
-It is only applicable to **univariate** problems but serves as an excellent illustration of how numerical solvers work.
+It is only applicable to **univariate** problems but serves as an intro to how numerical solvers work.
 
 
-**Requirements**
+### Requirements
 
 To apply bisection:
 
@@ -434,7 +427,7 @@ To apply bisection:
   $f(a) \cdot f(b) < 0$
   → This guarantees a root exists in $[a, b]$ by the **Intermediate Value Theorem**. 
   
-- How does it gaurantee this? either the $a$ or $b$ evaluates to negative and the other positive, so by the IVT there must be a point in between where it crosses zero.
+> How does it gaurantee this? either the $a$ or $b$ evaluates to negative and the other positive, so by the IVT there must be a point in between where it crosses zero.
   
 
 
@@ -456,9 +449,7 @@ Solve:  $\quad f(x) = x^2 - 2 = 0$
 
 We know $x = \sqrt{2} \approx 1.4142$ is the root.
 
-Start with $a = 1$, $b = 2$:
-
-- $f(1) = -1$, $f(2) = 2$, so the root is bracketed.
+Start with $a = 1$, $b = 2$: $f(1) = -1$, $f(2) = 2$, so the root is bracketed.
 
 Each iteration cuts the interval in half:
 
@@ -484,7 +475,7 @@ There are two common ways to define this:
 
 1. Interval is small enough
 
-- We stop when: $\quad |b - a| < \epsilon$.  This ensures we’re zoomed in tightly on the root. In bisection, this is the **primary** stopping rule.
+- We stop when: $ |b - a| < \epsilon$.  This ensures we’re zoomed in tightly on the root. In bisection, this is the **primary** stopping rule.
 
 2. Function value is small
 
@@ -493,7 +484,6 @@ There are two common ways to define this:
 Why Both?
 
 - In some methods, the updates $x^{(k+1)} - x^{(k)}$ may become small **even when the function value isn't** (e.g. at flat spots).
-- We'll use these same convergence criteria in more sophisticated methods throughout the course.
 
 ### Multiple Roots
 
@@ -501,7 +491,13 @@ If the function has multiple roots in the interval, bisection will find one of t
 
 Note also that if the function just touches zero (e.g., $f(x) = (x-1)^2$ at $x=1$), bisection may fail since there is no sign change.
 
-----
+> How might you improve the bisection method to find the root faster? 
+
+
+
+
+
+<!-- ----
 
 ## Fixed-Point Iteration
 
@@ -612,32 +608,24 @@ $\quad |g(x^{(k)}) - x^{(k)}| < \epsilon$
 :::
 
 
---------
+-------- -->
 
 ## Newton's Method
 
-Newton's method is a fast and widely used approach to solving nonlinear equations of the form:
+Newton's method is a fast and widely used approach to optimizing nonlinear functions. Since optimization involves finding the roots of the first derivative, the method is applied to functions of the form:
 
 $f(x) = 0$
 
-It uses both the function and its **derivative** to guide the search for the root. This makes it much faster than bisection or fixed-point iteration — but also more sensitive to where you start.
+It uses both the function **and its derivatives** to guide the search for the root. This makes it much faster than bisection or fixed-point iteration — but also more sensitive to where you start.
 
 
-### The Iteration Rule
+### The update rule
 
-The Newton update is:
+The Newton update rule is:
 
 $x^{(k+1)} = x^{(k)} - \frac{f(x^{(k)})}{f'(x^{(k)})}$
 
-This uses a **local linear approximation (first-order Taylor series expansion)**:  
-
-- At each step, approximate $f(x)$ by its tangent line  
-- Jump to where that line crosses zero  
-- Repeat until convergence
-
-::: {.callout-note title="Iteration Rule Detail"}
-
-Mathematically, the local linear approximation is:
+Take the local linear approximation of $f(x)$: 
 
 $L(x) = f(x^{(k)}) + f'(x^{(k)})(x - x^{(k)})$
 
@@ -645,12 +633,25 @@ We find the zero of this line by solving $L(x) = 0$, which gives:
 
 $x^{(k+1)} = x^{(k)} - \frac{f(x^{(k)})}{f'(x^{(k)})}$
 
-:::
-
 This is the heart of Newton’s method:  each step uses the slope of $f(x)$ to make a **smart jump** toward the root, rather than guessing blindly.
+
+**Intuition**
 
 Imagine standing on the curve of $f(x)$ at the point $(x^{(k)}, f(x^{(k)}))$. You draw the tangent line at that point. The next guess, $x^{(k+1)}$, is where this tangent line crosses the x-axis. This process is repeated, using the new point to draw a new tangent line, and so on, until you get sufficiently close to the root.
 
+:::{.callout-note title="Newton for optimization"}
+
+To optimize an objective $f$, we instead solve its first-order condition,
+**$f'(x)=0$**. Define $g(x)=f'(x)$ and apply the same Newton formula to $g$:
+
+$$
+x_{k+1}=x_k-\frac{g(x_k)}{g'(x_k)}
+       =x_k-\frac{f'(x_k)}{f''(x_k)}.
+$$
+
+We optimize by finding the root of the derivative. This is the basis for **Newton-Raphson optimization**.
+
+:::
 
 ### Newtons method assumptions
 
@@ -658,10 +659,8 @@ Imagine standing on the curve of $f(x)$ at the point $(x^{(k)}, f(x^{(k)}))$. Yo
 2. The derivative $f'(x)$ is **not zero** at the root (to avoid division by zero).
 3. The initial guess $x^{(0)}$ is **sufficiently close** to the actual root for convergence.
 4. $f(x)$ is sufficiently **smooth** (e.g., continuous second derivative) near the root to ensure good approximation by the tangent line.
-5. The root is **simple**. The root is simple if $f'(x^*) \neq 0$. If $f'(x^*) = 0$), the newtons method converges **linearly**.
 
 
----
 
 ### Example
 
@@ -722,6 +721,9 @@ ggplot(plot_df, aes(x = x)) +
 
 ```
 
+
+
+
 ### Convergence Properties
 
 Newton’s method has **quadratic convergence** when it works:
@@ -752,7 +754,6 @@ In practice, it’s common to use both.
 - Very effective for well-behaved, smooth functions
 - Poor choice if $f'(x)$ is expensive to compute or not available
 
------
 
 ## Quasi-Newton Methods
 
@@ -768,24 +769,348 @@ $x^{(k+1)} = x^{(k)} - \frac{f(x^{(k)})}{f'(x^{(k)})}$
 This approach is called the **secant method** in one dimension. You can substitute the finite difference approximation for the derivative in the Newton update.
 
 
+## Gradient descent/ascent 
 
------
+> What if I know the slope but don't want to calculate or use curvature?
+
+Returning to optimization, Newton's method applied to the FOC uses
+$x_{k+1}=x_k-f'(x_k)/f''(x_k)$. **Gradient descent/ascent** uses only the
+slope of the objective, with a positive **learning rate (step size)** $\alpha_k$:
+
+$$
+\begin{aligned}
+\text{Minimization:}\quad x_{k+1} &= x_k-\alpha_k f'(x_k),\\
+\text{Maximization:}\quad x_{k+1} &= x_k+\alpha_k f'(x_k).
+\end{aligned}
+$$
+
+The sign chooses downhill or uphill; $\alpha_k$ scales the move. The actual
+distance moved is $\alpha_k |f'(x_k)|$.
+
+Use the same objective as before: maximize $f(x)=-(x-4)^2+10$, whose slope is
+$f'(x)=-2(x-4)$ and whose maximum is at $x^*=4$. Starting from $x_0=0$, a
+constant step size gives $x_{k+1}=x_k-2\alpha(x_k-4)$:
+
+- **Too small ($\alpha=0.05$):** progress is slow.
+- **Reasonable ($\alpha=0.4$):** iterates converge quickly to $4$.
+- **Too large ($\alpha=1$):** iterates overshoot and oscillate between $0$ and $8$.
+- **Much too large ($\alpha=1.2$):** oscillations grow and the iterates diverge.
+
+```{r}
+#| label: fig-gradient-step-size
+#| fig-pos: H
+#| echo: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 4
+#| fig-cap: "Gradient ascent on the same quadratic objective, starting at x = 0. The dashed line marks the maximizer x = 4. Note the different vertical scale in the divergence panel."
+
+library(ggplot2)
+ascent_rates <- c(0.05, 0.4, 1, 1.2)
+ascent_labels <- c("Too small: alpha = 0.05", "Reasonable: alpha = 0.4",
+                   "Too large: alpha = 1", "Much too large: alpha = 1.2")
+ascent_paths <- do.call(rbind, lapply(seq_along(ascent_rates), function(i) {
+  iterates <- numeric(13)
+  for (k in 1:12) {
+    iterates[k + 1] <- iterates[k] - 2 * ascent_rates[i] * (iterates[k] - 4)
+  }
+  data.frame(iteration = 0:12, x = iterates,
+             case = factor(ascent_labels[i], levels = ascent_labels))
+}))
+
+ggplot(ascent_paths, aes(iteration, x)) +
+  geom_hline(yintercept = 4, linetype = "dashed", color = "gray40") +
+  geom_line(color = "steelblue", linewidth = 0.7) +
+  geom_point(color = "steelblue", size = 1.5) +
+  facet_wrap(~case, ncol = 2, scales = "free_y") +
+  scale_x_continuous(breaks = c(0, 4, 8, 12)) +
+  labs(x = "Iteration k", y = "Current choice x") +
+  theme_minimal(base_size = 11)
+```
+
+
+**Line search:** rather than choose $\alpha_k$ arbitrarily, an algorithm can
+search along the proposed direction for an acceptable step. For example, try
+a step and shrink it until it gives sufficient improvement: a decrease for
+minimization or an increase for maximization. This adapts the step size without
+requiring the second derivative or solving the line search exactly.
 
 ## Summary: Comparing Rootfinding Algorithms
 
 | Method               | Speed              | Derivative Needed | Convergence Guarantee | Robustness       | Common Use Cases                       |
 |----------------------|--------------------|--------------------|------------------------|------------------|----------------------------------------|
 | Bisection            | Slow (linear)      | No                 | Yes (if sign change)   | Very robust      | Bracketing roots in univariate problems |
-| Fixed-Point Iteration| Slow (linear)      | No                 | Only if contraction    | Medium           | Dynamic programming, expectations       |
 | Newton's Method      | Fast (quadratic)   | Yes ($f'(x)$)      | Local (if well-started)| Less robust      | Solving FOCs, likelihood equations      |
 | Quasi-Newton Methods | Fast (superlinear) | No                 | Local (if well-started)| More robust than Newton | Large-scale optimization, machine learning |
 
 **Choosing the Right Method**
 
 - Use **bisection** when you need guaranteed convergence and can bracket the root.
-- Use **fixed-point iteration** for problems naturally expressed as $x = g(x)$, especially in dynamic contexts.
+<!-- - Use **fixed-point iteration** for problems naturally expressed as $x = g(x)$, especially in dynamic contexts. -->
 - Use **Newton's method** for fast convergence when you have a good initial guess and can compute derivatives.
 - In practice, hybrid methods that combine these approaches are often employed to balance speed and robustness.
+
+
+## Multivariate optimization via rootfinding
+
+### Same idea, more decision variables
+
+Move from $f(x)$ to $f(\mathbf{x})$, where
+$f:\mathbb{R}^n\to\mathbb{R}$. We still optimize **one objective**, such as
+profit or cost, but now choose $n$ decision variables.
+
+In one dimension, we optimize $f$ by finding a root of $g(x)=f'(x)$.
+In multiple dimensions, the derivative becomes the **gradient**:
+
+$$
+\nabla f(\mathbf{x})=
+\begin{bmatrix}
+\partial f/\partial x_1\\
+\vdots\\
+\partial f/\partial x_n
+\end{bmatrix}.
+$$
+
+Define $\mathbf{g}(\mathbf{x})=\nabla f(\mathbf{x})$. The first-order conditions
+for an interior optimum are **$\mathbf{g}(\mathbf{x}^*)=\mathbf{0}$**:
+every marginal change in the objective must be zero.
+
+| | One decision variable | Multiple decision variables |
+|---|---|---|
+| Objective | $f:\mathbb{R}\to\mathbb{R}$ | $f:\mathbb{R}^n\to\mathbb{R}$ |
+| Function whose root we seek | $g(x)=f'(x)$ | $\mathbf{g}(\mathbf{x})=\nabla f(\mathbf{x})$ |
+| First-order condition | $g(x^*)=0$ | $\mathbf{g}(\mathbf{x}^*)=\mathbf{0}$ |
+
+The objective is scalar-valued, but its gradient has $n$ components. Finding
+a root of the gradient therefore means solving **$n$ equations in $n$ unknowns**.
+We are not trying to make the objective itself equal to zero.
+
+### Using the gradient to approach a stationary point
+
+> The gradient points in the direction of steepest increase.
+
+For a fixed, small Euclidean step length, moving along the gradient gives the
+largest first-order increase in $f$. Moving against it gives the largest decrease.
+The one-variable gradient updates extend directly:
+
+$$
+\begin{aligned}
+\text{Minimization:}\quad \mathbf{x}_{k+1}
+&=\mathbf{x}_k-\alpha_k\nabla f(\mathbf{x}_k),\\
+\text{Maximization:}\quad \mathbf{x}_{k+1}
+&=\mathbf{x}_k+\alpha_k\nabla f(\mathbf{x}_k).
+\end{aligned}
+$$
+
+The step size still matters: a direction that improves the objective locally
+can overshoot if we move too far.
+
+**Example:** minimize the quadratic cost
+$f(x_1,x_2)=\tfrac12(x_1^2+10x_2^2)$. 
+
+- Its gradient is $\mathbf{g}(\mathbf{x})=[x_1,10x_2]^\top$, so its unique root is $(0,0)$, the cost minimizer. 
+- Cost rises more sharply in the $x_2$ direction, producing elliptical contours. Starting at $(4,2)$ with $\alpha=0.18$ gives
+$x_{1,k+1}=0.82x_{1,k}$ and $x_{2,k+1}=-0.8x_{2,k}$: the second coordinate
+changes sign each step, while both approach zero.
+
+```{r}
+#| label: fig-multivariate-gradient
+#| fig-pos: H
+#| echo: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.7
+#| fig-cap: "Gradient descent on elliptical cost contours. Each orange arrow is a step against the gradient. The iterates zig-zag toward the minimum at (0, 0); a small gradient is the rootfinding target."
+
+library(ggplot2)
+cost_grid <- expand.grid(x1 = seq(-4.8, 4.8, length.out = 240),
+                         x2 = seq(-2.5, 2.5, length.out = 160))
+cost_grid$cost <- 0.5 * (cost_grid$x1^2 + 10 * cost_grid$x2^2)
+descent_path <- data.frame(k = 0:18, x1 = 4 * 0.82^(0:18),
+                          x2 = 2 * (-0.8)^(0:18))
+descent_steps <- data.frame(
+  x1 = head(descent_path$x1, -1), x2 = head(descent_path$x2, -1),
+  x1_next = tail(descent_path$x1, -1), x2_next = tail(descent_path$x2, -1)
+)
+
+ggplot(cost_grid, aes(x1, x2)) +
+  geom_contour(aes(z = cost), breaks = c(0.5, 2, 5, 10, 20, 30),
+               color = "gray65", linewidth = 0.4) +
+  geom_segment(data = descent_steps,
+               aes(x = x1, y = x2, xend = x1_next, yend = x2_next),
+               inherit.aes = FALSE, color = "darkorange3", linewidth = 0.65,
+               arrow = grid::arrow(length = grid::unit(0.055, "inches"))) +
+  geom_point(data = descent_path, color = "darkorange3", size = 1.3) +
+  annotate("point", x = 0, y = 0, shape = 8, size = 3, color = "steelblue4") +
+  annotate("text", x = 4, y = 2.3, label = "Start (4, 2)", size = 3.5) +
+  annotate("text", x = -1.3, y = -0.3, label = "Minimum (0, 0)",
+           color = "steelblue4", size = 3.5) +
+  coord_equal() +
+  labs(x = expression(x[1]), y = expression(x[2])) +
+  theme_minimal(base_size = 11) +
+  theme(panel.grid = element_blank())
+```
+
+The same iterates on the cost surface show how the zig-zag moves down the bowl:
+
+```{r}
+#| label: fig-multivariate-gradient-3d
+#| fig-pos: H
+#| echo: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.5
+#| fig-cap: "The same quadratic cost and gradient-descent iterates in three dimensions. Height is the objective value. Orange points are the iterates from the contour plot; segments connect successive iterates. The blue star marks the minimum."
+
+surface_x1 <- seq(-4.8, 4.8, length.out = 45)
+surface_x2 <- seq(-2.5, 2.5, length.out = 35)
+surface_cost <- outer(surface_x1, surface_x2,
+                      function(x1, x2) 0.5 * (x1^2 + 10 * x2^2))
+path_cost <- 0.5 * (descent_path$x1^2 + 10 * descent_path$x2^2)
+
+surface_par <- par(mar = c(1, 1, 1, 1))
+surface_view <- persp(
+  surface_x1, surface_x2, surface_cost,
+  theta = -35, phi = 25, expand = 0.6,
+  col = "aliceblue", border = "gray80", shade = 0.15,
+  ticktype = "detailed", nticks = 4,
+  xlab = "x1", ylab = "x2", zlab = "Cost f(x1, x2)",
+  cex.axis = 0.75, cex.lab = 0.85
+)
+projected_path <- trans3d(descent_path$x1, descent_path$x2, path_cost,
+                          pmat = surface_view)
+lines(projected_path, col = "darkorange3", lwd = 2)
+points(projected_path, col = "darkorange3", pch = 16, cex = 0.6)
+points(trans3d(0, 0, 0, pmat = surface_view),
+       col = "steelblue4", pch = 8, cex = 1.2, lwd = 1.5)
+text(trans3d(4, 2, 28, pmat = surface_view),
+     labels = "Start (4, 2)", pos = 3, cex = 0.8)
+text(trans3d(0, 0, 0, pmat = surface_view),
+     labels = "Minimum", pos = 2, col = "steelblue4", cex = 0.8)
+par(surface_par)
+```
+
+### Newton: find a root of the gradient
+
+In one dimension, Newton uses $g'$ to find a root of $g=f'$.
+In multiple dimensions, the derivative of $\mathbf{g}=\nabla f$ is the
+**Hessian**, $H(\mathbf{x})=\nabla^2 f(\mathbf{x})$, whose entries are
+$H_{ij}=\partial^2 f/\partial x_i\partial x_j$.
+It describes how the marginal returns change as we change the decisions.
+
+The same local linear approximation gives
+
+$$
+\mathbf{g}(\mathbf{x}_k+\mathbf{d})
+\approx \mathbf{g}(\mathbf{x}_k)+H(\mathbf{x}_k)\mathbf{d}.
+$$
+
+Set this approximation equal to zero to obtain Newton's update (when the
+Hessian is nonsingular):
+
+$$
+\underbrace{x_{k+1}=x_k-\frac{f'(x_k)}{f''(x_k)}}_{\text{One dimension}}
+\qquad\longrightarrow\qquad
+\underbrace{\mathbf{x}_{k+1}=\mathbf{x}_k-H(\mathbf{x}_k)^{-1}
+\nabla f(\mathbf{x}_k)}_{\text{Multiple dimensions}}.
+$$
+
+- **Gradient:** which direction increases the objective most rapidly?
+- **Hessian:** how steeply do marginal returns change in different directions?
+- **Newton:** use both to choose a step toward zero marginal returns.
+
+For the quadratic cost above, $H=\operatorname{diag}(1,10)$. Newton accounts
+for the different curvature in each direction and reaches $(0,0)$ in one
+step, just as it did for our one-variable quadratic.
+
+Both discussions target a **stationary point**. To conclude that it optimizes
+$f$, check the second-order conditions: a positive definite Hessian gives a
+strict local minimum, a negative definite Hessian a strict local maximum,
+and an indefinite Hessian a saddle point. A semidefinite Hessian is
+inconclusive. Away from the solution, Newton may still need a step-size or
+direction adjustment.
+
+\newpage
+
+## What actually goes wrong? (6 minutes)
+
+Optimization software can return **an answer without returning the best answer**.
+Four issues matter in applied work:
+
+- **Local versus global optima:** convergence to a local optimum does not
+  establish global optimality. A small gradient and the right local curvature
+  do not rule out a better solution elsewhere.
+- **Starting values:** different $\mathbf{x}_0$ can lead to different solutions.
+  Try several economically plausible starting values and compare objective values;
+  agreement is useful evidence, not a proof of global optimality.
+- **Scaling:** variables such as $x_1\approx0.001$ and $x_2\approx1{,}000{,}000$
+  can make step sizes, derivative calculations, and tolerances poorly balanced.
+  Rescaling variables to comparable magnitudes can help without changing the
+  underlying economic problem.
+- **Stopping criteria:** "converged" usually means a numerical tolerance was
+  satisfied, not that mathematics certified the solution. A tiny change in the
+  parameters or objective can reflect stagnation; check the gradient or FOC
+  residual as well.
+
+**Example:** maximize $f(x)=-(x^2-1)^2+0.3x$. Run the same gradient-ascent rule,
+$x_{k+1}=x_k+0.05f'(x_k)$, from $x_0=-1.5$ and $x_0=1.5$. Both runs approach
+roots of $f'(x)=-4x(x^2-1)+0.3$ with negative second derivatives, but the
+right-hand peak has a higher objective value.
+
+```{r}
+#| label: fig-starting-values-local-optima
+#| fig-pos: H
+#| echo: false
+#| warning: false
+#| fig-width: 7
+#| fig-height: 3.3
+#| fig-cap: "Same objective, algorithm, and step size; different starting values. Both runs converge to local maxima, but only the right-hand peak is the global maximum."
+
+library(ggplot2)
+multimodal_f <- function(x) -(x^2 - 1)^2 + 0.3 * x
+multimodal_slope <- function(x) -4 * x * (x^2 - 1) + 0.3
+ascent_starts <- c(-1.5, 1.5)
+ascent_runs <- do.call(rbind, lapply(ascent_starts, function(start) {
+  x <- start
+  for (k in 1:100) {
+    current <- tail(x, 1)
+    if (abs(multimodal_slope(current)) < 1e-8) break
+    x <- c(x, current + 0.05 * multimodal_slope(current))
+  }
+  data.frame(k = seq_along(x) - 1, x = x, value = multimodal_f(x),
+             start = factor(start, levels = ascent_starts))
+}))
+multimodal_curve <- data.frame(x = seq(-1.6, 1.6, length.out = 500))
+multimodal_curve$value <- multimodal_f(multimodal_curve$x)
+ascent_ends <- do.call(rbind, lapply(split(ascent_runs, ascent_runs$start),
+                                    function(run) tail(run, 1)))
+ascent_ends$label <- c("Lower local maximum", "Global maximum")
+
+ggplot(multimodal_curve, aes(x, value)) +
+  geom_line(color = "gray40", linewidth = 0.8) +
+  geom_path(data = ascent_runs, aes(color = start, group = start),
+            linewidth = 1,
+            arrow = grid::arrow(length = grid::unit(0.07, "inches"))) +
+  geom_point(data = ascent_runs, aes(color = start), size = 1.5) +
+  geom_point(data = subset(ascent_runs, k == 0), aes(color = start),
+             shape = 21, fill = "white", size = 3, stroke = 1) +
+  geom_point(data = ascent_ends, aes(color = start), shape = 8, size = 3,
+             show.legend = FALSE) +
+  geom_text(data = ascent_ends, aes(label = label, color = start),
+            nudge_y = 0.3, size = 3.5, show.legend = FALSE) +
+  scale_color_manual(values = c("darkorange3", "steelblue4"),
+                      labels = c("Start x = -1.5", "Start x = 1.5")) +
+  scale_y_continuous(expand = expansion(mult = c(0.04, 0.14))) +
+  labs(x = "x", y = "Objective f(x)", color = NULL) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom")
+```
+
+> Before interpreting the economics, check the termination message, FOC
+> residuals, local curvature, and sensitivity to starting values and scaling.
+> Compare objective values across candidate solutions.
+
+\newpage
 
 ------
 
