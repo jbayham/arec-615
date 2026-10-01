@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rootfinding lab · AREC 615</title>
+  <style>
+    :root { color-scheme: light; --ink:#192f35; --muted:#52686f; --paper:#f4f6f3; --line:#d9e2dd; --teal:#087f78; --orange:#bd551c; --blue:#3767b3; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.5 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { max-width:1440px; margin:auto; padding:40px 36px; }
+    header { margin-bottom:28px; }
+    .eyebrow { color:var(--teal); font-size:12px; font-weight:750; letter-spacing:.15em; text-transform:uppercase; }
+    h1 { margin:7px 0; font-size:clamp(30px,4vw,46px); line-height:1.15; letter-spacing:-.04em; font-weight:650; }
+    h2 { font-size:20px; margin:0; letter-spacing:-.025em; }
+    p { margin:8px 0; }
+    header p,.muted { color:var(--muted); }
+    .layout { display:grid; grid-template-columns:290px minmax(0,1fr); gap:24px; align-items:start; }
+    aside,.workspace { background:#fff; border:1px solid var(--line); border-radius:16px; }
+    aside { padding:24px; }
+    .workspace { padding:24px; min-width:0; }
+    label { display:block; font-weight:600; font-size:13px; margin-bottom:6px; }
+    input,select,button { font:inherit; }
+    input:not([type=range]):not([type=checkbox]),select { width:100%; border:1px solid #b8c9c2; background:#fff; color:var(--ink); padding:10px 11px; border-radius:7px; min-width:0; }
+    input[type=text] { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; }
+    button { cursor:pointer; padding:9px 15px; border-radius:7px; border:1px solid #b8c9c2; background:#fff; color:var(--ink); font-weight:600; }
+    button:hover { background:#eef4f0; }
+    button:disabled { opacity:.45; cursor:default; }
+    :focus-visible { outline:3px solid #4b9ace; outline-offset:3px; }
+    .primary { background:var(--teal); color:white; border-color:var(--teal); width:100%; margin-top:18px; }
+    .primary:hover { background:#066960; }
+    .field { margin-top:18px; }
+    .pair { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .help { font-size:12px; color:var(--muted); margin-top:7px; }
+    details { font-size:13px; margin-top:14px; }
+    summary { cursor:pointer; font-weight:600; }
+    code { font: .95em ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .note { border-top:1px solid var(--line); padding-top:17px; margin-top:22px; font-size:13px; color:var(--muted); }
+    .error { color:#9c3020; font-size:13px; margin-top:12px; }
+    [hidden] { display:none !important; }
+    .topline { display:flex; justify-content:space-between; gap:14px; align-items:center; flex-wrap:wrap; }
+    .methods { display:flex; gap:4px; padding:4px; background:#edf2ee; border-radius:10px; }
+    .methods button { border:0; background:transparent; }
+    .methods button[aria-pressed=true] { background:var(--ink); color:white; }
+    .check { display:flex; gap:7px; align-items:center; margin:0; font-weight:400; }
+    input[type=checkbox],input[type=range] { accent-color:var(--teal); }
+    .intro { margin:18px 0 4px; font-size:14px; color:var(--muted); min-height:42px; }
+    .legend { display:flex; flex-wrap:wrap; gap:10px 20px; color:var(--muted); font-size:12px; margin:12px 0 0; }
+    .legend span { display:inline-flex; gap:7px; align-items:center; }
+    .swatch { width:22px; height:0; border-top:3px solid var(--teal); display:inline-block; }
+    .swatch.orange { border-color:var(--orange); border-top-style:dashed; }
+    .swatch.blue { border-color:var(--blue); border-top-style:dotted; }
+    #plot { display:block; width:100%; height:360px; overflow:hidden; }
+    #plot text { font-family:inherit; font-size:12px; fill:var(--muted); }
+    .transport { border-top:1px solid var(--line); padding-top:18px; }
+    .slider-label { display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+    .slider-label label { font-size:15px; }
+    #step-count { color:var(--muted); font-size:13px; }
+    input[type=range] { display:block; width:100%; margin:14px 0 18px; cursor:ew-resize; }
+    .playback { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .playback .hint { margin-left:auto; font-size:12px; color:var(--muted); }
+    .explanation { background:#f2f7f3; border-radius:10px; margin-top:20px; padding:18px; }
+    #step-title { font-size:16px; font-weight:650; }
+    #step-description { font-size:14px; }
+    #equation { overflow-wrap:anywhere; margin-top:10px; font:13px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace; }
+    .metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-top:18px; }
+    .metric-label { font-size:12px; color:var(--muted); }
+    .metric-value { font-size:19px; font-weight:600; font-variant-numeric:tabular-nums; overflow-wrap:anywhere; }
+    #status { font-size:13px; color:var(--muted); margin:16px 0 0; }
+    #status.failure { color:#9c3020; }
+    .history { border-top:1px solid var(--line); margin-top:22px; padding-top:15px; }
+    .table-wrap { max-height:250px; overflow:auto; margin-top:10px; }
+    table { border-collapse:collapse; width:100%; font-size:12px; font-variant-numeric:tabular-nums; }
+    th,td { text-align:right; padding:8px; border-bottom:1px solid var(--line); white-space:nowrap; }
+    th { color:var(--muted); }
+    tr.selected { background:#e8f2ec; }
+    footer { font-size:12px; color:var(--muted); margin:20px 0 0; }
+    footer a { color:var(--teal); }
+    @media(max-width:900px) { main { padding:24px 18px; } .layout { grid-template-columns:240px minmax(0,1fr); gap:16px; } aside,.workspace { padding:18px; } .metrics { gap:8px; } .metric-value { font-size:16px; } }
+    @media(max-width:700px) { .layout { grid-template-columns:1fr; } main { padding:24px 12px; } #plot { height:320px; } .intro { min-height:0; } .playback .hint { width:100%; margin:3px 0 0; } }
+    @media(prefers-reduced-motion:reduce) { * { scroll-behavior:auto; } }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="eyebrow">AREC 615 / Nonlinear programming</div>
+    <h1>One root. Two ways to find it.</h1>
+    <p>Move through the iterations to see how a bracket narrows and a tangent guides the next guess.</p>
+  </header>
+  <div class="layout">
+    <aside>
+      <h2>Set up the problem</h2>
+      <form id="setup">
+        <div class="field"><label for="example">Start with an example</label><select id="example">
+          <option value="sqrt">From the notes: x² − 2</option>
+          <option value="cos">Curved: cos(x) − x</option>
+          <option value="foc">Profit FOC: 8 − 2x</option>
+          <option value="cycle">Newton cycle: x³ − 2x + 2</option>
+          <option value="touch">No sign change: (x − 1)²</option>
+        </select></div>
+        <div class="field"><label for="formula">Function f(x) to set equal to zero</label><input id="formula" type="text" value="x^2 - 2" spellcheck="false" autocomplete="off" required aria-describedby="syntax"></div>
+        <details id="syntax"><summary>Formula syntax</summary><p>Use <code>x</code>, numbers, <code>+ - * / ^</code>, and parentheses. Write multiplication explicitly: <code>2*x</code>.</p><p>Functions: <code>sin cos tan exp log ln sqrt abs sinh cosh atan</code>. Constants: <code>pi</code>, <code>e</code>. Trigonometric arguments are in radians; <code>log</code> and <code>ln</code> are natural logs.</p><p>Examples: <code>exp(-x)-x</code>, <code>log(x)-1</code>. Enter just the expression, without <code>f(x)=</code>.</p></details>
+        <div class="field pair"><div><label for="left">Bracket left, a</label><input id="left" type="number" step="any" value="1" required></div><div><label for="right">Bracket right, b</label><input id="right" type="number" step="any" value="2" required></div></div>
+        <div class="field"><label for="initial">Newton starting guess, x₀</label><input id="initial" type="number" step="any" value="1" required></div>
+        <div class="field pair"><div><label for="tolerance">Tolerance, ε</label><input id="tolerance" type="number" step="any" value="0.000001" min="1e-14" max="0.1" required></div><div><label for="limit">Max iterations</label><input id="limit" type="number" step="1" min="1" max="100" value="30" required></div></div>
+        <button class="primary" type="submit">Build iterations</button>
+        <p id="error" class="error" role="alert" hidden></p>
+        <p id="pending" class="help" hidden>Inputs changed. Build iterations to update the plot.</p>
+      </form>
+      <div class="note"><strong>From optimization to roots</strong><p>These algorithms solve f(x) = 0. To find a stationary point of an objective, enter its first derivative (the FOC). Then check the second-order condition separately.</p></div>
+      <div class="note"><strong>What the methods assume</strong><p>Bisection needs a continuous function and opposite signs at the bracket endpoints. Newton needs a derivative and a suitable starting guess; it can cycle or diverge.</p></div>
+    </aside>
+    <section class="workspace" aria-label="Algorithm visualization">
+      <div class="topline"><div class="methods" role="group" aria-label="Choose a method"><button id="bisection" type="button" aria-pressed="true">Bisection</button><button id="newton" type="button" aria-pressed="false">Newton</button></div><label class="check"><input id="zoom" type="checkbox"> Zoom to current step</label></div>
+      <p class="intro" id="method-intro"></p>
+      <div class="legend"><span><i class="swatch"></i>f(x)</span><span><i class="swatch orange"></i><span id="legend-action">Midpoint</span></span><span><i class="swatch blue"></i><span id="legend-next">Retained bracket</span></span></div>
+      <svg id="plot" role="img" aria-labelledby="plot-title plot-description"><title id="plot-title">Rootfinding plot</title><desc id="plot-description"></desc></svg>
+      <div class="transport">
+        <div class="slider-label"><label for="step">Algorithm step</label><output id="step-count" for="step"></output></div>
+        <input id="step" type="range" min="0" max="1" value="0" step="1">
+        <div class="playback"><button id="back" type="button" aria-label="Previous step">← Back</button><button id="play" type="button">Play</button><button id="next" type="button" aria-label="Next step">Next →</button><span class="hint">Drag the slider, or focus it and use ← / →.</span></div>
+      </div>
+      <div class="explanation" aria-live="polite" aria-atomic="true"><div id="step-title"></div><p id="step-description"></p><div id="equation"></div></div>
+      <div class="metrics"><div><div id="label-1" class="metric-label"></div><div id="value-1" class="metric-value"></div></div><div><div id="label-2" class="metric-label"></div><div id="value-2" class="metric-value"></div></div><div><div id="label-3" class="metric-label"></div><div id="value-3" class="metric-value"></div></div></div>
+      <p id="status" role="status"></p>
+      <details class="history"><summary>Iteration history</summary><div class="table-wrap"><table><thead id="history-head"></thead><tbody id="history-body"></tbody></table></div></details>
+    </section>
+  </div>
+  <footer>Companion to the <a href="../notes.pdf">NLP notes</a>, “Bisection Method” and “Newton’s Method.” Runs entirely in your browser. Derivatives are computed by automatic differentiation.</footer>
+</main>
+<script id="math-core">
+// Small expression parser; user expressions are never executed as JavaScript.
+// Each AST evaluation returns a value and its derivative (forward-mode AD).
+const Rootfinding = (() => {
+  const functions = {
+    sin:[Math.sin,Math.cos], cos:[Math.cos,x=>-Math.sin(x)],
+    tan:[Math.tan,x=>1/Math.cos(x)**2], exp:[Math.exp,Math.exp],
+    log:[Math.log,x=>1/x], ln:[Math.log,x=>1/x],
+    sqrt:[Math.sqrt,x=>1/(2*Math.sqrt(x))],
+    abs:[Math.abs,x=>x===0?NaN:Math.sign(x)],
+    sinh:[Math.sinh,Math.cosh], cosh:[Math.cosh,Math.sinh],
+    atan:[Math.atan,x=>1/(1+x*x)]
+  };
+  function parse(source) {
+    if (!source.trim()) throw Error('Enter a function of x.');
+    if (source.length>500) throw Error('Keep the expression under 500 characters.');
+    const tokens=[];
+    let pos=0;
+    while(pos<source.length) {
+      const rest=source.slice(pos);
+      const match=/^(\s+|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?|[a-zA-Z]+|\*\*|[+\-*/^()])/.exec(rest);
+      if(!match) throw Error('Unexpected character at position '+(pos+1)+'. Use the formula syntax shown below the input.');
+      if(!/^\s/.test(match[0])) tokens.push(match[0]==='**'?'^':match[0].toLowerCase());
+      pos+=match[0].length;
+    }
+    let i=0;
+    const number=v=>({op:'number',value:v,variable:false});
+    const node=(op,a,b)=>({op,a,b,variable:a.variable || !!b?.variable});
+    function atom() {
+      const token=tokens[i++];
+      if(token==='(') { const a=sum(); if(tokens[i++]!==')') throw Error('Missing closing parenthesis.'); return a; }
+      if(token==='x') return {op:'x',variable:true};
+      if(token==='pi') return number(Math.PI);
+      if(token==='e') return number(Math.E);
+      if(token && /^(\d|\.)/.test(token)) { const v=Number(token); if(!Number.isFinite(v)) throw Error('Numeric constants must be finite.'); return number(v); }
+      if(Object.hasOwn(functions,token)) {
+        if(tokens[i++]!=='(') throw Error('Use parentheses after '+token+', for example '+token+'(x).');
+        const a=sum(); if(tokens[i++]!==')') throw Error('Missing closing parenthesis after '+token+'.');
+        return node(token,a);
+      }
+      throw Error('Expected x, a number, or a supported function; found '+(token ?? 'the end of the expression')+'.');
+    }
+    function power() { let a=atom(); if(tokens[i]==='^') { i++; a=node('^',a,unary()); } return a; }
+    function unary() { if(tokens[i]==='+') { i++; return unary(); } if(tokens[i]==='-') { i++; return node('neg',unary()); } return power(); }
+    function product() { let a=unary(); while(['*','/'].includes(tokens[i])) { const op=tokens[i++]; a=node(op,a,unary()); } return a; }
+    function sum() { let a=product(); while(['+','-'].includes(tokens[i])) { const op=tokens[i++]; a=node(op,a,product()); } return a; }
+    const ast=sum();
+    if(i!==tokens.length) throw Error('Unexpected '+tokens[i]+'. Use * for multiplication, for example 2*x.');
+    function evaluate(n,x) {
+      if(n.op==='number') return [n.value,0];
+      if(n.op==='x') return [x,1];
+      const [a,da]=evaluate(n.a,x);
+      if(n.op==='neg') return [-a,-da];
+      if(Object.hasOwn(functions,n.op)) { const [f,df]=functions[n.op]; return [f(a),n.variable ? df(a)*da : 0]; }
+      const [b,db]=evaluate(n.b,x);
+      switch(n.op) {
+        case '+': return [a+b,da+db];
+        case '-': return [a-b,da-db];
+        case '*': return [a*b,da*b+a*db];
+        case '/': return [a/b,(da*b-a*db)/(b*b)];
+        case '^': {
+          const value=a**b;
+          if(!n.variable) return [value,0];
+          if(!n.b.variable) return [value,b===0?0:b*a**(b-1)*da];
+          return [value,a>0?value*(db*Math.log(a)+b*da/a):NaN];
+        }
+      }
+    }
+    return x=>evaluate(ast,x);
+  }
+  const opposite=(a,b)=>Math.sign(a)!==Math.sign(b);
+  function bisection(f,a,b,tol,limit) {
+    const frames=[{kind:'initial',a,b,fa:f(a)[0],fb:f(b)[0]}];
+    const finish=(message,ok=false)=>({frames,message,ok});
+    let fa=frames[0].fa,fb=frames[0].fb;
+    if(!Number.isFinite(fa)||!Number.isFinite(fb)) return finish('An endpoint is outside the function’s finite real domain. Choose another bracket.');
+    if(fa===0||fb===0) { frames[0].root=fa===0?a:b; return finish('An endpoint already has f(x) = 0.',true); }
+    if(!opposite(fa,fb)) return finish('No sign change: f(a) and f(b) have the same sign. Choose a different bracket. A root that only touches zero may not be bracketable.');
+    // This catches sampled domain failures, but cannot prove continuity.
+    for(let j=1;j<256;j++) if(!Number.isFinite(f(a+(b-a)*j/256)[0])) return finish('The function is undefined inside this bracket. Bisection requires continuity throughout [a, b].');
+    for(let k=1;k<=limit;k++) {
+      const c=a+(b-a)/2,fc=f(c)[0];
+      if(!Number.isFinite(fc)) return finish('The midpoint is outside the function’s finite real domain. Bisection stopped.');
+      if(c===a||c===b) return finish('Floating-point precision prevents another distinct midpoint.');
+      const left=fc!==0 && opposite(fa,fc);
+      const na=fc===0?c:left?a:c,nb=fc===0?c:left?c:b;
+      frames.push({kind:'bisect',a,b,fa,fb,c,fc,na,nb,left});
+      if(fc===0) return finish('A midpoint has f(c) = 0 (to machine precision).',true);
+      if(nb-na<tol) return finish('Retained bracket width < ε. This locates a root provided f is continuous on the starting bracket.',true);
+      a=na;b=nb;if(left) fb=fc;else fa=fc;
+    }
+    return finish('Iteration limit reached before the bracket met the tolerance. Increase the limit to continue.');
+  }
+  function newton(f,x,tol,limit) {
+    const frames=[{kind:'initial',x,fx:f(x)[0]}];
+    const finish=(message,ok=false)=>({frames,message,ok});
+    const visited=[x];
+    if(!Number.isFinite(frames[0].fx)) return finish('The initial guess is outside the function’s finite real domain.');
+    if(Math.abs(frames[0].fx)<tol) return finish('The initial guess already satisfies |f(x₀)| < ε.',true);
+    for(let k=1;k<=limit;k++) {
+      const [fx,slope]=f(x);
+      if(!Number.isFinite(slope)||slope===0) return finish('The derivative at the current guess is zero or undefined. Newton cannot take a step; choose another initial guess.');
+      const nx=x-fx/slope;
+      if(!Number.isFinite(nx)||Math.abs(nx)>1e12) return finish('Newton’s next step exceeds this demo’s finite range (|x| ≤ 10¹²). Try a different initial guess.');
+      const nfx=f(nx)[0],delta=Math.abs(nx-x);
+      frames.push({kind:'newton',x,fx,slope,nx,nfx,delta});
+      if(!Number.isFinite(nfx)) return finish('The tangent’s intercept is outside the function’s finite real domain. Try a different initial guess.');
+      if(nfx===0) return finish('The new guess has f(x) = 0 (to machine precision).',true);
+      if(Math.abs(nfx)<tol && delta<tol) return finish('Both |f(xₖ)| < ε and |xₖ − xₖ₋₁| < ε. The residual and step tests pass.',true);
+      if(visited.includes(nx)) return finish('A previous guess has repeated without satisfying the stopping tests. Newton is cycling or has stalled.');
+      visited.push(nx);x=nx;
+    }
+    return finish('Iteration limit reached before both stopping tests passed. Try another initial guess or increase the limit.');
+  }
+  return {parse,bisection,newton};
+})();
+</script>
+<script>
+(() => {
+  const $=id=>document.getElementById(id);
+  const fmt=n=>n===undefined||!Number.isFinite(n)?'—':n===0?'0':Math.abs(n)<1e-4||Math.abs(n)>=1e7?n.toExponential(5):Number(n.toPrecision(8)).toString();
+  let model,method='bisection',index=0,timer;
+  const examples={sqrt:['x^2 - 2',1,2,1],cos:['cos(x) - x',0,1,1],foc:['8 - 2*x',0,6,1],cycle:['x^3 - 2*x + 2',-3,0,0],touch:['(x - 1)^2',0,3,2.5]};
+  function stop() { clearInterval(timer);timer=null;$('play').textContent='Play'; }
+  function build(event) {
+    event?.preventDefault();stop();
+    try {
+      const f=Rootfinding.parse($('formula').value);
+      const a=Number($('left').value),b=Number($('right').value),x=Number($('initial').value),tol=Number($('tolerance').value),limit=Number($('limit').value);
+      if(![a,b,x,tol,limit].every(Number.isFinite)||['left','right','initial','tolerance','limit'].some(id=>!$(id).value.trim())) throw Error('Enter finite numbers for all starting values and settings.');
+      if(a>=b) throw Error('The bracket must satisfy a < b.');
+      if(Math.max(Math.abs(a),Math.abs(b),Math.abs(x))>1e12) throw Error('Keep starting values within ±10¹².');
+      if(tol<1e-14||tol>0.1) throw Error('Choose a tolerance between 10⁻¹⁴ and 0.1.');
+      if(!Number.isInteger(limit)||limit<1||limit>100) throw Error('Choose an integer iteration limit from 1 to 100.');
+      model={f,a,b,x,tol,limit,formula:$('formula').value,bisection:Rootfinding.bisection(f,a,b,tol,limit),newton:Rootfinding.newton(f,x,tol,limit)};
+      index=0;$('error').hidden=true;$('pending').hidden=true;render();
+    } catch(error) { $('error').textContent=error.message;$('error').hidden=false; }
+  }
+  function render() {
+    if(!model) return;
+    const run=model[method],s=run.frames[index],isB=method==='bisection',last=index===run.frames.length-1;
+    $('bisection').setAttribute('aria-pressed',isB);$('newton').setAttribute('aria-pressed',!isB);
+    $('method-intro').textContent=isB?'Bisect the bracket, test the midpoint, and keep the half whose endpoints have opposite signs.':'Evaluate the curve, draw its tangent, and use the tangent’s x-intercept as the next guess.';
+    $('legend-action').textContent=isB?'Midpoint c':'Tangent at previous guess';
+    $('legend-next').textContent=isB?'Retained bracket':'Next guess';
+    $('step').max=run.frames.length-1;$('step').value=index;$('step').disabled=run.frames.length===1;
+    $('step-count').textContent=`${index} / ${run.frames.length-1}`;
+    $('step').setAttribute('aria-valuetext',`Step ${index} of ${run.frames.length-1}`);
+    $('back').disabled=index===0;$('next').disabled=last;$('play').disabled=run.frames.length===1;
+    let title,description,equation,metrics;
+    if(index===0 && isB) {
+      title='Start with a bracket';description=`Evaluate both endpoints of [${fmt(s.a)}, ${fmt(s.b)}]. Opposite signs bracket a root if the function is continuous.`;
+      equation=`f(a) = ${fmt(s.fa)};  f(b) = ${fmt(s.fb)}`;
+      metrics=[['Left endpoint, a',fmt(s.a)],['Right endpoint, b',fmt(s.b)],['Bracket width',fmt(s.b-s.a)]];
+    } else if(isB) {
+      title=`Step ${index} · ${s.fc===0?'A root at the midpoint':s.left?'Keep the left half':'Keep the right half'}`;
+      description=s.fc===0?'The midpoint evaluates to zero, so no further split is needed.':`f(c) has the same sign as f(${s.left?'b':'a'}). Replace ${s.left?'b':'a'} with c; retain [${fmt(s.na)}, ${fmt(s.nb)}]. The shaded region is the retained bracket.`;
+      equation=`c = (${fmt(s.a)} + ${fmt(s.b)}) / 2 = ${fmt(s.c)};  f(c) = ${fmt(s.fc)}`;
+      metrics=[['Midpoint, c',fmt(s.c)],['Residual, |f(c)|',fmt(Math.abs(s.fc))],['Retained width',fmt(s.nb-s.na)]];
+    } else if(index===0) {
+      title='Start with an initial guess';description='Locate the starting guess on the curve. The first iteration will follow its tangent to the x-axis.';
+      equation=`x₀ = ${fmt(s.x)};  f(x₀) = ${fmt(s.fx)};  f′(x₀) = ${fmt(model.f(s.x)[1])}`;
+      metrics=[['Initial guess, x₀',fmt(s.x)],['Residual, |f(x₀)|',fmt(Math.abs(s.fx))],['Derivative, f′(x₀)',fmt(model.f(s.x)[1])]];
+    } else {
+      title=`Step ${index} · Follow the tangent`;
+      description=`The dashed tangent at x = ${fmt(s.x)} crosses the x-axis at ${fmt(s.nx)}. The dotted line lifts this new guess back to the curve for the next iteration.`;
+      equation=`x${index} = ${fmt(s.x)} − (${fmt(s.fx)}) / (${fmt(s.slope)}) = ${fmt(s.nx)}`;
+      metrics=[['New guess, xₖ',fmt(s.nx)],['Residual, |f(xₖ)|',fmt(Math.abs(s.nfx))],['Step size, |Δx|',fmt(s.delta)]];
+    }
+    $('step-title').textContent=title;$('step-description').textContent=description;$('equation').textContent=equation;
+    metrics.forEach(([label,value],i)=>{ $('label-'+(i+1)).textContent=label;$('value-'+(i+1)).textContent=value; });
+    $('status').className=last&&!run.ok?'failure':'';
+    $('status').textContent=last?run.message:isB?'Stopping rule: retained width < ε, or a midpoint evaluates to zero. Continuity is an assumption; sampling cannot prove it.':'Stopping rule: residual < ε and step size < ε, or the new guess evaluates to zero.';
+    draw(s,isB,description);
+    $('history-head').innerHTML=isB?'<tr><th>Step</th><th>a (before)</th><th>b (before)</th><th>c</th><th>f(c)</th><th>Width (after)</th></tr>':'<tr><th>Step</th><th>xₖ</th><th>f(xₖ)</th><th>|Δx|</th></tr>';
+    $('history-body').innerHTML=run.frames.slice(0,index+1).map((row,j)=>{
+      const values=isB?[j,fmt(row.a),fmt(row.b),fmt(row.c),fmt(row.fc),fmt(j?row.nb-row.na:row.b-row.a)]:[j,fmt(j?row.nx:row.x),fmt(j?row.nfx:row.fx),j?fmt(row.delta):'—'];
+      return `<tr${j===index?' class="selected"':''}>${values.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+    }).join('');
+  }
+  function draw(s,isB,description) {
+    const svg=$('plot'),W=svg.clientWidth||700,H=svg.clientHeight||360;
+    const m={l:64,r:22,t:28,b:48},w=W-m.l-m.r,h=H-m.t-m.b;
+    let lo,hi;
+    if(isB) { lo=$('zoom').checked?s.a:model.a;hi=$('zoom').checked?s.b:model.b; }
+    else {
+      const xs=$('zoom').checked?[s.x,s.nx??s.x]:[model.a,model.b,model.x,...model.newton.frames.slice(1,index+1).map(r=>r.nx)];
+      lo=Math.min(...xs);hi=Math.max(...xs);
+    }
+    const span=Math.max(hi-lo,1e-7*Math.max(1,Math.abs(lo))),pad=span*.18;
+    lo-=pad;hi+=pad;
+    const samples=Array.from({length:601},(_,i)=>{const x=lo+(hi-lo)*i/600;return [x,model.f(x)[0]];});
+    const ys=samples.map(p=>p[1]).filter(Number.isFinite).sort((a,b)=>a-b);
+    const important=isB?[s.fa,s.fb,s.fc,0]:[s.fx,s.nfx,0];
+    const bounds=[0,...important.filter(v=>Number.isFinite(v)&&Math.abs(v)<1e100)];
+    if(ys.length) bounds.push(ys[Math.floor((ys.length-1)*.04)],ys[Math.floor((ys.length-1)*.96)]);
+    let ymin=Math.min(...bounds),ymax=Math.max(...bounds);
+    const yspan=Math.max(ymax-ymin,1e-9),yp=yspan*.17;
+    ymin-=yp;ymax+=yp;
+    const X=x=>m.l+(x-lo)/(hi-lo)*w,Y=y=>m.t+(ymax-y)/(ymax-ymin)*h;
+    const ns='http://www.w3.org/2000/svg';
+    svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    function el(tag,attrs={},text,parent=svg) { const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs)) n.setAttribute(k,v);if(text!==undefined)n.textContent=text;parent.append(n);return n; }
+    el('title',{id:'plot-title'},`${isB?'Bisection':'Newton'}: f(x) = ${model.formula}, step ${index}`);
+    el('desc',{id:'plot-description'},description);
+    const defs=el('defs'),clip=el('clipPath',{id:'plot-clip'},undefined,defs);el('rect',{x:m.l,y:m.t,width:w,height:h},undefined,clip);
+    function line(x1,y1,x2,y2,color,dash='',width=1,parent=svg) { return el('line',{x1,y1,x2,y2,stroke:color,'stroke-width':width,'stroke-dasharray':dash},undefined,parent); }
+    function label(x,y,text,anchor='middle',parent=svg) { return el('text',{x,y,'text-anchor':anchor},text,parent); }
+    const ticks=W<450?3:5;
+    // Use an offset for narrow windows so long, nearly identical ticks do not collide.
+    const offset=hi-lo<.001*Math.max(1,Math.abs(lo))?(lo+hi)/2:0;
+    const tick=v=>v===0?'0':Math.abs(v)<.001||Math.abs(v)>=1e5?v.toExponential(1):Number(v.toPrecision(3)).toString();
+    const axisX=v=>tick(v-offset);
+    for(let j=0;j<=ticks;j++) {
+      const x=lo+(hi-lo)*j/ticks;line(X(x),m.t,X(x),H-m.b,'#e6ece8');
+      label(X(x),H-m.b+22,axisX(x),j===0?'start':j===ticks?'end':'middle');
+    }
+    for(let j=0;j<=4;j++) { const y=ymin+(ymax-ymin)*j/4;line(m.l,Y(y),W-m.r,Y(y),'#e6ece8');label(m.l-9,Y(y)+4,Math.abs(y)>1e4||Math.abs(y)<.001&&y!==0?y.toExponential(1):Number(y.toPrecision(3)).toString(),'end'); }
+    line(m.l,Y(0),W-m.r,Y(0),'#899f98');
+    if(lo<=0&&hi>=0)line(X(0),m.t,X(0),H-m.b,'#899f98');
+    label(W-m.r,H-6,offset?`x − ${Number(offset.toPrecision(13))}`:'x','end');label(m.l,16,'f(x)','start');
+    const marks=el('g',{'clip-path':'url(#plot-clip)'});
+    if(isB) {
+      const a=s.na??s.a,b=s.nb??s.b;
+      el('rect',{x:X(a),y:m.t,width:Math.max(0,X(b)-X(a)),height:h,fill:'#3767b3','fill-opacity':'.10'},undefined,marks);
+      for(const x of [a,b])line(X(x),m.t,X(x),H-m.b,'#3767b3','3 4',1.5,marks);
+    }
+    let path='',connected=false;
+    samples.forEach(([x,y],i)=>{
+      // Break the curve at invalid values and apparent asymptote jumps.
+      if(!Number.isFinite(y)||y<ymin-2*yspan||y>ymax+2*yspan) { connected=false;return; }
+      if(i>0&&Math.abs(y-samples[i-1][1])>1.5*(ymax-ymin))connected=false;
+      path+=(connected?'L':'M')+X(x).toFixed(2)+','+Y(y).toFixed(2);connected=true;
+    });
+    el('path',{d:path,fill:'none',stroke:'#087f78','stroke-width':2.8},undefined,marks);
+    function dot(x,y,color,square=false) {
+      if(!Number.isFinite(y))return;
+      if(square)el('rect',{x:X(x)-4.5,y:Y(y)-4.5,width:9,height:9,fill:color,stroke:'#fff','stroke-width':1.5},undefined,marks);
+      else el('circle',{cx:X(x),cy:Y(y),r:5,fill:color,stroke:'#fff','stroke-width':1.5},undefined,marks);
+    }
+    if(isB) {
+      dot(s.a,s.fa,'#3767b3');dot(s.b,s.fb,'#3767b3');
+      if(s.c!==undefined) { line(X(s.c),m.t,X(s.c),H-m.b,'#bd551c','6 4',1.8,marks);dot(s.c,s.fc,'#bd551c',true);label(X(s.c),m.t+15,'c'); }
+      label(X(s.a),H-m.b-8,'a','end');label(X(s.b),H-m.b-8,'b','start');
+      if(s.root!==undefined)dot(s.root,0,'#bd551c',true);
+    } else {
+      if(s.nx!==undefined) {
+        // Clip the tangent to the y range before mapping large slope values.
+        const tx1=Math.max(lo,Math.min(s.x+(ymin-s.fx)/s.slope,s.x+(ymax-s.fx)/s.slope));
+        const tx2=Math.min(hi,Math.max(s.x+(ymin-s.fx)/s.slope,s.x+(ymax-s.fx)/s.slope));
+        if(tx1<=tx2)line(X(tx1),Y(s.fx+s.slope*(tx1-s.x)),X(tx2),Y(s.fx+s.slope*(tx2-s.x)),'#bd551c','7 5',2,marks);
+        if(Number.isFinite(s.nfx)) { line(X(s.nx),Y(0),X(s.nx),Y(s.nfx),'#3767b3','3 4',2,marks);dot(s.nx,s.nfx,'#3767b3'); }
+        dot(s.nx,0,'#3767b3',true);
+        label(Math.max(m.l+30,Math.min(W-m.r-30,X(s.nx))),m.t+15,'new x');
+      }
+      line(X(s.x),Y(0),X(s.x),Y(s.fx),'#899f98','3 4',1,marks);dot(s.x,s.fx,'#bd551c');
+      label(Math.max(m.l+30,Math.min(W-m.r-30,X(s.x))),H-m.b-8,index?'previous x':'x₀');
+    }
+  }
+  $('setup').addEventListener('submit',build);
+  $('setup').addEventListener('input',()=>{stop();$('pending').hidden=false;});
+  $('example').addEventListener('change',()=>{ const e=examples[$('example').value];['formula','left','right','initial'].forEach((id,i)=>$(id).value=e[i]);build(); });
+  ['bisection','newton'].forEach(name=>$(name).addEventListener('click',()=>{stop();method=name;index=0;render();}));
+  $('step').addEventListener('input',()=>{stop();index=Number($('step').value);render();});
+  $('back').addEventListener('click',()=>{stop();index=Math.max(0,index-1);render();});
+  $('next').addEventListener('click',()=>{stop();index=Math.min(model[method].frames.length-1,index+1);render();});
+  $('play').addEventListener('click',()=>{
+    if(timer) {stop();return;}
+    if(index===model[method].frames.length-1)index=0;
+    render();$('play').textContent='Pause';
+    timer=setInterval(()=>{index++;render();if(index===model[method].frames.length-1)stop();},1100);
+  });
+  $('zoom').addEventListener('change',render);
+  new ResizeObserver(()=>{if(model)draw(model[method].frames[index],method==='bisection',$('step-description').textContent);}).observe($('plot'));
+  build();
+})();
+</script>
+</body>
+</html>
