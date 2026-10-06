@@ -49,21 +49,21 @@
       url: "problem_set_key.pdf"
   
   
-# - title: "Unconstrained and Constrained Nonlinear Programming"
-#   filename: "notes" 
-#   dirname: modules/nonlinear_programming
-#   desc: "This unit introduces nonlinear programming (NLP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
-#   readings:
-#     - title: "Miranda & Fackler Ch. 3"
+- title: "Unconstrained and Constrained Nonlinear Programming"
+  filename: "notes" 
+  dirname: modules/nonlinear_programming
+  desc: "This unit introduces nonlinear programming (NLP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
+  readings:
+    - title: "Kaiser and Messer Ch. 8"
 #       url: "course-materials/"
 #     - title: "McCarl & Spreen Ch. 12"
 #       url: "course-materials/"
 #   ps:
 #     - title: "Problem Set 2"
 #       url: "problem_set.pdf"
-#   materials:
-#     - title: "MLE Surface"
-#       url: "mle_example.r"
+  materials:
+    - title: "Rootfinding Demo"
+      url: "rootfinding/index.html"
 #     - title: "Portfolio Problem"
 #       url: "portfolio_problem.r"
 #     - title: "Simulated Method of Moments"
