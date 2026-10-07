@@ -1609,20 +1609,15 @@ $$
 +\left(\frac{12}{2+2\lambda}\right)^2-E=0.
 $$
 
-Simplifying gives a nonlinear equation in $\lambda$ (the emissions function is quadratic in output):
-$$
-\frac{72}{(2+\lambda)^2}+\frac{144}{(2+2\lambda)^2}-E=0.
-$$
 
-<!-- This connects directly to our rootfinding methods. For more complicated models, eliminating the decisions may be difficult; a constrained optimizer works with the decisions and constraints together. -->
 
-### Finding the multiplier by rootfinding
+### Digression: Finding the multiplier by rootfinding
 
 Choose $E=17$ and define the excess-emissions function
 
 $$
-h(\lambda)=\frac{72}{(2+\lambda)^2}
-+\frac{144}{(2+2\lambda)^2}-17.
+\frac12\left(\frac{12}{2+\lambda}\right)^2
++\left(\frac{12}{2+2\lambda}\right)^2-E=0.
 $$
 
 For any proposed shadow price $\lambda$, the stationarity equations determine outputs $q_1(\lambda)$ and $q_2(\lambda)$. The function $h(\lambda)$ measures how far their total emissions exceed the cap. We seek the price at which $h(\lambda)=0$.
@@ -1743,6 +1738,13 @@ Unconstrained gradient ascent follows $\nabla\Pi$. That direction can violate th
 
 **Sequential quadratic programming (SQP)** combines the curvature information used by Newton's method with the feasibility and multiplier conditions used by constrained optimization. Each iteration solves a smaller quadratic program to propose the next step.
 
+### What each iteration does
+
+1. Evaluate the objective, constraints, and their derivatives.
+2. Solve the quadratic subproblem for a direction and multiplier estimates.
+3. Select a step length and update $q^{k+1}=q^k+\alpha_kd^k$.
+4. Update the curvature approximation and repeat.
+
 ### A local approximation
 
 The original problem chooses the output vector $q=(q_1,q_2)^\top$. SQP instead asks a smaller question at each iteration: **starting from our current outputs, what change should we try next?**
@@ -1811,7 +1813,7 @@ The current constraint value tells us how much slack we have, while the gradient
 
 > Why does $d_i\geq-q_i^k$ allow a negative step, even though output itself cannot be negative?
 
-Because it could overshoot the boundary.
+So it can step back toward zero.
 
 #### Step 4: combine the models into a quadratic program
 
@@ -1831,6 +1833,7 @@ $$c(q^k)+\nabla c(q^k)^\top d\leq0,\qquad q^k+d\geq0.$$
 
 This is a **quadratic program (QP)**: the objective is quadratic in $d$, and all constraints are linear in $d$. The gradient rewards promising changes, the curvature controls their size and balance, and the constraints restrict the proposed changes.
 
+:::{.callout-note}
 To choose $B^k$, SQP uses a Newton approximation to the **KKT conditions**, rather than only a Taylor approximation to $F$. For clarity, suppose the emissions constraint is active and the output bounds are inactive. Write
 
 $$\mathcal L_{\min}(q,\lambda)=F(q)+\lambda c(q).$$
@@ -1871,25 +1874,91 @@ $$
 
 With linear constraints, $\nabla^2c=0$, so the Lagrangian and objective Hessians coincide. They also coincide at an iterate with $\lambda^k=0$, which is the case in our illustrative first step below. In practice, SLSQP updates an approximation to Lagrangian curvature rather than asking us to supply this matrix.
 
+:::
+
 #### Step 5: work through one numerical subproblem
 
-Start at $q^0=(2,2)$ with $E=17$. Total emissions are $6$, giving $11$ units of slack. For this illustrative first step, take $\lambda^0=0$ and $B^0=2I$, the objective Hessian. These are teaching choices, rather than a claim about SLSQP's internal initialization.
+Start at $q^0=(2,2)$ with $E=17$. We solve for **changes in output** $d$, not directly for the final outputs. For this illustrative first step, take $\lambda^0=0$, our initial multiplier estimate.
 
-At this point,
+**1. Evaluate the ingredients of the general subproblem**
 
-$$\nabla F(q^0)=\begin{bmatrix}-8\\-8\end{bmatrix},\qquad
-c(q^0)=-11,\qquad
-\nabla c(q^0)=\begin{bmatrix}2\\4\end{bmatrix}.$$
-
-The subproblem becomes
+The theoretical SQP subproblem is
 
 $$
-\min_{d_1,d_2}\;-8d_1-8d_2+d_1^2+d_2^2
+\min_d\;\nabla F(q^0)^\top d+\tfrac12d^\top B^0d
 $$
 
 subject to
 
+$$c(q^0)+\nabla c(q^0)^\top d\leq0,\qquad q^0+d\geq0.$$
+
+Our functions are
+
+$$F(q)=q_1^2-12q_1+q_2^2-12q_2,\qquad
+c(q)=\tfrac12q_1^2+q_2^2-17.$$
+
+Evaluate each ingredient at $q^0=(2,2)$:
+
+| Theoretical quantity | Calculation at the current point | Result |
+|---|---|---|
+| $\nabla F(q^0)$ | $(2(2)-12,\;2(2)-12)^\top$ | $(-8,-8)^\top$ |
+| $c(q^0)$ | $\tfrac12(2)^2+(2)^2-17$ | $-11$ |
+| $\nabla c(q^0)$ | $(2,\;2(2))^\top$ | $(2,4)^\top$ |
+| $B^0$ | $\nabla^2F(q^0)+0\nabla^2c(q^0)$ | $2I$ |
+
+The constraint value $-11$ means there are $11$ units of emissions slack. Because $\lambda^0=0$, the Lagrangian Hessian equals the objective Hessian for this first subproblem:
+
+$$B^0=\begin{bmatrix}2&0\\0&2\end{bmatrix}.$$
+
+**2. Substitute into the objective**
+
+The linear term becomes
+
+$$
+\nabla F(q^0)^\top d
+=\begin{bmatrix}-8&-8\end{bmatrix}
+\begin{bmatrix}d_1\\d_2\end{bmatrix}
+=-8d_1-8d_2.
+$$
+
+The quadratic term becomes
+
+$$
+\tfrac12d^\top B^0d
+=\tfrac12\begin{bmatrix}d_1&d_2\end{bmatrix}
+\begin{bmatrix}2&0\\0&2\end{bmatrix}
+\begin{bmatrix}d_1\\d_2\end{bmatrix}
+=\tfrac12(2d_1^2+2d_2^2)
+=d_1^2+d_2^2.
+$$
+
+Therefore, the numerical objective is
+
+$$\min_{d_1,d_2}\;-8d_1-8d_2+d_1^2+d_2^2.$$
+
+We omit $F(q^0)=-40$ because it is constant as we vary $d$ and cannot affect which step minimizes the expression.
+
+**3. Substitute into the constraints**
+
+The linearized emissions constraint becomes
+
+$$
+-11+\begin{bmatrix}2&4\end{bmatrix}
+\begin{bmatrix}d_1\\d_2\end{bmatrix}\leq0
+\quad\Rightarrow\quad 2d_1+4d_2\leq11.
+$$
+
+Locally, another unit of producer 1's output uses about $2$ units of emissions slack; another unit of producer 2's output uses about $4$. Their combined predicted increase cannot exceed the available $11$ units.
+
+Output nonnegativity gives $2+d_1\geq0$ and $2+d_2\geq0$, or $d_1,d_2\geq-2$. The complete numerical subproblem is thus
+
+$$\min_{d_1,d_2}\;-8d_1-8d_2+d_1^2+d_2^2$$
+
+subject to
+
 $$2d_1+4d_2\leq11,\qquad d_1,d_2\geq-2.$$
+
+**4. Solve the subproblem**
 
 Without the emissions restriction, the objective first-order conditions give $d_1=d_2=4$, moving directly to $(6,6)$. But this step would use $2(4)+4(4)=24$ units of predicted slack, exceeding the available $11$. The local emissions constraint must bind.
 
@@ -1936,28 +2005,7 @@ $$q^0+\tfrac12d^0=(3.35,2.7).$$
 
 The half step increases profit and remains feasible. It illustrates why we check the original functions and choose a step length; it does not prescribe the step length SLSQP will take. The next iteration constructs a new local model around the accepted point. **Sequential** means that we repeat this process, updating the point, derivatives, and curvature information as we go.
 
-### What each iteration does
 
-1. Evaluate the objective, constraints, and their derivatives.
-2. Solve the quadratic subproblem for a direction and multiplier estimates.
-3. Select a step length and update $q^{k+1}=q^k+\alpha_kd^k$.
-4. Update the curvature approximation and repeat.
-
-A line search uses a **merit function**, such as $F(q)+\rho\max\{0,c(q)\}$, to balance objective improvement and constraint violation. The parameter $\rho>0$ controls the penalty for violating the cap. Bounds also need to be respected.
-
-Linearized feasibility does not guarantee feasibility for the original curved constraint. For example, at $q^k=(4,3)$, $d=(0.3,-0.2)$ is tangent to the boundary because $(4,6)^\top d=0$, but
-
-$$G(q^k+d)=17+\tfrac12(0.3)^2+(-0.2)^2=17.085.$$
-
-This is why the solver must evaluate the actual nonlinear constraint again and control its step. Intermediate points can violate the cap even when the final solution satisfies it.
-
-### SLSQP and BFGS
-
-We will use **Sequential Least Squares Quadratic Programming (SLSQP)**, an SQP implementation in NLopt accessed through R's `nloptr` package. It handles smooth nonlinear equality and inequality constraints along with variable bounds.
-
-SLSQP uses **BFGS** to update a curvature approximation from changes in points and gradients. This avoids requiring us to supply second derivatives. We provide first derivatives of the objective and constraint.
-
-<!-- BFGS is useful for general smooth optimization, but ordinary BFGS does not itself enforce a nonlinear emissions constraint. Its role here is a component of the constrained method. We do not need its matrix-update formula to understand this walkthrough. -->
 
 ## Numerical solution in R
 

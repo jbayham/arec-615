@@ -1,6 +1,8 @@
 # Production under an emissions cap: classroom walkthrough
 # Run sections interactively in RStudio, or source this file.
 # Install once if needed: install.packages("nloptr")
+library(nloptr)
+library(ggplot2)
 
 # ---- Find the emissions multiplier by rootfinding ----
 h <- function(lambda) {
@@ -12,10 +14,11 @@ lambda_root <- uniroot(h, interval = c(0, 2), tol = 1e-10)$root
 q_root <- c(12 / (2 + lambda_root),
             12 / (2 + 2 * lambda_root))
 
+#Print the solution
 c(lambda = lambda_root, q1 = q_root[1], q2 = q_root[2],
   excess_emissions = h(lambda_root))
 
-library(ggplot2)
+
 lambda_grid <- data.frame(lambda = seq(0, 2, length.out = 201))
 lambda_grid$excess <- h(lambda_grid$lambda)
 root_plot <- ggplot(lambda_grid, aes(lambda, excess)) +
@@ -31,6 +34,7 @@ root_plot <- ggplot(lambda_grid, aes(lambda, excess)) +
        y = expression(h(lambda) == "Emissions minus cap")) +
   theme_minimal()
 print(root_plot)
+
 
 # ---- Define the economic model ----
 profit <- function(q) sum(12*q - q^2)
