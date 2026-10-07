@@ -1524,7 +1524,6 @@ Both yield the same value function, which is exactly the welfare–equilibrium d
 \newpage
 
 
--------
 
 # Numerical Methods for Constrained Optimization
 
@@ -1536,17 +1535,24 @@ $$
 \pi_i(q_i)=12q_i-q_i^2,\qquad q_i\geq0.
 $$
 
-Marginal profit is $12-2q_i$: additional production becomes less profitable as output increases. Producers have the same profit function but different pollution technologies:
+- Marginal profit is $12-2q_i$: additional production becomes less profitable as output increases. 
+- Producers have the same profit function but different pollution technologies:
 
 $$
 e_1(q_1)=\tfrac12q_1^2,\qquad e_2(q_2)=q_2^2.
 $$
 
-Emissions increase at an increasing rate. At the same output, producer 2 generates twice as much pollution as producer 1. Think of different equipment or production processes, rather than uncertainty about outcomes.
+- Emissions increase at an increasing rate. 
+- At the same output, producer 2 generates twice as much pollution as producer 1. 
+- Think of different equipment or production processes, rather than uncertainty about outcomes.
 
-Without regulation, each producer solves $12-2q_i=0$. Thus $q_1^u=q_2^u=6$, total profit is $72$, and total emissions are $54$.
+> What is the private optimum without regulation? What is the total profit and total emissions?
 
-A regulator wants to achieve an aggregate emissions threshold $E$ while preserving as much total profit as possible:
+Without regulation, $q_1^u=q_2^u=6$, total profit is $72$, and total emissions are $54$.
+
+A regulator wants to achieve an aggregate emissions threshold $E$ while preserving as much total profit as possible.
+
+> What is the regulators problem? What is the objective and what is the constraint?
 
 $$
 \max_{q_1,q_2\geq0}\;\Pi(q)=12q_1-q_1^2+12q_2-q_2^2
@@ -1554,7 +1560,9 @@ $$
 G(q)=\tfrac12q_1^2+q_2^2\leq E.
 $$
 
-This is a **cost-effective allocation for a given target**. We have not specified environmental damages, so the model does not determine the socially optimal target. Production reductions are the only way to reduce pollution in this example.
+- This is a **cost-effective allocation for a given target**. 
+- We have not specified environmental damages, so the model does not determine the socially optimal target. 
+- Production reductions are the only way to reduce pollution in this example.
 
 > If $E<54$, can both producers continue producing 6 units? Should the regulator require equal output from the two producers?
 
@@ -1563,38 +1571,112 @@ This is a **cost-effective allocation for a given target**. We have not specifie
 Using the same maximization convention as before, write
 
 $$
-\mathcal L(q,\lambda,\nu)=\Pi(q)+\lambda[E-G(q)]+\nu_1q_1+\nu_2q_2.
+\mathcal L(q,\lambda,\eta)=\Pi(q)+\lambda[E-G(q)]+\eta_1q_1+\eta_2q_2.
 $$
 
 The KKT conditions are:
 
 1. **Stationarity**:
-   $$12-2q_1-\lambda q_1+\nu_1=0,$$
-   $$12-2q_2-2\lambda q_2+\nu_2=0.$$
+   $$12-2q_1-\lambda q_1+\eta_1=0,$$
+   $$12-2q_2-2\lambda q_2+\eta_2=0.$$
 2. **Primal feasibility**: $G(q)\leq E$ and $q_1,q_2\geq0$.
-3. **Dual feasibility**: $\lambda,\nu_1,\nu_2\geq0$.
+3. **Dual feasibility**: $\lambda,\eta_1,\eta_2\geq0$.
 4. **Complementary slackness**:
-   $$\lambda[E-G(q)]=0,\qquad \nu_iq_i=0.$$
+   $$\lambda[E-G(q)]=0,\qquad \eta_iq_i=0.$$
 
-For $0<E<54$, the optimal outputs are positive and the cap binds. Setting $\nu_1=\nu_2=0$ gives
+For $0<E<54$, the optimal outputs are positive and the cap binds, so $\eta_1=\eta_2=0$. 
 
 $$
 q_1(\lambda)=\frac{12}{2+\lambda},\qquad
 q_2(\lambda)=\frac{12}{2+2\lambda}.
 $$
 
-Substitute these expressions into $G(q)=E$ to obtain one equation in $\lambda$:
+:::{.callout-note}
+Recall that $\lambda$ is the shadow price of the emissions cap. The KKT conditions imply
+$$
+\frac{\pi_1'(q_1)}{e_1'(q_1)}
+=\frac{\pi_2'(q_2)}{e_2'(q_2)}=\lambda.
+$$
+
+Each ratio measures **marginal profit sacrificed per unit of emissions reduction**. Reducing output by a small amount lowers both profit and emissions. If this ratio differs across producers, shift pollution reductions toward the producer that can reduce emissions at lower marginal cost.
+
+:::
+
+Substitute these expressions into $G(q)=E$ to obtain one equation in $\lambda$ (assuming an interior solution):
 
 $$
 \frac12\left(\frac{12}{2+\lambda}\right)^2
 +\left(\frac{12}{2+2\lambda}\right)^2-E=0.
 $$
 
-This connects directly to our rootfinding methods. For more complicated models, eliminating the decisions may be difficult; a constrained optimizer works with the decisions and constraints together.
+Simplifying gives a nonlinear equation in $\lambda$ (the emissions function is quadratic in output):
+$$
+\frac{72}{(2+\lambda)^2}+\frac{144}{(2+2\lambda)^2}-E=0.
+$$
+
+<!-- This connects directly to our rootfinding methods. For more complicated models, eliminating the decisions may be difficult; a constrained optimizer works with the decisions and constraints together. -->
+
+### Finding the multiplier by rootfinding
+
+Choose $E=17$ and define the excess-emissions function
+
+$$
+h(\lambda)=\frac{72}{(2+\lambda)^2}
++\frac{144}{(2+2\lambda)^2}-17.
+$$
+
+For any proposed shadow price $\lambda$, the stationarity equations determine outputs $q_1(\lambda)$ and $q_2(\lambda)$. The function $h(\lambda)$ measures how far their total emissions exceed the cap. We seek the price at which $h(\lambda)=0$.
+
+- At $\lambda=0$, emissions are $54$, so $h(0)=37>0$.
+- At $\lambda=2$, emissions are $8.5$, so $h(2)=-8.5<0$.
+- As $\lambda$ increases, both outputs and emissions decrease. Thus $h$ is strictly decreasing for $\lambda\geq0$, and there is exactly one root between $0$ and $2$.
+
+We can use bisection, or R's `uniroot`, which combines bracketing with interpolation. Solving for $\lambda$ first reduces the three KKT equations to one rootfinding problem.
+
+```{r}
+#| label: emissions-multiplier-root
+h <- function(lambda) {
+  0.5 * (12 / (2 + lambda))^2 +
+    (12 / (2 + 2 * lambda))^2 - 17
+}
+
+lambda_root <- uniroot(h, interval = c(0, 2), tol = 1e-10)$root
+q_root <- c(12 / (2 + lambda_root),
+            12 / (2 + 2 * lambda_root))
+
+c(lambda = lambda_root, q1 = q_root[1], q2 = q_root[2],
+  excess_emissions = h(lambda_root))
+```
+
+The plot shows the root where excess emissions cross zero. Positive values indicate that the proposed price is too low to meet the cap; negative values indicate that emissions fall below the cap.
+
+```{r}
+#| label: fig-emissions-multiplier-root
+#| fig-cap: "Rootfinding for the emissions-cap multiplier. At lambda = 1, the implied outputs generate exactly 17 emissions units."
+#| fig-width: 6
+#| fig-height: 3.5
+library(ggplot2)
+lambda_grid <- data.frame(lambda = seq(0, 2, length.out = 201))
+lambda_grid$excess <- h(lambda_grid$lambda)
+root_plot <- ggplot(lambda_grid, aes(lambda, excess)) +
+  geom_hline(yintercept = 0, colour = "grey40") +
+  geom_line(colour = "steelblue", linewidth = 1) +
+  geom_vline(xintercept = lambda_root, linetype = "dashed",
+             colour = "firebrick") +
+  annotate("point", x = lambda_root, y = 0,
+           colour = "firebrick", size = 3) +
+  annotate("text", x = lambda_root + 0.08, y = 5,
+           label = "Root: lambda = 1", hjust = 0) +
+  labs(x = expression(lambda),
+       y = expression(h(lambda) == "Emissions minus cap")) +
+  theme_minimal()
+print(root_plot)
+```
 
 ### A transparent benchmark
 
-Choose $E=17$. Then $\lambda^*=1$ gives
+The numerical root is $\lambda^*\approx1$. Substituting the exact value $\lambda^*=1$ verifies the solution:
+
 
 $$q_1^*=4,\qquad q_2^*=3,\qquad G(q^*)=8+9=17,$$
 
@@ -1604,18 +1686,6 @@ $$\Pi(q^*)=(48-16)+(36-9)=59.$$
 
 These values satisfy all the KKT conditions. The objective is strictly concave, and the feasible set is convex because $G$ is convex. With $E>0$, a strictly feasible positive allocation exists. The KKT solution is therefore the unique global maximum.
 
-## Intuition: where should pollution reductions occur?
-
-At an interior optimum with a binding cap,
-
-$$
-\frac{\pi_1'(q_1)}{e_1'(q_1)}
-=\frac{\pi_2'(q_2)}{e_2'(q_2)}=\lambda.
-$$
-
-Each ratio measures **marginal profit sacrificed per unit of emissions reduction**. Reducing output by a small amount lowers both profit and emissions. If this ratio differs across producers, shift pollution reductions toward the producer that can reduce emissions at lower marginal cost.
-
-At $(4,3)$, producer 1 has marginal profit $4$ and marginal emissions $4$. Producer 2 has marginal profit $6$ and marginal emissions $6$. Both ratios equal $1$. Output and emissions need not be equal for marginal costs to be equal.
 
 ### Geometry
 
@@ -1675,11 +1745,81 @@ Unconstrained gradient ascent follows $\nabla\Pi$. That direction can violate th
 
 ### A local approximation
 
+The original problem chooses the output vector $q=(q_1,q_2)^\top$. SQP instead asks a smaller question at each iteration: **starting from our current outputs, what change should we try next?**
+
+#### Step 1: define the current point and the proposed change
+
 For the algorithm, convert maximization to minimization:
 
 $$F(q)=-\Pi(q),\qquad c(q)=G(q)-E\leq0.$$
 
-At the current point $q^k$, use a quadratic model in the proposed step $d$ and linearize the emissions constraint:
+Minimizing negative profit gives the same allocation as maximizing profit. Writing the constraint as emissions minus the cap makes its sign easy to interpret: negative is feasible, zero is binding, and positive violates the cap.
+
+| Symbol | Meaning |
+|---|---|
+| $q^k$ | Current output vector at iteration $k$; the superscript labels the iteration, not a power |
+| $d=(d_1,d_2)^\top$ | Proposed change in outputs; this is the decision variable of the subproblem |
+| $q^k+d$ | Proposed outputs if we take the full step |
+| $\alpha_k$ | Fraction of the proposed step actually taken |
+| $B^k$ | Matrix describing the curvature used in the local model |
+
+A positive $d_i$ increases producer $i$'s output; a negative $d_i$ reduces it. We optimize over **changes** $d$, then translate the result back into outputs.
+
+#### Step 2: approximate the objective near the current point
+
+Recall the second-order Taylor expansion:
+
+$$
+F(q^k+d)\approx F(q^k)+\nabla F(q^k)^\top d
++\tfrac12d^\top\nabla^2F(q^k)d.
+$$
+
+The three terms have different roles:
+
+- $F(q^k)$ is the current objective value. It is constant as we vary $d$, so it can be omitted when choosing the step.
+- $\nabla F(q^k)^\top d$ predicts the first-order change. A negative value predicts that negative profit falls, so profit rises.
+- The quadratic term describes how marginal returns change as we move. It prevents the local model from treating an initially profitable direction as equally profitable at every distance.
+
+For our objective,
+
+$$
+F(q)=q_1^2-12q_1+q_2^2-12q_2,\qquad
+\nabla F(q)=\begin{bmatrix}2q_1-12\\2q_2-12\end{bmatrix},\qquad
+\nabla^2F(q)=\begin{bmatrix}2&0\\0&2\end{bmatrix}.
+$$
+
+Because $F$ is quadratic, its second-order Taylor expansion is exact. For a general nonlinear objective, it is only a local approximation. This expansion uses the objective Hessian $\nabla^2F$. Below, we will distinguish this Taylor model from the quadratic model used by SQP.
+
+#### Step 3: approximate the constraint with a tangent line
+
+Use a first-order Taylor expansion for the emissions constraint:
+
+$$c(q^k+d)\approx c(q^k)+\nabla c(q^k)^\top d.$$
+
+Thus, the local requirement is
+
+$$c(q^k)+\nabla c(q^k)^\top d\leq0.$$
+
+For this example,
+
+$$
+c(q)=\tfrac12q_1^2+q_2^2-E,\qquad
+\nabla c(q)=\begin{bmatrix}q_1\\2q_2\end{bmatrix}.
+$$
+
+The current constraint value tells us how much slack we have, while the gradient predicts how a change in each output uses that slack. Geometrically, we replace the curved emissions boundary by a straight line near $q^k$. Nonnegativity is already linear, so it is imposed exactly as $q^k+d\geq0$, or $d_i\geq-q_i^k$.
+
+> Why does $d_i\geq-q_i^k$ allow a negative step, even though output itself cannot be negative?
+
+Because it could overshoot the boundary.
+
+#### Step 4: combine the models into a quadratic program
+
+A direct combination of the objective Taylor expansion and the linearized constraints would use $\nabla^2F(q^k)$ as the quadratic coefficient. Standard SQP adjusts that coefficient to account for constraint curvature. Define its quadratic model as
+
+$$m_k(d)=\nabla F(q^k)^\top d+\tfrac12d^\top B^k d.$$
+
+**$B^k$ is the curvature matrix in the subproblem objective.** This describes where it is used; we still need to explain how SQP chooses it. The step solves
 
 $$
 \min_d\;\nabla F(q^k)^\top d+\tfrac12d^\top B^k d
@@ -1689,14 +1829,112 @@ subject to
 
 $$c(q^k)+\nabla c(q^k)^\top d\leq0,\qquad q^k+d\geq0.$$
 
-Here $B^k$ approximates the Hessian of the **minimization Lagrangian** $F+\lambda c$. For our example, its exact Hessian is
+This is a **quadratic program (QP)**: the objective is quadratic in $d$, and all constraints are linear in $d$. The gradient rewards promising changes, the curvature controls their size and balance, and the constraints restrict the proposed changes.
+
+To choose $B^k$, SQP uses a Newton approximation to the **KKT conditions**, rather than only a Taylor approximation to $F$. For clarity, suppose the emissions constraint is active and the output bounds are inactive. Write
+
+$$\mathcal L_{\min}(q,\lambda)=F(q)+\lambda c(q).$$
+
+The original stationarity condition is
+
+$$\nabla F(q)+\lambda\nabla c(q)=0.$$
+
+At the current estimates $(q^k,\lambda^k)$, propose changes $d$ and $\Delta\lambda$. Linearizing stationarity in both variables gives
 
 $$
-\nabla^2(F+\lambda c)=
-\begin{bmatrix}2+\lambda&0\\0&2+2\lambda\end{bmatrix}.
+0\approx\nabla F(q^k)+\lambda^k\nabla c(q^k)
++\underbrace{\left[\nabla^2F(q^k)+\lambda^k\nabla^2c(q^k)\right]}_{B^k\text{ for an exact Newton step}}d
++\nabla c(q^k)\Delta\lambda.
 $$
 
-The constraint contributes curvature. For nonlinear constraints, the objective Hessian alone does not capture the full local constrained problem.
+Define the proposed multiplier $\widehat\lambda=\lambda^k+\Delta\lambda$. Combining the two multiplier terms gives
+
+$$\nabla F(q^k)+B^k d+\widehat\lambda\nabla c(q^k)=0.$$
+
+This is exactly the stationarity condition of the quadratic subproblem, because the gradient of $m_k(d)$ is $\nabla F(q^k)+B^k d$. Together with the linearized active constraint, it reproduces the Newton equations for the original KKT system. This explains the choice
+
+$$
+B^k\approx\nabla_{qq}^2\mathcal L_{\min}(q^k,\lambda^k)
+=\nabla^2F(q^k)+\lambda^k\nabla^2c(q^k).
+$$
+
+Thus, $B^k$ has one consistent meaning: **the quadratic coefficient in the SQP objective, chosen to approximate Lagrangian curvature**. The QP objective is a model for choosing a constrained step; when $\lambda^k\nabla^2c\neq0$, it is not the ordinary second-order Taylor expansion of $F$ alone. The nonlinear constraint's curvature enters this coefficient because the QP replaces the constraint itself with a linear model.
+
+For our example,
+
+$$
+\nabla_{qq}^2\mathcal L_{\min}=
+\begin{bmatrix}2&0\\0&2\end{bmatrix}
++\lambda\begin{bmatrix}1&0\\0&2\end{bmatrix}
+=\begin{bmatrix}2+\lambda&0\\0&2+2\lambda\end{bmatrix}.
+$$
+
+With linear constraints, $\nabla^2c=0$, so the Lagrangian and objective Hessians coincide. They also coincide at an iterate with $\lambda^k=0$, which is the case in our illustrative first step below. In practice, SLSQP updates an approximation to Lagrangian curvature rather than asking us to supply this matrix.
+
+#### Step 5: work through one numerical subproblem
+
+Start at $q^0=(2,2)$ with $E=17$. Total emissions are $6$, giving $11$ units of slack. For this illustrative first step, take $\lambda^0=0$ and $B^0=2I$, the objective Hessian. These are teaching choices, rather than a claim about SLSQP's internal initialization.
+
+At this point,
+
+$$\nabla F(q^0)=\begin{bmatrix}-8\\-8\end{bmatrix},\qquad
+c(q^0)=-11,\qquad
+\nabla c(q^0)=\begin{bmatrix}2\\4\end{bmatrix}.$$
+
+The subproblem becomes
+
+$$
+\min_{d_1,d_2}\;-8d_1-8d_2+d_1^2+d_2^2
+$$
+
+subject to
+
+$$2d_1+4d_2\leq11,\qquad d_1,d_2\geq-2.$$
+
+Without the emissions restriction, the objective first-order conditions give $d_1=d_2=4$, moving directly to $(6,6)$. But this step would use $2(4)+4(4)=24$ units of predicted slack, exceeding the available $11$. The local emissions constraint must bind.
+
+Let $\widehat\lambda$ be its QP multiplier. With the output bounds inactive, the subproblem's stationarity conditions are
+
+$$-8+2d_1+2\widehat\lambda=0,\qquad
+-8+2d_2+4\widehat\lambda=0.$$
+
+Thus $d_1=4-\widehat\lambda$ and $d_2=4-2\widehat\lambda$. Substituting into the binding local constraint gives
+
+$$2(4-\widehat\lambda)+4(4-2\widehat\lambda)=11
+\quad\Rightarrow\quad\widehat\lambda=1.3.$$
+
+Therefore,
+
+$$d^0=(2.7,1.4),\qquad q^0+d^0=(4.7,3.4).$$
+
+The subproblem proposes a larger increase for the cleaner producer. Its multiplier is an estimate from the local problem, not yet the final shadow value $\lambda^*=1$.
+
+#### Step 6: check the proposed step against the original problem
+
+The linearized constraint predicts that the full step exactly meets the cap. The actual emissions are
+
+$$G(4.7,3.4)=\tfrac12(4.7)^2+(3.4)^2=22.605>17.$$
+
+The approximation omitted the quadratic change in emissions. In this example we can see that omission exactly:
+
+$$
+c(q^k+d)=c(q^k)+\nabla c(q^k)^\top d
++\tfrac12d_1^2+d_2^2.
+$$
+
+For $d^0=(2.7,1.4)$, the omitted term is $5.605$. The objective model is exact here, but the linearized constraint is not.
+
+Taking half the proposed step instead gives
+
+$$q^0+\tfrac12d^0=(3.35,2.7).$$
+
+| Allocation | Actual profit | Actual emissions | Feasible? |
+|---|---:|---:|---|
+| Current point $(2,2)$ | 40 | 6 | Yes |
+| Full proposed step $(4.7,3.4)$ | 63.55 | 22.605 | No |
+| Half step $(3.35,2.7)$ | 54.0875 | 12.90125 | Yes |
+
+The half step increases profit and remains feasible. It illustrates why we check the original functions and choose a step length; it does not prescribe the step length SLSQP will take. The next iteration constructs a new local model around the accepted point. **Sequential** means that we repeat this process, updating the point, derivatives, and curvature information as we go.
 
 ### What each iteration does
 
@@ -1719,7 +1957,7 @@ We will use **Sequential Least Squares Quadratic Programming (SLSQP)**, an SQP i
 
 SLSQP uses **BFGS** to update a curvature approximation from changes in points and gradients. This avoids requiring us to supply second derivatives. We provide first derivatives of the objective and constraint.
 
-BFGS is useful for general smooth optimization, but ordinary BFGS does not itself enforce a nonlinear emissions constraint. Its role here is a component of the constrained method. We do not need its matrix-update formula to understand this walkthrough.
+<!-- BFGS is useful for general smooth optimization, but ordinary BFGS does not itself enforce a nonlinear emissions constraint. Its role here is a component of the constrained method. We do not need its matrix-update formula to understand this walkthrough. -->
 
 ## Numerical solution in R
 
@@ -1771,7 +2009,7 @@ fit <- nloptr::nloptr(
 )
 q_star <- fit$solution
 fit$status
-fit$message
+cat(paste(strwrap(fit$message, width = 65), collapse = "\n"), "\n")
 q_star
 c(profit = profit(q_star), emissions = emissions(q_star),
   cap_residual = cap_constraint(q_star))
@@ -1799,7 +2037,7 @@ checks <- c(
   complementarity = abs(lambda_hat*cap_constraint(q_star))
 )
 lambda_hat
-checks
+data.frame(check = names(checks), residual = unname(checks))
 ```
 
 All residuals should be close to zero and $\widehat\lambda$ close to $1$. This recovery assumes positive outputs and a binding cap; a slack cap has multiplier zero, and binding output bounds require their own multipliers.
@@ -1847,7 +2085,7 @@ data.frame(
 )
 ```
 
-Both allocations achieve the same emissions target. Equal output yields total profit of approximately $58.13$, compared with $59$ under the efficient allocation. The relevant policy comparison holds the environmental target fixed.
+At the same emissions target, equal output yields profit of approximately $58.13$, compared with $59$ under the efficient allocation.
 
 > Try $E=10$, $E=30$, and $E=60$. Predict whether the cap binds, how output changes, and whether the shadow value rises or falls. When the cap is slack, why should its multiplier be zero?
 

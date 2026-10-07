@@ -56,7 +56,7 @@
   readings:
     - title: "Kaiser and Messer Ch. 8"
 #       url: "course-materials/"
-#     - title: "McCarl & Spreen Ch. 12"
+    - title: "Helfand and House (1995)"
 #       url: "course-materials/"
 #   ps:
 #     - title: "Problem Set 2"
@@ -64,6 +64,8 @@
   materials:
     - title: "Rootfinding Demo"
       url: "rootfinding/index.html"
+    - title: "Emissions Cap Example"
+      url: "emissions_cap.R"
 #     - title: "Portfolio Problem"
 #       url: "portfolio_problem.r"
 #     - title: "Simulated Method of Moments"
