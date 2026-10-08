@@ -1,0 +1,833 @@
+---
+title: "Helfand and House: A Code Walkthrough"
+subtitle: "Classroom companion to HH_model.R"
+format:
+  html:
+    embed-resources: true
+    toc: true
+    toc-depth: 2
+    code-copy: true
+    code-fold: false
+    code-overflow: wrap
+execute:
+  eval: false
+  echo: true
+---
+
+## How to use this tutorial
+
+Open [HH_model.R](HH_model.R) in RStudio and run a few lines at a time. The
+numbered sections below follow the script in order, with the same code and
+object names. You can also use the **copy button** on each code block and
+paste it into RStudio. Run the blocks from top to bottom in the same R
+session: later blocks use objects created earlier. Code is displayed but
+**never executed when these notes are rendered**; your R session supplies
+the results we discuss in class.
+
+The script needs R and the `nloptr` package. If the package is missing, run
+this once in the R console:
+
+```{r}
+#| label: install-package
+install.packages("nloptr")
+```
+
+The walkthrough is self-contained and can run from any working directory.
+You do not need to source `model.R` or load a dataset first.
+
+Our question is: **How does soil heterogeneity affect the cost of reducing
+agricultural pollution?** Farmers choose nitrogen and irrigation on two
+soils, Mocho and Pacheco. We first solve their unregulated choices, then
+compare seven policies that target the same 20% reduction in average
+leaching. Watch how each policy changes the incentives and the choices
+available to farmers.
+
+<!-- ::: {.callout-note title="The model we are using"}
+This is the classroom reconstruction used in `HH_model.R`, not an exact
+replication of the published tables. It uses a negative linear nitrogen
+coefficient in Mocho's yield equation and omits the
+$-1.11\sqrt{N}$ term in Pacheco's leaching equation. These are reconstruction
+choices, not author-confirmed corrections. The [README](README.md) records
+the source discrepancies. Our task here is to understand the supplied
+model and code.
+::: -->
+
+## 1. Prices, areas, and biological responses
+
+### Set prices and describe the two soils
+
+`library(nloptr)` loads the optimization tools. The assignment operator
+`<-` stores a value under a name; `c()` combines values into a vector.
+`area_share` is a named vector giving the fraction of total land on each
+soil. The paper assumes an equal distribution of lettuce fields across the
+two soil types (p. 1027), so each share is 0.5.
+
+In these notes, we write those shares as $a_s$, where $s$ identifies the
+soil: $a_M=a_P=0.5$ and $a_M+a_P=1$. **The symbol $a_s$ is our notation for
+the paper's equal-area assumption.** These shares are fixed land weights,
+not estimated biological coefficients or choices that farmers optimize.
+
+| Quantity | Units in the script |
+|---|---|
+| Nitrogen, `N` | kg per hectare |
+| Irrigation depth, `W` | mm |
+| Yield | tons of lettuce biomass per hectare |
+| Leaching | kg per hectare |
+| `lettuce_price` | dollars per ton, net of harvest cost |
+| `nitrogen_price` | dollars per kg |
+| `water_price` | dollars per mm-ha |
+| Quasi-rent | dollars per hectare |
+
+```{r}
+#| label: hh-01-1
+library(nloptr)
+
+lettuce_price <- 1350                   # dollars per ton, net of harvest cost
+nitrogen_price <- 0.70                  # dollars per kg
+water_price <- 0.23                     # dollars per mm-ha
+area_share <- c(Mocho = 0.5, Pacheco = 0.5)
+```
+
+### Define the biological response functions
+
+`function(N, W)` creates a reusable calculation. Defining a function does
+not evaluate it; calling it with input values does. R returns the last
+expression in the function body.
+
+The first two functions predict yield; the next two predict leaching.
+Their coefficients differ by soil. The `N*W` interaction means that the
+marginal effect of nitrogen depends on water use, and vice versa.
+`sqrt(N)` and `sqrt(W)` let marginal responses change with input levels.
+A negative linear coefficient alone does not tell us the overall marginal
+effect: we must include the interaction and square-root terms.
+
+```{r}
+#| label: hh-01-2
+# N is kg/ha, W is irrigation depth in mm.
+# Yield is tons of dry lettuce biomass/ha; leaching is kg/ha.
+yield_mocho <- function(N, W) {
+  0.9117 - 0.00363*N - 0.0029*W + 0.00000193*N*W +
+    0.0506*sqrt(N) + 0.156*sqrt(W)
+}
+
+yield_pacheco <- function(N, W) {
+  2.296 - 0.00195*N - 0.00158*W + 0.00000153*N*W +
+    0.0249*sqrt(N) + 0.0732*sqrt(W)
+}
+
+leaching_mocho <- function(N, W) {
+  -26.06 - 0.152*N + 0.158*W + 0.000363*N*W
+}
+
+leaching_pacheco <- function(N, W) {
+  43.82 - 0.17*N + 0.313*W + 0.000466*N*W - 7.28*sqrt(W)
+}
+```
+
+### Evaluate an allocation before optimizing
+
+The first two calls evaluate Mocho at a particular input combination.
+They do not search for better inputs. `starting_inputs` then collects all
+four choices in the order used throughout the script:
+
+$$x=(N_M,W_M,N_P,W_P).$$
+
+`farm_results()` rearranges that vector into a two-row table. R indexes
+from 1, so `x[1]` and `x[3]` select the two nitrogen choices. The function
+calculates quasi-rent on each soil as
+
+$$q_s(N_s,W_s)=p_Y Y_s(N_s,W_s)-c_NN_s-c_WW_s.$$
+
+Quasi-rent subtracts nitrogen and irrigation costs; it does not deduct all
+farm costs. `data.frame()` collects the inputs and outcomes into columns.
+
+```{r}
+#| label: hh-01-3
+# Try one point before optimizing. These are the published Mocho inputs.
+yield_mocho(N = 85, W = 723)
+leaching_mocho(N = 85, W = 723)
+
+# x always contains FOUR choices in this order: N_M, W_M, N_P, W_P.
+starting_inputs <- c(N_M = 85, W_M = 723, N_P = 52, W_P = 478)
+
+# Translate four input choices into a two-row table of economic outcomes.
+farm_results <- function(x) {
+  N <- c(x[1], x[3])
+  W <- c(x[2], x[4])
+  yield <- c(yield_mocho(N[1], W[1]), yield_pacheco(N[2], W[2]))
+  leaching <- c(leaching_mocho(N[1], W[1]), leaching_pacheco(N[2], W[2]))
+  rent <- lettuce_price*yield - nitrogen_price*N - water_price*W
+  #output
+  data.frame(soil = c("Mocho", "Pacheco"), N, W, yield, leaching, rent,
+             row.names = NULL)
+}
+
+farm_results(starting_inputs)
+```
+
+### Convert soil outcomes to landscape averages
+
+`farm_results(x)$rent` extracts the table's rent column. Multiplication by
+`area_share` weights each soil's outcome, and `sum()` adds the contributions:
+
+$$Q(x)=\sum_s a_s q_s(x_s),\qquad L(x)=\sum_s a_s L_s(x_s).$$
+
+These are averages per hectare of the whole landscape, not totals for an
+unspecified farm acreage. With equal areas they are simple averages:
+
+$$L(x)=0.5L_M(x_M)+0.5L_P(x_P).$$
+
+For example, if Mocho leaches 100 kg/ha and Pacheco leaches 40 kg/ha, the
+landscape average is $0.5(100)+0.5(40)=70$ kg/ha. The same land shares weight
+quasi-rent. Their purpose is to give each soil's per-hectare outcome its
+appropriate contribution to the landscape average.
+
+```{r}
+#| label: hh-01-4
+# Quasi-rent excludes costs other than fertilizer and irrigation.
+# Area shares convert soil-specific outcomes to landscape averages per ha.
+mean_rent <- function(x) sum(area_share * farm_results(x)$rent)
+mean_leaching <- function(x) sum(area_share * farm_results(x)$leaching)
+
+mean_rent(starting_inputs)
+mean_leaching(starting_inputs)
+```
+
+**Before moving on:** Identify the four entries in `starting_inputs`, the two rows in `farm_results()`, and the single value returned by `mean_leaching()`. These are three views of the same allocation.
+
+## 2. Optimize the unregulated baseline
+
+We now choose the four inputs to maximize $Q(x)$. With no shared pollution
+constraint, maximizing this weighted sum also solves each soil's private
+problem independently.
+
+### Set numerical bounds and scaling
+
+`rep(1e-6, 4)` repeats a small positive lower bound four times. The floor
+avoids the undefined derivative of a square root at zero. `input_upper`
+limits the search to the reconstruction's numerical domain; these bounds
+are distinct from the policy ceilings introduced later.
+
+The solver works with scaled choices $z$, where
+`x = z * input_scale` (element-by-element multiplication).
+Dividing nitrogen by 100 and water by 1,000 gives variables of more similar
+size. This changes their numerical representation, not their physical units
+when we report results. The fitted response functions should not be
+extrapolated arbitrarily beyond this domain.
+
+```{r}
+#| label: hh-02-1
+# SLSQP is sequential quadratic programming: approximate the objective
+# locally by a quadratic and constraints by linear functions, solve that
+# subproblem, update the input choices, and repeat.
+
+# Keep the original model's numerical domain and scaling.
+# These are computational choices, not additional policies from the paper.
+input_lower <- rep(1e-6, 4)
+input_upper <- c(150, 1000, 100, 700)
+input_scale <- c(100, 1000, 100, 1000)
+```
+
+### Supply the objective and its derivatives
+
+`nloptr()` minimizes an objective, so we minimize **negative** average
+quasi-rent. Dividing it by 1,000 further adjusts numerical scale without
+changing its maximizer.
+
+`rent_gradient(x)` returns the four derivatives of average quasi-rent with
+respect to the physical inputs. For example,
+
+$$\frac{\partial Q}{\partial N_M}
+=a_M\left[p_Y\left(-0.00363+0.00000193W_M+
+\frac{0.0506}{2\sqrt{N_M}}\right)-c_N\right].$$
+
+Each component is the area-weighted value of marginal yield minus the
+input price. `rep(area_share, each = 2)` gives weights in input order:
+$(a_M,a_M,a_P,a_P)$. By contrast, `rep(c(nitrogen_price, water_price), 2)`
+repeats the whole price pair.
+
+```{r}
+#| label: hh-02-2
+# SLSQP minimizes. Negate rent to maximize it.
+# The optimizer chooses z; x = z*input_scale converts back to physical units.
+# SLSQP uses first derivatives. These are the four marginal quasi-rents.
+# Writing them explicitly keeps square-root derivatives inside their domain.
+rent_gradient <- function(x) {
+  N_M <- x[1]; W_M <- x[2]; N_P <- x[3]; W_P <- x[4]
+  yield_slopes <- c(
+    -0.00363 + 0.00000193*W_M + 0.0506/(2*sqrt(N_M)),
+    -0.0029 + 0.00000193*N_M + 0.156/(2*sqrt(W_M)),
+    -0.00195 + 0.00000153*W_P + 0.0249/(2*sqrt(N_P)),
+    -0.00158 + 0.00000153*N_P + 0.0732/(2*sqrt(W_P))
+  )
+  rep(area_share, each = 2) *
+    (lettuce_price*yield_slopes - rep(c(nitrogen_price, water_price), 2))
+}
+baseline_objective <- function(z) -mean_rent(z * input_scale) / 1000
+```
+
+### Ask SLSQP to find the baseline
+
+SLSQP (sequential quadratic programming) repeatedly builds and solves a
+local approximation to the optimization problem, then updates the choices.
+
+| Argument | Meaning here |
+|---|---|
+| `x0` | Initial guess in scaled units |
+| `eval_f` | Function calculating the objective |
+| `eval_grad_f` | Function calculating the objective's gradient |
+| `lb`, `ub` | Lower and upper bounds in scaled units |
+| `algorithm` | Selects SLSQP |
+| `xtol_rel`, `ftol_abs` | Stopping tolerances for changes in choices and objective |
+| `maxeval` | Limit on objective evaluations |
+
+The gradient callback includes a minus sign, division by 1,000, and
+multiplication by `input_scale`. The last factor follows from the chain
+rule because the solver changes $z$, while `rent_gradient()` differentiates
+with respect to $x$. `function(z)` defines that callback directly inside
+the solver call.
+
+The returned object contains more than the solution. When running the
+script, inspect `baseline_fit$status` and `baseline_fit$message` if you
+need to diagnose convergence. A returned vector alone does not establish
+that an optimizer succeeded.
+
+```{r}
+#| label: hh-02-3
+baseline_fit <- nloptr(
+  x0 = starting_inputs / input_scale,
+  eval_f = baseline_objective,
+  eval_grad_f = function(z) -rent_gradient(z * input_scale) * input_scale / 1000,
+  lb = input_lower / input_scale,
+  ub = input_upper / input_scale,
+  opts = list(algorithm = "NLOPT_LD_SLSQP", xtol_rel = 1e-10,
+              ftol_abs = 1e-12, maxeval = 2000)
+)
+```
+
+## 3. Look at the baseline
+
+### Recover physical inputs and set the target
+
+`$solution` extracts the solver's chosen vector. Multiplying by
+`input_scale` converts it back to kg/ha and mm. Printing
+`farm_results(baseline_inputs)` shows whether the two soils choose different
+inputs even though they face the same prices.
+
+Save baseline quasi-rent and leaching before introducing any policy.
+Every policy uses the common target
+
+$$\bar L=0.8L(x^0),$$
+
+where $x^0$ is the computed baseline. A 20% reduction in **average leaching**
+does not require a 20% reduction in every input or on every soil.
+
+```{r}
+#| label: hh-03-1
+baseline_inputs <- baseline_fit$solution * input_scale
+baseline_inputs
+farm_results(baseline_inputs)
+baseline_rent <- mean_rent(baseline_inputs)
+baseline_leaching <- mean_leaching(baseline_inputs)
+baseline_rent
+baseline_leaching
+
+# Every policy below targets the same 20% reduction.
+leaching_target <- 0.8 * baseline_leaching
+leaching_target
+```
+
+### Keep the policy accounting consistent
+
+`policy_result()` builds one row for the final comparison. Its default
+`taxes = rep(0, 4)` means zero taxes unless a vector is supplied. The tax
+vector always follows $(N_M,W_M,N_P,W_P)$.
+
+For each soil, tax payments equal each per-unit rate times its input use.
+Area weights then turn those payments into dollars per landscape hectare.
+The accounting is
+
+$$\text{efficiency cost}=Q(x^0)-Q(x),$$
+$$\text{farmer net rent}=Q(x)-\text{tax payments}.$$
+
+Tax payments reduce farmers' receipts but are transfers in this model's
+efficiency accounting. We therefore do not add them to efficiency cost.
+Administrative costs and environmental damages are not included. The
+baseline row should have zero efficiency cost and zero tax payments.
+
+```{r}
+#| label: hh-03-2
+# One small reporting function lets us compare all the policies consistently.
+# Taxes are transfers; efficiency cost is lost PRE-TAX quasi-rent.
+policy_result <- function(policy, x, taxes = rep(0, 4)) {
+  tax_by_soil <- c(sum(taxes[1:2] * x[1:2]), sum(taxes[3:4] * x[3:4]))
+  transfers <- sum(area_share * tax_by_soil)
+  data.frame(policy,
+             efficiency_cost = baseline_rent - mean_rent(x),
+             leaching = mean_leaching(x),
+             tax_payments = transfers,
+             farmer_net_rent = mean_rent(x) - transfers)
+}
+
+baseline_result <- policy_result("Baseline", baseline_inputs)
+baseline_result
+```
+
+## 4. Efficient allocation and differentiated taxes
+
+### Impose the environmental target directly
+
+For the efficient benchmark, a planner chooses all four inputs:
+
+$$\max_x Q(x)\quad\text{subject to}\quad L(x)\leq\bar L.$$
+
+The objective is unchanged. The new ingredient is `pollution_constraint()`.
+`nloptr()` expects inequalities in the form $g(z)\leq0$, so the function
+returns leaching **minus** the target, divided by 100 for scaling.
+A positive value means excess pollution; zero means the cap binds.
+
+`eval_g_ineq` supplies this constraint, and `eval_jac_g_ineq` supplies its
+derivatives. `nl.grad()` approximates derivatives numerically by evaluating
+nearby points. The initial guess is the unregulated baseline, which exceeds
+the pollution target; the constrained solver must move to a feasible
+allocation. Compare the resulting average leaching with `leaching_target`.
+
+```{r}
+#| label: hh-04-1
+# The planner chooses all four inputs. nloptr expects g(z) <= 0.
+efficient_objective <- function(z) -mean_rent(z * input_scale) / 1000
+pollution_constraint <- function(z) {
+  (mean_leaching(z * input_scale) - leaching_target) / 100
+}
+
+efficient_fit <- nloptr(
+  x0 = baseline_inputs / input_scale,
+  eval_f = efficient_objective,
+  eval_grad_f = function(z) -rent_gradient(z * input_scale) * input_scale / 1000,
+  eval_g_ineq = pollution_constraint,
+  eval_jac_g_ineq = function(z) nl.grad(z, pollution_constraint),
+  lb = input_lower / input_scale,
+  ub = input_upper / input_scale,
+  opts = list(algorithm = "NLOPT_LD_SLSQP", xtol_rel = 1e-10, maxeval = 2000)
+)
+
+efficient_inputs <- efficient_fit$solution * input_scale
+farm_results(efficient_inputs)
+mean_leaching(efficient_inputs)
+```
+
+### Translate the efficient allocation into input taxes
+
+Using the Lagrangian $Q(x)+\lambda[\bar L-L(x)]$, an interior input choice
+satisfies
+
+$$\frac{\partial Q}{\partial x_i}
+=\lambda\frac{\partial L}{\partial x_i}.$$
+
+The code recovers $\lambda$ from the Mocho nitrogen condition by taking a
+ratio of derivatives. This calculation assumes that input is interior,
+the pollution constraint binds, and its marginal leaching is nonzero; an
+active input bound would introduce another term into the condition.
+
+`shadow_value` is the marginal increase in maximized quasi-rent from
+relaxing the leaching target by one unit: dollars per kg of allowed
+leaching. Both derivatives in the ratio carry the same area weight, so it
+cancels. These derivatives use physical inputs and unscaled outcomes;
+there is no need to undo the solver's objective or constraint scaling.
+
+A supporting per-unit input tax on soil $s$ is
+
+$$t_{Ns}=\lambda\frac{\partial L_s}{\partial N_s},\qquad
+ t_{Ws}=\lambda\frac{\partial L_s}{\partial W_s},$$
+
+evaluated at the efficient allocation. `leaching_slopes` contains derivatives
+of **average** leaching, so dividing by `rep(area_share, each = 2)` removes
+the area weights. Nitrogen rates are dollars/kg; water rates are dollars/mm-ha.
+The resulting four rates can differ across soils because marginal leaching
+differs. Section 5 checks whether farmers facing these rates choose the
+planner's allocation.
+
+```{r}
+#| label: hh-04-2
+# Recover lambda from the nitrogen FOC on Mocho: q_N = lambda * L_N.
+# Reuse the rent derivatives; nl.grad estimates the leaching derivatives.
+rent_slopes <- rent_gradient(efficient_inputs)
+leaching_slopes <- nl.grad(efficient_inputs, mean_leaching)
+shadow_value <- rent_slopes[1] / leaching_slopes[1]
+shadow_value                          # dollars per kg of allowed leaching
+
+# Differentiated taxes: lambda times each soil's marginal leaching.
+# Remove area weights from the slopes of LANDSCAPE-average leaching.
+differentiated_taxes <- shadow_value * leaching_slopes /
+  rep(area_share, each = 2)
+names(differentiated_taxes) <- names(starting_inputs)
+differentiated_taxes
+
+efficient_result <- policy_result("Differentiated taxes", efficient_inputs,
+                                  differentiated_taxes)
+efficient_result
+```
+
+## 5. Farmer responses to a tax or input ceiling
+
+`choose_inputs()` is the producer-response function used by all remaining
+policies. Give it four tax rates, four ceilings, or both; it returns four
+chosen inputs in physical units. By default it applies no taxes and retains
+the numerical upper bounds.
+
+Inside the function, farmers maximize **after-tax** quasi-rent:
+
+$$\sum_s a_s[q_s(N_s,W_s)-t_{Ns}N_s-t_{Ws}W_s].$$
+
+`after_tax_objective()` and `after_tax_gradient()` can use the `taxes`
+argument supplied to the surrounding function. The gradient subtracts the
+area-weighted tax rates from the marginal pre-tax returns. Because soils
+have separate technologies and no shared constraint in this step, one
+optimization solves both farmers' choices.
+
+Ceilings enter through `ub`. `pmin(baseline_inputs, ceilings)` takes the
+smaller value at each position to keep the initial guess within those
+ceilings. A ceiling restricts an input to be **at most** that amount; it
+does not force the farmer to use it.
+
+The last expression returns `fit$solution * input_scale`. Compare the two
+vectors printed at the end: `choose_inputs(taxes = differentiated_taxes)`
+and `efficient_inputs` should be close if the supporting taxes decentralize
+the efficient allocation and both solves converge.
+
+```{r}
+#| label: hh-05-1
+# Reuse the baseline optimization, now allowing taxes and policy ceilings.
+# Maximizing aggregate farmer receipts here also solves each farmer's problem:
+# farmers have separate technologies and no shared constraint in this step.
+choose_inputs <- function(taxes = rep(0, 4), ceilings = input_upper) {
+  after_tax_objective <- function(z) {
+    x <- z * input_scale
+    tax_by_soil <- c(sum(taxes[1:2]*x[1:2]), sum(taxes[3:4]*x[3:4]))
+    -(mean_rent(x) - sum(area_share * tax_by_soil)) / 1000
+  }
+  after_tax_gradient <- function(z) {
+    -(rent_gradient(z * input_scale) - rep(area_share, each = 2) * taxes) *
+      input_scale / 1000
+  }
+  fit <- nloptr(
+    x0 = pmin(baseline_inputs, ceilings) / input_scale,
+    eval_f = after_tax_objective,
+    eval_grad_f = after_tax_gradient,
+    lb = input_lower / input_scale,
+    ub = ceilings / input_scale,
+    opts = list(algorithm = "NLOPT_LD_SLSQP", xtol_rel = 1e-10,
+                ftol_abs = 1e-12, maxeval = 2000)
+  )
+  fit$solution * input_scale
+}
+
+# Example: farmers facing the differentiated taxes choose the efficient inputs.
+choose_inputs(taxes = differentiated_taxes)
+efficient_inputs
+```
+
+## 6. Uniform taxes on both inputs
+
+### Separate the regulator's choice from the farmers' choices
+
+Now there are only two tax rates: one for nitrogen and one for water,
+shared by both soils. The regulator cannot set four independent rates.
+`rep(z * tax_scale, 2)` expands the two scaled rates into
+$(t_N,t_W,t_N,t_W)$ before calling `choose_inputs()`.
+
+This is a nested problem. For each candidate tax pair, farmers choose
+inputs; the regulator evaluates the resulting quasi-rent and leaching:
+
+$$\max_{t_N,t_W\geq0}Q(x(t_N,t_W))
+\quad\text{subject to}\quad L(x(t_N,t_W))\leq\bar L.$$
+
+The inner farmer problem subtracts taxes. The outer regulator objective
+uses **pre-tax** quasi-rent, consistent with treating tax revenue as a
+transfer. Here `z` represents two scaled tax rates, rather than the four
+scaled inputs used in earlier solver calls.
+
+```{r}
+#| label: hh-06-1
+# Regulator chooses TWO rates, repeated across soils: (t_N, t_W, t_N, t_W).
+# Each trial pair requires farmers to re-optimize all four input choices.
+tax_scale <- c(1, 0.2)
+uniform_response <- function(z) {
+  choose_inputs(taxes = rep(z * tax_scale, 2))
+}
+uniform_objective <- function(z) -mean_rent(uniform_response(z)) / 1000
+uniform_constraint <- function(z) {
+  (mean_leaching(uniform_response(z)) - leaching_target) / 100
+}
+```
+
+### Find the tax pair and inspect the induced allocation
+
+Each call to `uniform_objective()` or `uniform_constraint()` triggers a
+farmer optimization. Numerical derivatives therefore measure how outcomes
+change after farmers re-optimize in response to a changed tax rate.
+`heps = 1e-4` sets the finite-difference step used by `nl.grad()`; the outer
+solver also specifies a constraint tolerance.
+
+`lb = c(0, 0)` restricts both tax rates to be nonnegative. After solving,
+`uniform_fit$solution * tax_scale` recovers rates in actual price units.
+The code then solves the farmers' problem at those rates and records the
+policy outcome. This nested calculation may take more time than a single
+farmer solve.
+
+**Pause and discuss:** Why can uniform tax rates lead to different input
+choices on the two soils? What flexibility does the regulator lose relative
+to differentiated taxes?
+
+```{r}
+#| label: hh-06-2
+# SLSQP again; nl.grad estimates how the regulator's objective and constraint
+# change when the tax rates change and farmers re-optimize.
+uniform_fit <- nloptr(
+  x0 = c(0.06, 0.9),
+  eval_f = uniform_objective,
+  eval_grad_f = function(z) nl.grad(z, uniform_objective, heps = 1e-4),
+  eval_g_ineq = uniform_constraint,
+  eval_jac_g_ineq = function(z) nl.grad(z, uniform_constraint, heps = 1e-4),
+  lb = c(0, 0),
+  opts = list(algorithm = "NLOPT_LD_SLSQP", xtol_rel = 1e-9,
+              maxeval = 5000, tol_constraints_ineq = 1e-9)
+)
+
+uniform_rates <- uniform_fit$solution * tax_scale
+names(uniform_rates) <- c("nitrogen", "water")
+uniform_rates
+uniform_inputs <- choose_inputs(taxes = rep(uniform_rates, 2))
+farm_results(uniform_inputs)
+uniform_result <- policy_result("Uniform taxes on both inputs", uniform_inputs,
+                                rep(uniform_rates, 2))
+uniform_result
+```
+
+## 7. Uniform nitrogen-only tax
+
+With only one tax rate to determine, the script uses root finding. Define
+
+$$h(t)=L(x(t,0))-\bar L.$$
+
+`nitrogen_tax_gap(t)` calculates this gap after farmers choose both inputs.
+A positive gap means the policy misses the target; a negative gap means it
+reduces leaching beyond the target. `uniroot()` searches for a rate where
+the gap is zero, and `$root` extracts that rate.
+
+The interval `c(0, 15)` brackets the root for this specification: the endpoint
+gaps must have opposite signs (or an endpoint must already be a root).
+It is a search interval, not a policy restriction. If prices, coefficients,
+or the target change, check the endpoint gaps before reusing the interval.
+A bracketed root search finds a target-achieving rate; it is not a general
+proof that responses are monotone or the root is unique.
+
+The vector `c(t, 0, t, 0)` taxes nitrogen on both soils. **Water remains a
+choice**, so a nitrogen-only tax can also change irrigation. The final
+assignment saves a comparison row; assignments do not automatically print
+in R, so type `nitrogen_tax_result` to inspect it immediately.
+
+```{r}
+#| label: hh-07-1
+# With one instrument, find the rate that makes leaching equal the target.
+# The intervals in these examples bracket the target for THIS specification.
+# They are search intervals, not economic limits on the instruments.
+nitrogen_tax_gap <- function(t) {
+  x <- choose_inputs(taxes = c(t, 0, t, 0))
+  mean_leaching(x) - leaching_target
+}
+nitrogen_rate <- uniroot(nitrogen_tax_gap, interval = c(0, 15), tol = 1e-8)$root
+nitrogen_rate
+nitrogen_tax_inputs <- choose_inputs(taxes = c(nitrogen_rate, 0, nitrogen_rate, 0))
+farm_results(nitrogen_tax_inputs)
+nitrogen_tax_result <- policy_result("Uniform nitrogen-only tax", nitrogen_tax_inputs,
+                                     c(nitrogen_rate, 0, nitrogen_rate, 0))
+```
+
+## 8. Uniform water-only tax
+
+This repeats the root-finding logic with `c(0, t, 0, t)`. The nitrogen tax
+is zero, but farmers still re-optimize nitrogen along with water. The
+search interval is now `c(0, 1)`, in dollars per mm-ha.
+
+Compare `farm_results(water_tax_inputs)` with the nitrogen-tax allocation.
+Look at both columns of inputs and both soils' leaching. The cost of an
+instrument depends on how it changes the full production decision, not
+just the quantity it directly taxes. Both policies seek the same average
+leaching target, making their efficiency costs comparable.
+
+```{r}
+#| label: hh-08-1
+water_tax_gap <- function(t) {
+  x <- choose_inputs(taxes = c(0, t, 0, t))
+  mean_leaching(x) - leaching_target
+}
+water_rate <- uniroot(water_tax_gap, interval = c(0, 1), tol = 1e-8)$root
+water_rate
+water_tax_inputs <- choose_inputs(taxes = c(0, water_rate, 0, water_rate))
+farm_results(water_tax_inputs)
+water_tax_result <- policy_result("Uniform water-only tax", water_tax_inputs,
+                                  c(0, water_rate, 0, water_rate))
+```
+
+## 9. Common nitrogen ceiling
+
+We now regulate a quantity instead of raising an input price.
+`c(cap, 1000, cap, 700)` applies the same nitrogen ceiling to both soils
+and leaves their water bounds at the original numerical values.
+
+`nitrogen_cap_gap()` solves the farmer problem under each proposed cap.
+`uniroot()` adjusts that cap until average leaching equals the target.
+The interval `c(5, 85)` is measured in kg of nitrogen per hectare.
+
+A common ceiling means $N_M\leq\text{cap}$ and
+$N_P\leq\text{cap}$, not that nitrogen use must be identical. Compare the
+chosen quantities to `nitrogen_cap` to see which constraints bind.
+`policy_result()` receives no tax vector, so tax payments default to zero.
+Farmers can still lose quasi-rent because the ceiling restricts their choices.
+
+```{r}
+#| label: hh-09-1
+nitrogen_cap_gap <- function(cap) {
+  x <- choose_inputs(ceilings = c(cap, 1000, cap, 700))
+  mean_leaching(x) - leaching_target
+}
+nitrogen_cap <- uniroot(nitrogen_cap_gap, interval = c(5, 85), tol = 1e-8)$root
+nitrogen_cap
+nitrogen_cap_inputs <- choose_inputs(ceilings = c(nitrogen_cap, 1000, nitrogen_cap, 700))
+farm_results(nitrogen_cap_inputs)
+nitrogen_cap_result <- policy_result("Nitrogen cap", nitrogen_cap_inputs)
+```
+
+## 10. Common water ceiling
+
+The policy ceiling applies to water on both soils. The `pmin()` operation
+compares the proposed ceilings with `input_upper` element by element. This
+keeps a proposed water cap above 700 from inadvertently expanding Pacheco's
+original numerical domain.
+
+The root search chooses a cap in mm that achieves the common leaching
+target. After running it, compare the two water choices with `water_cap`.
+As the script notes, Pacheco can use less than the ceiling: a common maximum
+does not require equal irrigation. Nitrogen remains adjustable.
+
+**Pause and discuss:** How could a water tax affect a farmer whose water use
+would be below a common water ceiling? Why might that change the allocation
+across soils even when aggregate leaching is the same?
+
+```{r}
+#| label: hh-10-1
+water_cap_gap <- function(cap) {
+  x <- choose_inputs(ceilings = pmin(input_upper, c(150, cap, 100, cap)))
+  mean_leaching(x) - leaching_target
+}
+water_cap <- uniroot(water_cap_gap, interval = c(500, 723), tol = 1e-8)$root
+water_cap
+water_cap_inputs <- choose_inputs(ceilings = pmin(input_upper, c(150, water_cap, 100, water_cap)))
+farm_results(water_cap_inputs)           # Pacheco can use less than the ceiling
+water_cap_result <- policy_result("Water cap", water_cap_inputs)
+```
+
+## 11. Water and nitrogen caps as percentages of baseline
+
+This policy uses a common reduction fraction $r$ to set four ceilings:
+
+$$x_i\leq(1-r)x_i^0.$$
+
+The percentage is common, but the numerical ceilings differ because they
+are based on each soil's own baseline choices. For example, $r = 0.1$
+would set each ceiling at 90% of that input's baseline quantity.
+
+`both_caps_gap()` lets farmers optimize below those ceilings, then measures
+the leaching gap. `uniroot()` searches between zero and a 30% rollback.
+The resulting `reduction_fraction` need not equal 0.2: a percentage reduction
+in inputs is different from a percentage reduction in leaching.
+
+`both_ceilings` stores the limits and `both_caps_inputs` stores actual
+choices. Compare them to identify binding ceilings rather than assuming
+all four inputs must equal their limits. There are no tax payments.
+
+```{r}
+#| label: hh-11-1
+# A common percentage r creates four soil-specific ceilings.
+both_caps_gap <- function(r) {
+  x <- choose_inputs(ceilings = (1-r) * baseline_inputs)
+  mean_leaching(x) - leaching_target
+}
+reduction_fraction <- uniroot(both_caps_gap, interval = c(0, 0.3), tol = 1e-9)$root
+reduction_fraction
+both_ceilings <- (1-reduction_fraction) * baseline_inputs
+both_ceilings
+both_caps_inputs <- choose_inputs(ceilings = both_ceilings)
+farm_results(both_caps_inputs)
+both_caps_result <- policy_result("Water and nitrogen caps (% of baseline)", both_caps_inputs)
+```
+
+## 12. Compare policies
+
+`rbind()` stacks the saved one-row data frames into a single table. The
+baseline plus seven policies produces eight rows. `digits = 6` controls
+printed precision, while `row.names = FALSE` hides row labels.
+
+| Column | How to interpret it |
+|---|---|
+| `efficiency_cost` | Lost pre-tax quasi-rent relative to baseline, dollars/ha |
+| `leaching` | Average leaching, kg/ha |
+| `tax_payments` | Area-weighted payments to the regulator, dollars/ha |
+| `farmer_net_rent` | Quasi-rent after tax payments, dollars/ha |
+
+First compare each regulated row's leaching with `leaching_target`, allowing
+for numerical tolerance. Then compare efficiency costs at that common
+outcome. Finally, compare farmer net rents to see the additional effect of
+tax payments. The efficient benchmark should provide a lower bound on
+production costs for the other feasible policies in this model; a lower
+reported cost elsewhere is a reason to inspect feasibility and convergence.
+
+The last two calls return to soil-level outcomes. An aggregate table can
+hide which soil adjusts and which farmers bear the production losses.
+
+```{r}
+#| label: hh-12-1
+policy_comparison <- rbind(baseline_result, efficient_result, uniform_result,
+                           both_caps_result, nitrogen_tax_result, water_tax_result,
+                           nitrogen_cap_result, water_cap_result)
+print(policy_comparison, digits = 6, row.names = FALSE)
+
+# Inspect any soil-level allocation using farm_results(), for example:
+farm_results(water_tax_inputs)
+farm_results(water_cap_inputs)
+
+# This walkthrough intentionally omits the original program's checks,
+# full derivative machinery, multi-start searches, and automatic root bracketing.
+# Keep model.R and validate_model.R as the reference for research/extensions.
+```
+
+### Questions to answer from your run
+
+1. Why do the two soils choose different inputs at the same market prices?
+2. How do the differentiated nitrogen and water taxes vary across soils,
+   and how does marginal leaching explain those differences?
+3. How much additional efficiency cost comes from restricting the regulator
+   to uniform rates or to a single taxed input?
+4. Which ceilings bind? How do adjustments in the unrestricted input affect
+   the pollution outcome?
+5. Which policy has the lowest efficiency cost, and which leaves farmers
+   with the highest net rent? Explain any difference using the tax payments.
+
+### If you change the model
+
+Run again from Section 1 so all functions, the baseline, the target, and
+policy results reflect the same assumptions. Recheck root-search brackets,
+solver messages, and target attainment. SLSQP is a local numerical method;
+its output alone does not prove global optimality in an altered model.
+
+`HH_model.R` deliberately keeps the classroom steps visible and omits the
+larger implementation's automated verification and multiple-start searches.
+Use `model.R` and `validate_model.R` as the reference for research extensions.
+The separate [model lab](Helfand_Model_Lab.qmd) provides the assignment.
+
+## Reference
+
+Helfand, Gloria E., and Brett W. House. 1995. "Regulating Nonpoint Source
+Pollution Under Heterogeneous Conditions." *American Journal of Agricultural
+Economics* 77(4):1024–1032. <https://doi.org/10.2307/1243825>.

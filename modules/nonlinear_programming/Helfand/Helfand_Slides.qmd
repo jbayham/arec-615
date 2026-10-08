@@ -1,0 +1,534 @@
+---
+title: "Helfand and House (1995)"
+subtitle: "Regulating nonpoint source pollution under heterogeneous conditions"
+author: "AREC 615"
+date: "2026-10-08"
+date-format: "MMMM D, YYYY"
+format:
+  revealjs:
+    theme: [simple, slides.scss]
+    width: 1280
+    height: 720
+    margin: 0.07
+    center: false
+    transition: none
+    slide-number: c/t
+    progress: true
+    controls: true
+    navigation-mode: linear
+    embed-resources: true
+    html-math-method: katex
+    preview-links: false
+    chalkboard: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+source("paper_tables.R")
+knitr::opts_chunk$set(dev="png", dpi=180, fig.width=11.5, fig.height=4.25)
+theme_set(theme_minimal(base_size=19) +
+  theme(panel.grid.minor=element_blank(), panel.grid.major.y=element_blank(),
+        plot.background=element_rect(fill="#faf9f5", color=NA),
+        panel.background=element_rect(fill="#faf9f5", color=NA),
+        text=element_text(color="#20352f"),
+        plot.margin=margin(8, 24, 8, 8)))
+```
+
+
+
+## Why regulate inputs?
+
+- Nitrate can leach below the crop root zone and reach groundwater.
+- Effluent is difficult to measure and attribute to individual farms. (Nonpoint source pollution)
+- Fertilizer and irrigation are potential ***points*** of regulation.
+
+**The difficulty:** an input is observable more readily than its contribution to pollution.
+
+::: {.prompt}
+Would a kilogram of fertilizer cause the same leaching on every farm?
+:::
+
+<!-- ::: {.source}
+Helfand and House (1995), pp. 1024–1025. Historical policy setting of the paper.
+::: -->
+
+::: {.notes}
+Opening: frame the cost of a common input policy across different farms. The deck has 20 main slides and 2 backup slides.
+
+3 minutes. Separate observability of inputs from perfect enforceability. Input taxes can also have resale problems when rates differ by farm. Do not frame this historical motivation as a description of current law. Source: paper pp. 1024–1025.
+:::
+
+## The cost of uniform regulation
+
+Different soils imply different **yield responses** and **leaching responses**.
+
+Tailored input instruments can implement the efficient allocation, but require more information and administration.
+
+**The empirical question:** How much additional production cost does a common policy impose?
+
+::: {.prompt}
+Does it matter more which input we regulate, or whether rates differ across farms?
+:::
+
+::: {.notes}
+4 minutes. Collect predictions without resolving them. Theory identifies why uniform input taxes generally fail to implement the efficient allocation. It does not tell us the magnitude of the efficiency loss. Sources: paper pp. 1025–1026.
+:::
+
+## Lettuce production on two soils
+
+California’s Salinas Valley; equal areas of each soil.
+
+| Unregulated outcome | Mocho | Pacheco |
+|:--|--:|--:|
+| Nitrogen applied (kg/ha) | 85 | 52 |
+| Irrigation depth (mm) | 723 | 478 |
+| Dry lettuce biomass (tons/ha) | 3.296 | 3.257 |
+| Nitrate leaching (kg/ha) | 97 | 37 |
+
+**Similar yields, very different input use and leaching.**
+
+::: {.source}
+Published values: Tables 3–4, p. 1030. Irrigation is reported as “mm/ha” in the paper.
+:::
+
+::: {.notes}
+4 minutes. Mocho is silty loam; Pacheco is silty clay loam. Mocho is more porous. Explain irrigation as depth applied per hectare: mm of depth; cost uses dollars per mm-ha. Use the paper's nitrate convention for leaching. Do not imply yield or leaching differences are causal soil treatment estimates. Sources: paper pp. 1027–1030, Tables 3–4.
+:::
+
+## Building the response functions
+
+**EPIC simulations** → **estimated biological responses** → **economic optimization**
+
+For soil $s$, estimate yield $Y_s(N_s,W_s)$ and leaching $L_s(N_s,W_s)$.
+
+- Nitrogen and irrigation affect both outputs (lettuce yield and nitrate leaching).
+- Nonlinear responses allow marginal effects to change with input use.
+- The run a bunch of simulations and fit yield and leaching response functions.
+
+::: {.source}
+Helfand and House (1995), pp. 1026–1028, Table 1.
+:::
+
+::: {.notes}
+3 minutes. EPIC generates observations used to estimate reduced-form response functions. These are not observed causal responses to a tax. The response function's valid domain matters. The following slide shows conditional response curves and their equations; printed coefficients are in the response-functions backup slide.
+:::
+
+## Yield and leaching responses {.response-slide .nostretch}
+
+```{r biological-responses, fig.width=11.5, fig.height=4.5, out.width="100%"}
+source("model.R")
+response_parameters <- helfand_parameters("table_reconstruction")
+baseline_inputs <- subset(paper_soils(), policy == "baseline")
+
+# Conditional response curves: vary N within both soils' numerical domains,
+# holding irrigation at each soil's published unregulated value.
+response_curves <- do.call(rbind, lapply(seq_len(nrow(baseline_inputs)), function(i) {
+  soil <- baseline_inputs$soil[i]
+  nitrogen <- sort(unique(c(seq(1, 100, length.out=300), baseline_inputs$N[i])))
+  irrigation <- baseline_inputs$W[i]
+  do.call(rbind, lapply(c("yield", "leach"), function(outcome) {
+    data.frame(
+      soil=soil, N=nitrogen,
+      outcome=if (outcome == "yield") "Yield (tons dry biomass/ha)" else "Nitrate leaching (kg/ha)",
+      value=vapply(nitrogen, function(n) {
+        response(c(n, irrigation), response_parameters[[outcome]][soil, ])
+      }, numeric(1)),
+      baseline_N=nitrogen == baseline_inputs$N[i]
+    )
+  }))
+}))
+response_curves$outcome <- factor(response_curves$outcome,
+  levels=c("Yield (tons dry biomass/ha)", "Nitrate leaching (kg/ha)"))
+response_plot <- ggplot(response_curves, aes(N, value, color=soil)) +
+  geom_line(linewidth=1.2) +
+  geom_point(data=subset(response_curves, baseline_N), size=3) +
+  facet_wrap(~outcome, nrow=1, scales="free_y") +
+  scale_color_manual(values=c(Mocho="#237468", Pacheco="#b97739")) +
+  scale_x_continuous(breaks=c(0, 25, 50, 75, 100)) +
+  labs(x="Nitrogen applied (kg/ha)", y=NULL, color=NULL,
+       subtitle="Irrigation held at 723 mm on Mocho and 478 mm on Pacheco",
+       caption="Classroom reconstruction; dots mark published baseline nitrogen inputs, evaluated on the fitted curves.") +
+  theme(legend.position="top", strip.text=element_text(face="bold", size=18),
+        plot.subtitle=element_text(size=16), plot.caption=element_text(size=12, hjust=0),
+        panel.grid.major.y=element_line(color="#e2e5df", linewidth=.3))
+response_plot
+```
+
+
+::: {.response-equations}
+$$
+\begin{aligned}
+Y_M(N,W)&=0.9117-0.00363N-0.0029W+1.93\!\times\!10^{-6}NW+0.0506\sqrt N+0.156\sqrt W\\
+Y_P(N,W)&=2.296-0.00195N-0.00158W+1.53\!\times\!10^{-6}NW+0.0249\sqrt N+0.0732\sqrt W\\
+L_M(N,W)&=-26.06-0.152N+0.158W+0.000363NW\\
+L_P(N,W)&=43.82-0.17N+0.313W+0.000466NW-7.28\sqrt W
+\end{aligned}
+$$
+:::
+
+::: {.response-caveat}
+Working reconstruction: $M$ = Mocho, $P$ = Pacheco. Pacheco’s printed $-1.11\sqrt N$ term is omitted (unverified assumption).
+:::
+
+::: {.notes}
+The panels are slices through two-input response surfaces, not total responses allowing irrigation to adjust. Nitrogen varies from 1 to 100 kg/ha. Irrigation is fixed at each soil's published baseline (723 mm on Mocho, 478 mm on Pacheco); thus the comparison combines soil differences with different irrigation levels. Dots are reconstructed responses at published baseline nitrogen inputs, not published yield/leaching observations. The plot uses the negative Mocho nitrogen yield coefficient and omits the Pacheco square-root nitrogen leaching term, as documented in the source audit. Consequently, leaching is linear in nitrogen at fixed water in this reconstruction; the full leaching functions still depend on both inputs.
+
+Equations display the full two-input functions used to generate the curves, not the literal printed Table 1 specification. Mocho's printed linear nitrogen yield coefficient is positive; the reconstruction changes its sign. The square-root nitrogen leaching coefficient is zero for Mocho in Table 1, but is -1.11 for Pacheco in print. Only the reconstruction sets Pacheco's coefficient to zero. With W fixed, the NW interaction contributes to the constant nitrogen slope; Pacheco's square-root W term contributes to the intercept. Therefore these plotted leaching slices are exactly linear in N. Sources: paper Table 1; model.R and the classroom source audit.
+:::
+
+## The farmer’s unregulated problem
+
+For each soil $s\in\{M,P\}$:
+
+$$\max_{N_s,W_s}\quad q_s=p_Y Y_s(N_s,W_s)-c_NN_s-c_WW_s$$
+
+At an interior optimum:
+
+$$p_Y Y_{s,N}=c_N,\qquad p_Y Y_{s,W}=c_W$$
+
+**Marginal revenue product equals the input price.**
+
+::: {.small}
+$p_Y=\$1{,}350$/ton; $c_N=\$0.70$/kg; $c_W=\$0.23$/mm-ha.  
+Quasi-rent subtracts nitrogen and irrigation costs, not all farm costs.
+:::
+
+::: {.notes}
+5 minutes. Define Y as harvestable dry lettuce biomass; output price is net of harvesting cost. Other input costs are omitted. First-order conditions assume differentiability and an interior solution; they alone do not prove a maximum. Source: paper p. 1028 and Table 1; local model notes, Unregulated choices.
+:::
+
+## The least-cost pollution target
+
+Choose $x=(N_M,W_M,N_P,W_P)$:
+
+$$\max_x\;\sum_s a_s q_s(N_s,W_s)$$
+$$\text{subject to}\quad \sum_s a_s L_s(N_s,W_s)\leq\bar L$$
+
+Here $a_M=a_P=0.5$ and the intended target is **20% less leaching**.
+
+A common target lets us compare production costs **without estimating a damage function**.
+
+::: {.source}
+Model formulation; paper p. 1028. Classroom implementation sets $\bar L=0.8L^0$ exactly. <br>
+Introduced $a_s$ to create equal weights so values are on a per-hectare basis. 
+:::
+
+::: {.notes}
+6 minutes. Ask students to name objective, choices, parameters, constraint, and units. Objective is average dollars per hectare; pollution constraint is average kg per hectare. This is cost effectiveness conditional on a target, not selection of a welfare-optimal environmental target. The published 67 baseline and 53.1 target are internally inconsistent with exactly 20%; disclose in the source-audit backup. Sources: paper p. 1028, Table 2; local notes, Unregulated choices and the efficient benchmark.
+:::
+
+## KKT conditions and the shadow value{.scrollable}
+
+$$\mathcal L=\sum_s a_s q_s+\lambda\left(\bar L-\sum_s a_sL_s\right)$$
+
+For positive nitrogen and water choices on each soil $s\in\{M,P\}$:
+
+::: {.prompt}
+Derive all four types of KKT conditions. What changes if the pollution cap is slack?
+:::
+
+::: {.kkt-conditions .fragment}
+$$
+\begin{aligned}
+\text{Stationarity (nitrogen):}\quad &p_Y Y_{s,N}-c_N-\lambda L_{s,N}=0\\
+\text{Stationarity (water):}\quad &p_Y Y_{s,W}-c_W-\lambda L_{s,W}=0\\
+\text{Primal feasibility:}\quad &\sum_s a_sL_s(N_s,W_s)\leq\bar L\\
+\text{Dual feasibility:}\quad &\lambda\geq0\\
+\text{Complementary slackness:}\quad &\lambda\left(\bar L-\sum_s a_sL_s(N_s,W_s)\right)=0
+\end{aligned}
+$$
+:::
+
+<!-- $\lambda$: gain in maximized quasi-rent from allowing one more unit of leaching, **dollars per kg**. -->
+
+<!-- ::: {.prompt}
+Board exercise: derive the nitrogen condition. What changes if the cap is slack?
+::: -->
+
+::: {.notes}
+9 minutes, including board work. Differentiate to get a_s(p_Y Y_s,N-c_N-λL_s,N)=0; divide by positive a_s. Stationarity applies to both inputs on both soils, giving four equations. Primal feasibility requires meeting the aggregate pollution cap; dual feasibility gives the nonnegative sign of its multiplier. Complementary slackness implies λ=0 if the cap is slack, so the private first-order conditions return. These are the KKT conditions for the displayed pollution-constrained problem at positive input choices. Under regularity they are necessary conditions; they alone do not establish global optimality. The derivative of optimized value with respect to cap is λ under regularity. This is a marginal compliance value, not an estimated damage value. Source: local notes, Unregulated choices and the efficient benchmark; derivation from stated model.
+:::
+
+## Implementing the efficient allocation
+
+With input taxes, the farmer’s condition is
+
+$$p_Y Y_{s,j}-c_j=t_{s,j}.$$
+
+Matching the planner’s condition gives
+
+$$\boxed{t_{s,j}=\lambda L_{s,j}(x_s^*)}.$$
+
+**One pollution shadow value; potentially four input tax rates.**
+
+The efficient rates differ when marginal leaching responses differ across soils.
+
+::: {.notes}
+5 minutes. Taxes are evaluated at the efficient allocation and are per unit of the input. A constant input tax supports that allocation if it also solves the farmer's maximization problem, not merely its FOC; the classroom validation re-solves farmer problems. Resale and monitoring make differentiated rates difficult. Sources: paper pp. 1025–1026; local notes, efficient benchmark and numerical verification.
+:::
+
+## Seven policy experiments
+
+| Policy | Common across soils? | Regulated inputs |
+|:--|:--|:--|
+| Differentiated taxes | No: soil-specific rates | Nitrogen and water |
+| Uniform taxes on both inputs | Same two rates | Nitrogen and water |
+| Uniform standard | Same percentage of own baseline | Nitrogen and water |
+| Uniform nitrogen-only tax | Same rate | Nitrogen |
+| Uniform water-only tax | Same rate | Water |
+| Nitrogen standard | Same upper bound | Nitrogen |
+| Water standard | Same upper bound | Water |
+
+::: {.source}
+Paper pp. 1026, 1029. All policies aim at the same aggregate pollution target.
+:::
+
+::: {.notes}
+3 minutes. 
+
+- Rollback percentages apply to soil-specific baseline input quantities. 
+- A 20% pollution reduction does not generally require a 20% input rollback. The paper reports a 12% rollback. 
+- Standards are ceilings, not equalities. 
+- The differentiated-tax case is the benchmark, not an eighth regulated policy.
+:::
+
+## Farmers respond to uniform input taxes {.instrument-problem}
+
+Each rate is common across soils; $t_N$ and $t_W$ need not be equal.
+
+**Farmer:** choose nitrogen and water, $x_s=(N_s,W_s)$.
+
+$$x_s(t_N,t_W)\in\arg\max_{N_s,W_s\geq0}
+\left[q_s(N_s,W_s)-t_NN_s-t_WW_s\right]$$
+
+**Regulator:** choose the two rates, anticipating farmer responses.
+
+$$\begin{aligned}
+\max_{t_N,t_W\geq0}\quad &\sum_s a_s q_s\big(x_s(t_N,t_W)\big)\\
+\text{subject to}\quad &\sum_s a_sL_s\big(x_s(t_N,t_W)\big)\leq\bar L
+\end{aligned}$$
+
+A nitrogen tax can change **both** nitrogen and water use.
+
+::: {.notes}
+3 minutes. The regulator chooses instruments; farmers choose inputs. Uniform means t_N is the same for Mocho and Pacheco, and t_W is the same for Mocho and Pacheco. It does not mean t_N=t_W; the rates have different units. The farmer maximizes after-tax quasi-rent; the regulator evaluates pre-tax quasi-rent because tax receipts are transfers. Setting t_W=0 gives the nitrogen-only tax case; setting t_N=0 gives the water-only case. Do not let a planner pick arbitrary inputs and call the result a uniform tax. Sources: paper p. 1026; local notes, Policy experiments. The displayed response formulation makes the classroom implementation explicit.
+:::
+
+## Farmers respond to a common input ceiling {.instrument-problem}
+
+Example: a common irrigation ceiling $\bar W$ for both soils.
+
+**Farmer:** maximize quasi-rent subject to the input ceiling.
+
+$$x_s(\bar W)\in\arg\max_{\substack{N_s,W_s\geq0\\W_s\leq\bar W}}q_s(N_s,W_s)$$
+
+**Regulator:** choose the ceiling, anticipating farmer responses.
+
+$$\begin{aligned}
+\max_{\bar W\geq0}\quad &\sum_s a_s q_s\big(x_s(\bar W)\big)\\
+\text{subject to}\quad &\sum_s a_sL_s\big(x_s(\bar W)\big)\leq\bar L
+\end{aligned}$$
+
+Same ceiling, potentially different use: $W_M\leq\bar W$ and $W_P\leq\bar W$.
+
+::: {.notes}
+3 minutes. There are two distinct constraints at two decision levels. W_s≤Wbar is the input restriction each farmer faces; the aggregate leaching cap is the environmental target the regulator must meet when selecting Wbar. Farmers still choose both inputs. They need not use exactly the ceiling, and the ceiling may bind on one soil but not the other. In the paper's water-standard discussion and the classroom reconstruction, Mocho is constrained while Pacheco remains below the ceiling. Published cap values are inconsistent; use the source-audit backup for that discrepancy rather than presenting the printed cap as feasible. For a common nitrogen ceiling, replace the regulator's choice Wbar with Nbar and the farmer's restriction with N_s≤Nbar; water remains a farmer choice. The classroom code finds a ceiling attaining the common leaching target by root finding around farmer responses. Sources: paper pp. 1026 and 1030; local notes, Policy experiments; model.R.
+:::
+
+## Efficiency costs and farmer payments
+
+$$C=\sum_s a_s\left[q_s(x_s^0)-q_s(x_s^{policy})\right]$$
+
+**Production loss** counts as an efficiency cost.
+
+**Tax revenue** is a transfer in this accounting.
+
+$$\text{Farmer net receipts}=\text{pre-tax quasi-rent}-\text{tax payments}$$
+
+::: {.prompt}
+Can farmers prefer a policy that creates higher production costs?
+:::
+
+::: {.notes}
+3 minutes. Yes: taxes can lower farmer receipts much more than the additional production loss under a standard. This comparison excludes administration costs and assumes tax receipts are transfers. Lump-sum rebates could change incidence without changing marginal input incentives. Sources: Table 2 and discussion pp. 1029–1030.
+:::
+
+## Several uniform policies nearly match the benchmark
+
+```{r costs, fig.width=11.5, fig.height=4.15}
+d <- subset(paper_table2(), policy!="baseline")
+d$label <- factor(c("Differentiated taxes", "Uniform taxes on both inputs", "Uniform rollback", "Uniform nitrogen-only tax", "Uniform water-only tax", "Nitrogen cap", "Water cap"),
+ levels=rev(c("Differentiated taxes", "Uniform taxes on both inputs", "Uniform rollback", "Uniform water-only tax", "Water cap", "Uniform nitrogen-only tax", "Nitrogen cap")))
+ggplot(d,aes(welfare_cost,label))+
+ geom_col(fill="#237468",width=.60)+
+ geom_text(aes(label=sprintf("$%.2f",welfare_cost)),hjust=-.12,size=5.5)+
+ scale_x_continuous(limits=c(0,104),breaks=c(0,25,50,75,100))+
+ labs(x="Lost pre-tax quasi-rent ($/ha)",y=NULL)
+```
+
+::: {.small}
+Near the benchmark: **$6.67** differentiated · **$6.78** uniform taxes · **$6.83** water tax · **$6.86** rollback
+:::
+
+::: {.source}
+Published results, Table 2, p. 1029; nominal dollars as reported in the paper.
+:::
+
+::: {.notes}
+4 minutes. These are the paper's published values, not outputs of the classroom reconstruction. Uniform taxes cost $0.11/ha more than differentiated taxes; rollback $0.19/ha more. Nitrogen-only policies cost about 13.5 times the benchmark. These are production-efficiency comparisons at the paper's reported common pollution target; they do not include administrative costs. Source: Table 2.
+:::
+
+## Why nitrogen-only controls cost more
+
+| Published response | Mocho | Pacheco |
+|:--|--:|--:|
+| Nitrogen, baseline → N tax (kg/ha) | 85 → 12 | 52 → 4 |
+| Water, baseline → water tax (mm) | 723 → 650 | 478 → 402 |
+| Yield loss under N tax (tons/ha) | 0.136 | 0.077 |
+| Yield loss under water tax (tons/ha) | 0.021 | 0.021 |
+
+The nitrogen tax requires a drastic fertilizer reduction; the water tax achieves the target with much smaller yield losses.
+
+::: {.source}
+Published Tables 3–4, p. 1030; yield losses calculated from rounded reported yields.
+:::
+
+::: {.notes}
+4 minutes. Both inputs adjust under either single-input policy. This table highlights the taxed input but does not imply the other is fixed. Nitrogen-tax water is 657 and 439; water-tax nitrogen is 77 and 45. Explain that input leverage over pollution relative to its value in production drives cost, not simply the pollutant's name. Return to opening predictions. Sources: Tables 3–4 and discussion pp. 1029–1030.
+:::
+
+## Who bears the cost?
+
+```{r incidence, fig.width=11.5, fig.height=4.15}
+d <- subset(paper_soils(),policy %in% c("individual_taxes","uniform_taxes","uniform_rollback"))
+baseline <- subset(paper_soils(),policy=="baseline")
+d$loss <- baseline$net_rent[match(d$soil,baseline$soil)]-d$net_rent
+d$label <- factor(d$policy,levels=c("uniform_rollback","uniform_taxes","individual_taxes"),
+ labels=c("Uniform rollback","Uniform taxes","Differentiated taxes"))
+ggplot(d,aes(loss,label,color=soil,shape=soil))+
+ geom_point(size=4.3,position=position_dodge(width=.45))+
+ scale_color_manual(values=c(Mocho="#237468",Pacheco="#b97739"))+
+ scale_x_continuous(limits=c(0,155))+
+ labs(x="Reduction in farmer net quasi-rent ($/ha)",y=NULL,color=NULL,shape=NULL)+
+ theme(legend.position="top")
+```
+
+::: {.small}
+Tax payments make farmer losses much larger than production-efficiency costs. Rollback collects no tax revenue.
+:::
+
+::: {.source}
+Calculated from published net quasi-rents, Tables 3–4. No tax rebates assumed.
+:::
+
+::: {.notes}
+3 minutes. Differentiated taxes: losses $142.26 Mocho and $74.59 Pacheco. Uniform taxes: $131.22 and $83.77. Rollback: $9.82 and $4.00. Moving to uniform taxes shifts receipts toward Mocho relative to differentiated taxes, and away from Pacheco. The plots use each soil's own published baseline. Source: Tables 3–4. Rounded table entries need not aggregate exactly to Table 2.
+:::
+
+## What the results establish
+
+**Several simple policies perform well in this application.**
+
+- The regulated input matters greatly for production costs.
+- Small efficiency differences can coexist with large differences in farmer receipts.
+- Administration and enforcement costs could change the ranking.
+
+Two soils, fixed prices, and fitted biological responses limit generalization.
+
+::: {.prompt}
+What evidence would you need before applying this ranking in another watershed?
+:::
+
+::: {.notes}
+5 minutes. Solicit soil mix, crop technology, input prices, enforcement costs and hydrologic transport. The model targets leaching; it does not estimate a complete mapping to health damages. The paper explicitly says more heterogeneity could change results and omits transaction costs. Do not conclude uniform instruments are always near efficient. Sources: paper pp. 1030–1031.
+:::
+
+## The classroom model and numerical checks
+
+The supplied R code is a **documented reconstruction**, with explicit assumptions where the printed paper is inconsistent.
+
+Before interpreting a solution, check:
+
+1. Does each policy meet the same pollution target?
+2. Do farmer choices and the efficient benchmark satisfy their optimality conditions?
+3. Does a small change in the cap agree with the shadow value?
+4. Do alternative starting values lead to the same solution?
+
+::: {.source}
+Course files: [`Helfand_Notes.qmd`](Helfand_Notes.html), and [`HH_model.R`](HH_model.R)
+:::
+
+::: {.notes}
+4 minutes. Students receive functioning code and reference results; solving publication discrepancies is not their task. The reconstruction reverses a Mocho yield sign and omits a Pacheco leaching term, the latter an unverified hypothesis. Numerical success is separate from agreement with a published table. run_model.R runs the scenarios; validate_model.R checks derivatives, KKT, decentralization, multiplier interpretation, and accounting. These are the existing model's checks, not a claim that this slide build reran them. Sources: local README.md and Helfand_Notes.qmd.
+:::
+
+## Extend the model
+
+Choose one economically meaningful addition:
+
+| Extension | Economic question |
+|:--|:--|
+| Water scarcity | How do water and pollution shadow values interact? |
+| Irrigation technology | When is adoption worthwhile, and how does policy affect it? |
+| Implementation costs | When does differentiation justify its added cost? |
+| Land allocation | How does an outside option change abatement? |
+
+**Show:** a revised model, one central comparison, the mechanism, and checks.
+
+::: {.prompt}
+Which omitted feature could change the policy ranking—and why?
+:::
+
+::: {.notes}
+6 minutes. Source: existing Helfand_Model_Lab.qmd. Students should preserve the reference run and recover it when the extension is disabled or nonbinding. A price change alone is not the extension, although comparative statics can investigate an extension. Inputs should have sourced values or clearly labeled illustrative assumptions. Follow existing lab requirements for slides, short report, and runnable code. Risk is reserved for a later lab. End the main presentation here; remaining slides are backup.
+:::
+
+## Backup: response functions and coefficients {.small}
+
+For yield or leaching:
+
+$$F_s=b_{0s}+b_{Ns}N_s+b_{Ws}W_s+b_{NWs}N_sW_s+b_{\sqrt N,s}\sqrt{N_s}+b_{\sqrt W,s}\sqrt{W_s}$$
+
+| Printed Table 1 | $b_0$ | $b_N$ | $b_W$ | $b_{NW}$ | $b_{\sqrt N}$ | $b_{\sqrt W}$ |
+|:--|--:|--:|--:|--:|--:|--:|
+| Mocho yield | 0.9117 | **0.00363** | −0.0029 | 0.00000193 | 0.0506 | 0.156 |
+| Pacheco yield | 2.296 | −0.00195 | −0.00158 | 0.00000153 | 0.0249 | 0.0732 |
+| Mocho leaching | −26.06 | −0.152 | 0.158 | 0.000363 | 0 | 0 |
+| Pacheco leaching | 43.82 | −0.17 | 0.313 | 0.000466 | **−1.11** | −7.28 |
+
+$$F_{s,N}=b_{Ns}+b_{NWs}W_s+\frac{b_{\sqrt N,s}}{2\sqrt{N_s}}$$
+
+Working reconstruction changes the bold entries to **−0.00363** and **0**, respectively. These choices are not author-confirmed corrections.
+
+::: {.source}
+Table 1, p. 1028; reconstruction choices documented in the course model notes.
+:::
+
+::: {.notes}
+Backup. This table displays the printed values, not silently corrected coefficients. The coefficient changes materially affect responses. Units: yield tons dry biomass/ha, leaching kg/ha in paper's nitrate convention, N kg/ha, W irrigation depth. Estimates should not be extrapolated arbitrarily. Positive N×W terms make an unrestricted domain problematic. Source: paper Table 1 and local source audit.
+:::
+
+## Backup: published results and reconstruction {.small}
+
+| Issue | Published source | Classroom treatment |
+|:--|:--|:--|
+| Mocho yield coefficient | Positive N coefficient; negative t-statistic | Use negative coefficient; strong internal evidence |
+| Pacheco leaching term | $-1.11\sqrt N$ conflicts with reported baseline leaching | Omit term as an **unverified hypothesis** |
+| Water standard | Printed cap 478; Mocho use 585 | Solve for a feasible common cap |
+| Pollution target | Baseline 67; target 53.1 | Use exactly 80% of computed baseline |
+
+The reference code is **not an exact replication**. Remaining differences include baseline quasi-rent and nitrogen-only policy costs.
+
+Policy-result charts use **published Tables 2–4**. Response curves and lab comparisons use the **documented computational reference**.
+
+::: {.source}
+Helfand and House (1995), Tables 1–4; course README.md and Helfand_Notes.qmd source audit.
+:::
+
+::: {.notes}
+Backup. Do not describe the omitted Pacheco term as a confirmed typo. Reconstruction baseline leaching is about 66.995 and target 53.596 kg/ha; common water cap about 581.60. Retaining the printed Pacheco term changes marginal leaching, not just the level. Resolving these discrepancies requires author corrections, original code, or higher precision coefficients. This is instructor context, not a student debugging assignment. Sources: local README.md and model notes; original Tables 1–4.
+:::

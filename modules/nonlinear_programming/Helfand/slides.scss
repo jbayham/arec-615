@@ -1,0 +1,33 @@
+/*-- scss:defaults --*/
+$body-bg: #faf9f5;
+$body-color: #20352f;
+$link-color: #237468;
+$presentation-heading-color: #153e35;
+$font-family-sans-serif: 'Arial', sans-serif;
+$presentation-font-size-root: 30px;
+$presentation-h2-font-size: 1.45em;
+$presentation-heading-font-weight: 600;
+
+/*-- scss:rules --*/
+.reveal h2 { margin-bottom: 0.65em; }
+.reveal p, .reveal li { line-height: 1.35; }
+.reveal li { margin-bottom: 0.45em; }
+.reveal .source { font-size: 0.52em; color: #64736d; margin-top: 1.3em; }
+.reveal .prompt { border-left: 5px solid #b97739; padding: 0.3em 0 0.3em 0.7em; margin-top: 0.8em; font-size: 0.85em; }
+.reveal .small { font-size: 0.77em; }
+.reveal .equation { font-size: 1.02em; margin: 0.7em 0; }
+.reveal table { font-size: 0.77em; width: 100%; }
+.reveal table th { border-bottom: 2px solid #237468; }
+.reveal table td, .reveal table th { padding: 0.34em 0.45em; }
+.reveal .slide-number { color: #64736d; }
+.reveal .quarto-title-block .quarto-title-authors { font-size: 0.7em; }
+.reveal .cell-output-display { margin: 0; }
+.reveal img { margin: 0; }
+.reveal .response-slide h2 { margin-bottom: 0.25em; }
+.reveal .response-slide img { height: 410px; width: 100%; object-fit: contain; }
+.reveal .response-slide .response-equations { font-size: 0.62em; }
+.reveal .response-slide .katex-display { margin: 0.25em 0; }
+.reveal .response-slide .response-caveat { font-size: 0.55em; margin-top: 0.5em; }
+.reveal .kkt-conditions { font-size: 0.83em; }
+.reveal .instrument-problem { font-size: 0.88em; }
+.reveal .instrument-problem .katex-display { margin: 0.6em 0; }
