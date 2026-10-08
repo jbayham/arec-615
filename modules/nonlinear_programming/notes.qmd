@@ -2007,6 +2007,59 @@ The half step increases profit and remains feasible. It illustrates why we check
 
 
 
+
+#### How does the solver choose the step length?
+
+The quadratic subproblem determines a **direction** $d^k$. A separate **line search** determines how far to move along it:
+
+$$q^{k+1}=q^k+\alpha_kd^k,\qquad 0<\alpha_k\leq1.$$
+
+Our half step uses $\alpha=1/2$, so it halves the proposed changes in output. It is an illustrative feasible step, not an optimal step length or a claim about the step SLSQP will select.
+
+One way to think about choosing $\alpha$ is as a one-dimensional optimization problem. The solver evaluates the original objective and constraints along $q^k+\alpha d^k$, rather than relying entirely on the local approximations. For a single inequality constraint, a useful **merit function** is
+
+$$\phi_\rho(q)=F(q)+\rho\max\{0,c(q)\},\qquad \rho>0.$$
+
+Recall that $F=-\Pi$ and $c=G-E$. The first term rewards higher profit; the second penalizes emissions above the cap. Feasible points incur no penalty. The weight $\rho$ controls the tradeoff between objective improvement and constraint violation.
+
+An **exact line search** would seek
+
+$$\alpha_k\in\operatorname*{arg\,min}_{0\leq\alpha\leq1}
+\phi_\rho(q^k+\alpha d^k).$$
+
+In practice, repeatedly solving this scalar problem to high precision can be wasteful: the direction itself comes from a local model that will soon be updated. An **inexact line search** instead seeks sufficient improvement in the merit function, measured against the predicted improvement. It typically tries the full step first and reduces the step if the improvement is insufficient. Halving is a simple teaching rule; implementations can use interpolation to choose a smaller trial step.
+
+NLopt's SLSQP implementation uses an inexact line search with a penalty-based merit function. Its penalty weights are updated by the algorithm. A trial point can violate the nonlinear constraint and still be accepted if the merit-function test is satisfied; SQP does not generally require every intermediate point to meet the cap. [Implementation reference](https://github.com/stevengj/nlopt/blob/master/src/algs/slsqp/slsqp.c).
+
+For illustration, choose $\rho=5$ in our example:
+
+| Trial | $F=-\Pi$ | Cap violation $\max\{0,c\}$ | Merit value $\phi_5$ |
+|---|---:|---:|---:|
+| Current point | $-40$ | $0$ | $-40$ |
+| Full step | $-63.55$ | $5.605$ | $-35.525$ |
+| Half step | $-54.0875$ | $0$ | $-54.0875$ |
+
+The full step raises profit but worsens this merit function. The half step lowers the merit function. This explains why shortening the step can help, although a solver's sufficient-decrease test and penalty weight determine actual acceptance.
+
+#### What would the best feasible step be in this example?
+
+For this particular direction, we can solve a different scalar problem: maximize profit along the direction while requiring the actual cap to hold. With $q^0=(2,2)$ and $d^0=(2.7,1.4)$,
+
+$$\Pi(q^0+\alpha d^0)=40+32.8\alpha-9.25\alpha^2,$$
+
+$$G(q^0+\alpha d^0)=6+11\alpha+5.605\alpha^2.$$
+
+Profit increases throughout $0\leq\alpha\leq1$, since its derivative is $32.8-18.5\alpha>0$ on that interval. The best feasible step therefore reaches the actual emissions cap:
+
+$$6+11\alpha+5.605\alpha^2=17.$$
+
+The positive root is
+
+$$\alpha=\frac{-11+\sqrt{11^2+4(5.605)(11)}}{2(5.605)}\approx0.729.$$
+
+Thus, $1/2$ is a convenient feasible trial, while approximately $0.729$ is the profit-maximizing feasible step along this direction. Neither calculation determines the step SLSQP will take under its merit-function line search. After accepting a step, SQP builds a new local model at the accepted point and repeats.
+
+
 ## Numerical solution in R
 
 The standalone script `emissions_cap.R` contains the same walkthrough for use in RStudio. Install `nloptr` once if needed: `install.packages("nloptr")`.
