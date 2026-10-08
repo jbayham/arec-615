@@ -6,7 +6,6 @@ date: "2026-10-08"
 date-format: "MMMM D, YYYY"
 format:
   revealjs:
-    theme: [simple, slides.scss]
     width: 1280
     height: 720
     margin: 0.07
