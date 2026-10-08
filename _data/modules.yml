@@ -58,6 +58,7 @@
 #       url: "course-materials/"
     - title: "Helfand and House (1995)"
 #       url: "course-materials/"
+    - title: "Ando and Mallory (2012)"
   ps:
     - title: "Problem Set"
       url: "problem_set.pdf"
@@ -72,6 +73,10 @@
       url: "Helfand/Helfand_Notes.html"
     - title: "Helfand and House R Code"
       url: "Helfand/HH_model.R"
+    - title: "Ando and Mallory Slides"
+      url: "Ando/Ando_Slides.html"
+    - title: "Ando and Mallory R Code"
+      url: "Ando/AM_model.R"
 #     - title: "Portfolio Problem"
 #       url: "portfolio_problem.r"
 #     - title: "Simulated Method of Moments"

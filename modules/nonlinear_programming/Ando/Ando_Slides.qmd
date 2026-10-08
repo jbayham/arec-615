@@ -1,0 +1,458 @@
+---
+title: "Ando and Mallory (2012)"
+subtitle: "Conservation portfolios under climate uncertainty"
+author: "AREC 615"
+format:
+  revealjs:
+    width: 1280
+    height: 720
+    margin: 0.07
+    center: false
+    transition: none
+    slide-number: c/t
+    progress: true
+    controls: true
+    navigation-mode: linear
+    embed-resources: true
+    html-math-method: katex
+    preview-links: false
+    chalkboard: false
+    include-in-header:
+      text: |
+        <style>
+        .reveal .solver-slide pre { font-size: 0.78em; }
+        </style>
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup, include=FALSE}
+options(ando.quiet=TRUE, ando.plot=FALSE)
+source("reproduce_SI.R")
+knitr::opts_chunk$set(dev="png", dpi=180, fig.width=11.5, fig.height=4.1,
+                     out.width="100%")
+fmt <- function(x, digits=3) formatC(x, digits=digits, format="f")
+uniform <- models[["CCI: Uniform"]]
+target_fit <- solve_portfolio(uniform, 0.51)
+```
+
+## Conservation decisions precede climate outcomes
+
+Land protection commits resources now. Habitat quality depends on future climate.
+
+- A region with excellent habitat today may perform poorly in a warmer climate.
+- Conservation across regions can reduce exposure to a shared uncertain future.
+
+::: {.prompt}
+Where should we protect land when we do not know which climate will occur?
+:::
+
+::: {.source}
+Ando and Mallory (2012), PNAS 109(17):6484–6489, pp. 6484–6485.
+:::
+
+::: {.notes}
+3 minutes. This is a static allocation before uncertainty resolves. There is no later reoptimization in the model. Link to Helfand: heterogeneous locations still matter, but the planner now cares about the joint distribution of benefits. The regional scenario predictions are inputs to the economic problem.
+:::
+
+## Wetland conservation in the Prairie Pothole Region
+
+The study divides the US portion into **Western, Central, and Eastern** subregions.
+
+The conservation outcome is the **cover-cycle index (CCI)**, an indicator of wetland habitat quality.
+
+The planner chooses fractions of conservation land in each region.
+
+::: {.prompt}
+Would maximizing expected habitat quality necessarily produce a diversified allocation?
+:::
+
+::: {.source}
+Paper Fig. 1 and discussion, pp. 6484–6485. Geographic and institutional setting refers to the study period.
+:::
+
+::: {.notes}
+3 minutes. The region includes portions of Montana, North Dakota, South Dakota, Minnesota, and Iowa. CCI summarizes wetland cycling relevant to waterfowl habitat, rather than dollar profit or a direct bird count. Explain the abstraction: continuous regional land shares, no parcel map, and no endogenous habitat connectivity.
+:::
+
+## Four joint climate scenarios
+
+| Region | Historic | +2°C | +4°C | +4°C, wetter |
+|:--|--:|--:|--:|--:|
+| Western | 0.290 | 0.178 | 0.124 | 0.168 |
+| Central | 0.718 | 0.587 | 0.251 | 0.503 |
+| Eastern | 0.317 | 0.561 | 0.584 | 0.654 |
+
+Each column describes **the same climate future across all three regions**.
+
+“Wetter” means 10% more precipitation in the +4°C scenario.
+
+::: {.source}
+Paper Table 1, p. 6485. Values are average CCI from ecological projections.
+:::
+
+::: {.notes}
+3 minutes. Walk across the Central and Eastern rows. These are four possible future states, not four consecutive years or independent regional shocks. The R script stores the transpose of this display: scenarios in rows and regions in columns.
+:::
+
+## Habitat quality shifts across regions {.nostretch}
+
+```{r scenario-chart}
+scenario_plot
+```
+
+::: {.prompt}
+Which regions tend to offset one another across these futures?
+:::
+
+::: {.notes}
+3 minutes. The connecting lines help track each region across discrete scenarios; they do not represent time or an estimated continuous climate response. Western and Central generally move together. Eastern tends to improve in scenarios that harm the other regions. Source: Table 1.
+:::
+
+## The paper compares two probability distributions
+
+| Assumption | Historic | +2°C | +4°C | +4°C, wetter |
+|:--|--:|--:|--:|--:|
+| No change likely | 0.80 | 0.10 | 0.05 | 0.05 |
+| Uniform | 0.25 | 0.25 | 0.25 | 0.25 |
+
+These are **alternative assumptions about probabilities**, rather than estimated climate forecasts.
+
+Changing probabilities changes both expected returns and covariance.
+
+::: {.source}
+Paper Table 1 and discussion, p. 6485.
+:::
+
+::: {.notes}
+3 minutes. Distinguish beliefs about outcomes from willingness to accept risk. The paper does not estimate a risk-aversion coefficient or assert either probability distribution is correct. Neither distribution is a current climate forecast.
+:::
+
+## A portfolio is a set of land shares
+
+Let $w_i$ denote the fraction of protected land in region $i$.
+
+$$
+w_W+w_C+w_E=1,\qquad w_i\geq 0.
+$$
+
+In climate scenario $s$, the benefits-only portfolio yields
+
+$$R_s(w)=\sum_i w_i\,\mathrm{CCI}_{si}.$$
+
+An allocation of six million acres would place $6{,}000{,}000w_i$ acres in region $i$.
+
+::: {.notes}
+3 minutes. Shares represent land, not spending. Six million acres is the visualization scale in the paper's figure insets, not a constraint needed to solve the normalized portfolio. Linear aggregation assumes habitat benefits can substitute across regions. Regional returns do not decline with the amount conserved.
+:::
+
+## Expected benefits are linear in the shares
+
+With scenario probabilities $p_s$, define $\mu_i=\sum_s p_s R_{si}$.
+
+$$E[R(w)]=\sum_i w_i\mu_i=\mu^\top w.$$
+
+```{r expected-benefits}
+means <- data.frame(Region=regions,
+  `No change likely`=models[["CCI: No change likely"]]$mu,
+  Uniform=uniform$mu, check.names=FALSE)
+knitr::kable(means, digits=3, row.names=FALSE)
+```
+
+::: {.prompt}
+If we cared only about expected CCI, where would all the land go?
+:::
+
+::: {.notes}
+3 minutes. The answers are Central under no change likely and Eastern under uniform probabilities. This is a linear objective over the simplex: an extreme point attains the maximum. Computed from Table 1 using Eq. 2.
+:::
+
+## Portfolio risk depends on covariance
+
+$$
+\operatorname{Var}(R(w))=w^\top\Sigma w
+=\sum_i w_i^2\sigma_i^2+2\sum_{i<j}w_iw_j\sigma_{ij}.
+$$
+
+- The first terms reflect uncertainty within each region.
+- Cross terms capture how regional outcomes move together.
+- Negative covariance can reduce the variance of the combined outcome.
+
+We minimize **variance** and display risk as **standard deviation**.
+
+::: {.notes}
+4 minutes. Expand the two-region case on the board. The marginal risk contribution is 2(Sigma w)_i, which depends on the whole allocation. A region with high standalone variance can still help a portfolio. Variance penalizes upward and downward deviations alike. Source: Eq. 3 and the portfolio discussion.
+:::
+
+## The covariance matrix comes from joint outcomes
+
+$$\Sigma_{ij}=\sum_s p_s(R_{si}-\mu_i)(R_{sj}-\mu_j).$$
+
+Under uniform probabilities, the implied **correlations** are:
+
+```{r correlations}
+knitr::kable(cov2cor(uniform$Sigma), digits=2)
+```
+
+::: {.source}
+Calculated from Table 1. Correlation standardizes covariance by regional standard deviations.
+:::
+
+::: {.notes}
+4 minutes. Explain why this calculation uses probability weights without a sample n-1 correction. R's ordinary cov() estimates a sample covariance and does not automatically implement this finite scenario distribution. Negative Central-Eastern covariance is especially useful near high-return allocations.
+:::
+
+## The constrained optimization problem
+
+For a specified expected-return target $\bar R$:
+
+$$
+\begin{aligned}
+\min_w\quad &w^\top\Sigma w\\
+\text{subject to}\quad &\mu^\top w=\bar R,\\
+&\mathbf1^\top w=1,\\
+&w\geq0.
+\end{aligned}
+$$
+
+Three decision variables, two equalities, and three nonnegativity bounds.
+
+::: {.source}
+Paper Eq. 1, p. 6488. Nonnegative shares follow the text and reported zero-weight solutions.
+:::
+
+::: {.notes}
+4 minutes. Preserve the paper's equality target. An at-least return constraint agrees on the upper efficient branch but differs below the global minimum-variance mean. Eq. 1 prints a strict positivity symbol even though the text and results permit zero. A valid covariance matrix is positive semidefinite, so the program is convex. The Table 1 matrices used here are positive definite.
+:::
+
+## KKT conditions explain regional entry and exit {.small}
+
+Use the Lagrangian
+
+$$\mathcal L=w^\top\Sigma w+\lambda(\bar R-\mu^\top w)
++\eta(1-\mathbf1^\top w)-\nu^\top w.$$
+
+$$
+\begin{aligned}
+2\Sigma w-\lambda\mu-\eta\mathbf1-\nu&=0,\\
+\mu^\top w=\bar R,\quad\mathbf1^\top w=1,\quad w&\geq0,\\
+\nu&\geq0,\qquad\nu_iw_i=0.
+\end{aligned}
+$$
+
+An included region has $2(\Sigma w)_i=\lambda\mu_i+\eta$.
+
+A zero-weight region can satisfy an inequality instead.
+
+::: {.notes}
+5 minutes. Equality multipliers are unrestricted. At regular solutions, lambda is the derivative of minimum variance with respect to the expected-return target, not the slope in SD-return coordinates. For an excluded region, 2(Sigma w)_i-lambda mu_i-eta=nu_i>=0. This connects directly to the recent corner-solution material. Avoid interpreting positive nu as standalone regional risk.
+:::
+
+## One numerical solution
+
+Under uniform probabilities, require expected CCI of **0.510**.
+
+```{r one-portfolio}
+knitr::kable(data.frame(Region=regions, `Land share`=as.numeric(target_fit$w),
+                        check.names=FALSE), digits=3)
+```
+
+The minimum standard deviation is **`r fmt(target_fit$outcomes["sd"])`**.
+
+The all-Eastern allocation has expected CCI **`r fmt(max(uniform$mu))`** and standard deviation **`r fmt(sqrt(uniform$Sigma[3,3]))`**.
+
+::: {.notes}
+3 minutes. These are computed Table 1 results, not literal coordinates copied from Table 2. Requiring 0.51 keeps almost all the maximum expected benefit while substantially reducing risk. Ask why Western gets a small positive share despite its low expected CCI.
+:::
+
+## Solving one portfolio in R {.solver-slide}
+
+```{r solver-code, eval=FALSE, echo=TRUE}
+mu <- moments_example$mu
+Sigma <- moments_example$Sigma
+fit <- quadprog::solve.QP(
+  Dmat = 2 * Sigma,
+  dvec = rep(0, 3),
+  Amat = cbind(rep(1, 3), mu, diag(3)),
+  bvec = c(1, 0.51, 0, 0, 0),
+  meq = 2
+)
+fit$solution
+```
+
+`Amat` stores constraint coefficients in columns. The first two constraints are equalities.
+
+::: {.notes}
+4 minutes. quadprog minimizes one-half w'Dw-d'w, hence D=2 Sigma. It imposes t(Amat) w>=bvec, with the first meq constraints interpreted as equalities. The identity matrix imposes the three lower bounds. AM_model.R wraps this call so we can repeatedly solve different targets. This exact quadratic structure makes a dedicated QP solver convenient even though the course has also used SLSQP.
+:::
+
+## The efficient frontier contains the best tradeoffs
+
+1. Find the global minimum-variance allocation without a return target.
+2. Increase the target from that allocation's mean to the largest feasible mean.
+3. Solve again at each target and plot expected return against standard deviation.
+
+Targets below the minimum-variance mean generate a **dominated lower branch**.
+
+::: {.prompt}
+Why would a planner reject a portfolio with both lower expected benefits and higher risk?
+:::
+
+::: {.notes}
+3 minutes. The script uses 100 targets for each of the four frontiers, with actual computed endpoints. The paper gives a uniform benefits-only example starting at 0.2975 and ending at 0.5291; using its rounded Table 1 shifts endpoints slightly. Do not call the complete equality-constrained locus an efficient frontier.
+:::
+
+## Benefits-only conservation portfolios {.nostretch}
+
+```{r benefits-frontier}
+figure2
+```
+
+::: {.notes}
+4 minutes. Reconstruction of the economic content of Fig. 2, using Table 1. Triangles are exact equal-thirds portfolios evaluated under each distribution. Trace the upper end to Central for no change likely and Eastern for uniform. Do not quote the paper's percentages from this reconstruction: its plotted equal-thirds risks disagree with Table 1. A backup slide documents the issue.
+:::
+
+## Regional shares change along the frontier {.nostretch}
+
+```{r shares-frontier}
+weights_plot
+```
+
+::: {.notes}
+4 minutes. Begin at the right end of each panel, then lower the return target. At high targets, the optimizer combines Central and Eastern. Western enters as the target falls. At sufficiently low efficient targets, Central leaves. Use the KKT conditions to connect zero weights to changing active constraints. These curves use the supplied scenario outcomes.
+:::
+
+## Conservation costs vary across regions
+
+| Region | Historic | +2°C | +4°C | +4°C, wetter |
+|:--|--:|--:|--:|--:|
+| Western | 0.601 | 0.631 | 0.631 | 0.536 |
+| Central | 0.697 | 0.720 | 0.720 | 0.659 |
+| Eastern | 1.210 | 1.230 | 1.230 | 1.200 |
+
+Costs are in **thousands of dollars per acre**.
+
+The paper uses future land values to represent the opportunity cost of conservation.
+
+::: {.source}
+Table 1, p. 6485, and Methods, p. 6488. Historical study values, not current prices.
+:::
+
+::: {.notes}
+3 minutes. The Eastern region is more expensive. The paper distinguishes a land trust's current acquisition budget from a government agency's long-run opportunity costs. It uses the latter perspective for its benefit-cost analysis. Do not infer that these future cost realizations are known when land shares are selected.
+:::
+
+## Benefit–cost returns use scenario-specific ratios
+
+Define each regional return as
+
+$$R_{si}=\frac{\mathrm{CCI}_{si}}{\mathrm{Cost}_{si}}.$$
+
+Then calculate $\mu$ and $\Sigma$ from this new scenario matrix and solve the same portfolio problem.
+
+$$E[\mathrm{CCI}/\mathrm{Cost}]\neq
+\frac{E[\mathrm{CCI}]}{E[\mathrm{Cost}]}\quad\text{in general}.$$
+
+Under uniform probabilities, **Central** now has the highest expected return.
+
+::: {.notes}
+4 minutes. Sources: Eqs. 4-5 and Fig. 3. Units with the supplied cost table are CCI per thousand dollars per acre. The paper weights regional ratios with land shares. A weighted average of regional ratios is generally different from the ratio of total benefits to total costs. The next backup slide makes that distinction explicit. Changing this formulation would change the model.
+:::
+
+## Portfolios with benefit–cost returns {.nostretch}
+
+```{r cost-frontier}
+si_figure3
+```
+
+::: {.notes}
+4 minutes. Lines reproduce all 200 Figure 3 portfolios in Dataset S1 to numerical precision. Open circles are the authors' SI coordinates. This match uses regional means and covariances rounded to two decimals, an inferred implementation detail rather than an author-confirmed specification. Both maximum-return endpoints allocate entirely to Central. Explain the zero-risk left endpoint on the following slide before drawing a policy conclusion from it.
+:::
+
+## Input precision affects the measured risk
+
+The SI benefit–cost results match **two-decimal means and covariances**.
+
+For Western and Eastern regions, that rounding gives
+
+$$\sigma_W^2=\sigma_E^2=0.01,\qquad\sigma_{WE}=-0.01.$$
+
+A half-Western, half-Eastern portfolio therefore has variance
+
+$$\tfrac14(0.01)+\tfrac14(0.01)+\tfrac12(-0.01)=0.$$
+
+The original scenario outcomes imply **positive risk** for the same allocation.
+
+::: {.notes}
+3 minutes. This numerical issue matters for interpretation of the published figure. It is not an assigned student extension. reproduce_SI.R confirms the matching arithmetic and optimal weights across all 200 SI points. We cannot establish the authors' exact implementation without their code. The main Table 1 implementation keeps full computed moments, with its separate figure3 object. Rounding changes a positive definite covariance matrix into a singular positive semidefinite matrix.
+:::
+
+## The model connects risk to the allocation decision
+
+- A region's value depends on its contribution to the **whole portfolio**.
+- Scenario probabilities affect both means and covariances.
+- Land costs can change the preferred allocation.
+- Risk preferences select among efficient portfolios.
+
+::: {.prompt}
+Which assumptions would matter most when interpreting this model for a conservation decision?
+:::
+
+::: {.notes}
+4 minutes. End the main discussion here. Leave students free to formulate their own investigations. Do not assign a common extension or present a menu of required model changes. Students should distinguish what the model assumes from what the numerical solution establishes. Backup slides provide formulation and source detail if useful.
+:::
+
+## Backup: land shares and benefit–cost ratios {.small}
+
+The paper's scenario return is an average of regional ratios:
+
+$$\sum_i w_i\frac{B_{si}}{C_{si}}.$$
+
+The ratio of total benefits to total costs for those land shares is:
+
+$$\frac{\sum_i w_iB_{si}}{\sum_i w_iC_{si}}.$$
+
+These expressions generally differ. With spending shares $v_i$ and known costs, $\sum_i v_iB_i/C_i$ measures benefits per dollar of the budget.
+
+**The code preserves the paper's land-share formulation.**
+
+::: {.notes}
+This is a formulation clarification, not a prescribed extension. A change from land shares to spending shares requires consistent definitions of the decision timing, costs, and constraints. With scenario-dependent opportunity costs, a fixed spending-share interpretation does not automatically follow.
+:::
+
+## Backup: published results and reconstruction {.small}
+
+| Quantity | Paper reports | Table 1 reconstruction |
+|:--|--:|--:|
+| Equal-thirds CCI SD, no change likely | 0.110 | `r fmt(benchmarks$sd[benchmarks$metric=="CCI" & benchmarks$belief=="No change likely" & benchmarks$portfolio=="Equal thirds"])` |
+| Equal-thirds CCI SD, uniform | 0.130 | `r fmt(benchmarks$sd[benchmarks$metric=="CCI" & benchmarks$belief=="Uniform" & benchmarks$portfolio=="Equal thirds"])` |
+| $1bn total CCI, all Eastern | 357,442 | `r format(round(budget_audit$using_expected_cost[1]), big.mark=",")` |
+| $1bn total CCI, all Central | 1,057,183 | `r format(round(budget_audit$using_expected_cost[2]), big.mark=",")` |
+
+Budget calculations here use probability-weighted land costs. The script also reports alternative cost conventions.
+
+**Numerical verification of the stated model does not establish exact replication of the published results.**
+
+::: {.source}
+Paper Tables 1–2 and Methods, p. 6488. Full comparisons: paper_audit and budget_audit in AM_model.R.
+:::
+
+::: {.notes}
+Keep this separate from the student investigation. Equal-thirds risks cannot be reconciled by ordinary input rounding. Some Table 2 weights also fail to sum to one, and several benefit-cost coordinates differ. The script evaluates both literal and explicitly normalized published weights without altering the optimization inputs. The SI confirms the benefits-only frontier closely and the benefit-cost frontier exactly after two-decimal moment rounding. The equal-thirds Figure 2 risks and the budget totals remain unresolved. These are instructor-side replication issues.
+:::
+
+## Reference
+
+Ando, Amy W., and Mindy L. Mallory. 2012. “Optimal portfolio design to reduce climate-related conservation uncertainty in the Prairie Pothole Region.” *Proceedings of the National Academy of Sciences* 109(17):6484–6489.
+
+[doi:10.1073/pnas.1114653109](https://doi.org/10.1073/pnas.1114653109)
+
+Classroom code: `AM_model.R`  
+SI reconstruction: `reproduce_SI.R`  
+Numerical checks: `validate_model.R`
+
+::: {.notes}
+The author calculations used MATLAB frontcon. This course implementation uses R's quadprog and derives inputs from the main paper's Table 1. The later portn package by Seong Yun supplies an independent software example, not an author-issued replication archive.
+:::

@@ -8,3 +8,5 @@ format:
     documentclass: article
     geometry: margin=1in
     include-in-header: styles/quote-box.tex
+  revealjs:
+    theme: [simple, ../styles/slides.scss]
