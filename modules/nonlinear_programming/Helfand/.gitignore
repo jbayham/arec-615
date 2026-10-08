@@ -1,0 +1,11 @@
+results/
+*_files/
+*.knit.md
+*.utf8.md
+
+audit_pacheco_term.R
+model.R
+validate_model.R
+run_model.R
+README.md
+paper_tables.R

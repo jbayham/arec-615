@@ -58,9 +58,9 @@
 #       url: "course-materials/"
     - title: "Helfand and House (1995)"
 #       url: "course-materials/"
-#   ps:
-#     - title: "Problem Set 2"
-#       url: "problem_set.pdf"
+  ps:
+    - title: "Problem Set"
+      url: "problem_set.pdf"
   materials:
     - title: "Rootfinding Demo"
       url: "rootfinding/index.html"

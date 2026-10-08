@@ -1,5 +1,6 @@
 ---
 title: "Problem Set: Nonlinear Programming"
+number-sections: false
 execute: 
   echo: true
   warning: false
@@ -8,22 +9,24 @@ execute:
 
 **Instructions**
 
-In this problem set, you will implement three numerical methods for solving nonlinear equations:
+In Problems 1–3, you will implement three numerical methods for solving nonlinear equations:
 
 - Bisection Method
 - Fixed Point Iteration
 - Newton’s Method
 
-For each problem:
+For each of Problems 1–3:
 
 - Write your own implementation from scratch (no use of built-in solvers like `uniroot()` or `nleqslv()`).
 - Use a convergence criterion of $|x_{k+1} - x_k| < 10^{-6}$.
 - Include a plot of the function over an appropriate interval.
 - Report the final root estimate, number of iterations, and whether convergence was successful.
 
+For Problems 4–5, solve analytically using the KKT conditions and show your work.
+
 ---
 
-## Bisection Method
+## Problem 1: Bisection Method
 
 Let
 
@@ -33,37 +36,18 @@ $$
 
 Use the bisection method to solve $f(x) = 0$ on the interval $[0, 1]$.
 
-### Tasks
+**Tasks**
 
 a. Confirm that $f(0) \cdot f(1) < 0$.
 b. Implement the bisection method.
 c. Plot $f(x)$ over $[0, 1]$ and mark the root.
 d. Report: number of iterations, final estimate, and value of $f(x)$ at the root.
 
-> **Comment**: Explain why is convergence guaranteed given the function?
+> **Comment**: Explain why convergence is guaranteed given the function.
 
 ---
 
-## Fixed Point Iteration
-
-Consider the function:
-
-$$
-x = g(x) = \sqrt{1 + x}
-$$
-
-### Tasks
-
-a. Define the iteration $x_{n+1} = g(x_n)$.
-b. Use $x_0 = 1$ as the starting value.
-c. Plot $g(x)$ and the 45-degree line $y = x$ over $[0, 3]$.
-d. Determine whether the iteration converges.
-e. Try other initial values (e.g., $x_0 = 0.5$, $x_0 = 3$) and compare behavior.
-f. Check the derivative $g'(x)$ at the fixed point. What does this tell you about convergence?
-
----
-
-## Problem 3: Newton's Method
+## Problem 2: Newton's Method
 
 Let
 
@@ -71,7 +55,7 @@ $$
 f(x) = x^3 - 2x + 2
 $$
 
-### Tasks
+**Tasks**
 
 a. Implement Newton’s method.
 b. Use $x_0 = 0$ and $x_0 = -1.5$ as two different initial values.
@@ -81,35 +65,24 @@ e. Compare the convergence (or divergence) behavior. What role does the choice o
 f. Why does the method fail to move when starting at $x_0 = 0$? explain.
 
 
+---
 
-## Problem 4: Pollution Abatement under an Emissions Cap
+## Problem 3: Pollution Abatement under an Emissions Cap
 
-A firm produces output $q$ which generates pollution. For each unit of output, one unit of emissions is generated unless the firm invests in abatement $a$ (e.g., cleaner technology, filters). Abatement reduces emissions one-for-one, but it is costly.
+A firm chooses how much output $q$ to produce and how much pollution abatement $a$ to undertake to maximize profit. It sells output at a price of $100$ per unit and incurs production costs of $C(q)=2q^2$. The firm can reduce pollution by using cleaner technology or filters, at an abatement cost of $A(a)=\tfrac{1}{2}a^2$. 
+<!-- Its profit is therefore $\pi(q,a)=100q-2q^2-\tfrac{1}{2}a^2$. -->
 
-- Profit function (before regulation):
-$$
-\pi(q,a) = 100q - 2q^2 - \tfrac{1}{2}a^2
-$$
-
--	Emissions constraint:
-$$
-q - a \leq E
-$$
-where $E$ is the regulatory emissions cap.
-
-- Non-negativity: $q \geq 0$, $a \geq 0$.
-
-⸻
+Each unit of output generates one unit of pollution before abatement, and each unit of abatement reduces emissions by one unit. A regulator limits net emissions to a cap of $E$. The firm must choose nonnegative output and abatement, $q\geq0$ and $a\geq0$. Consider how the firm adjusts these choices to comply with a cap of $E=20$ and how a tighter cap affects its profit.
 
 Questions:
 
-a.	Lagrangian: Construct the Lagrangian for the problem, introducing a multiplier $\lambda$ on the emissions constraint.
+a.	Lagrangian: Construct the Lagrangian for the problem, introducing a multiplier $\lambda$ on the emissions constraint, and $\mu_q$ and $\mu_a$ on the non-negativity constraints.
 
-b.	KKT conditions: Derive the first-order conditions (stationarity, complementary slackness, feasibility).
+b.	Derive the KKT conditions (stationarity, complementary slackness, primal/dual feasibility).
 
 c.	Solution:
     - Solve for the unconstrained optimum $(q^u, a^u)$ and show whether the emissions constraint binds.
-    - Solve for the constrained optimum $(q^,a^)$ when the cap is $E=20$.
+    - Solve for the constrained optimum $(q^*,a^*)$ when the cap is $E=20$.
   
 d. Verify that the second-order conditions for a maximum are satisfied at the constrained optimum.
 
@@ -122,13 +95,28 @@ f.	Comparative statics: Suppose $E$ decreases by one unit (stricter regulation).
 g.	Dual problem: Formulate the dual problem and interpret its objective function in this context.
 
 
-## Problem 5: Extend the Simulated Method of Moments Problem
+## Problem 4: Product Mix 
 
-Recall the SMM problem from class and the course notes. See more information on SMM [here](https://opensourceecon.github.io/CompMethods/struct_est/SMM.html) 
+A firm chooses quantities $x$ and $y$ of two products to maximize profit:
 
-The r script for the class example is in the modules material.
+$$
+\max_{x,y} \; \pi(x,y) = 12x - x^2 + 4y - y^2
+$$
 
-a. Estimate the standard errors of the parameters. You can use asymptotic theory (Hessian) or bootstrap methods. 
+Each unit of either product uses one unit of production capacity. The firm has three units of capacity, and quantities must be nonnegative:
 
-b. The current SMM estimator uses an identity weighting matrix. Modify the code to use an optimal weighting matrix. You can use the sample variance-covariance matrix of the moments as an estimate of the optimal weighting matrix. Compare the estimates and standard errors of the parameters using the identity and optimal weighting matrices. Which one is more efficient? Why?
+$$
+x+y \leq 3, \qquad x \geq 0, \qquad y \geq 0.
+$$
+
+**Tasks**
+
+a. Find the profit-maximizing quantities when the capacity constraint is absent. Are these quantities feasible with the capacity constraint?
+
+b. Write the Lagrangian using multipliers $\lambda$, $\mu_x$, and $\mu_y$ on $3-x-y \geq 0$, $x \geq 0$, and $y \geq 0$, respectively. Derive all KKT conditions: stationarity, primal feasibility, dual feasibility, and complementary slackness.
+
+c. Use the KKT conditions to solve the problem. If a case is impossible, state the specific condition it violates.
+
+
+d. Report the optimal quantities, profit, and all three multipliers. Verify every KKT condition at your solution. Use the Hessian of the profit function and the shape of the feasible set to explain why this is the unique global maximum.
 
