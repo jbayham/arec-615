@@ -3,7 +3,6 @@ title: "AI, Code, and Reproducible Workflows"
 subtitle: "A first-day orientation"
 format:
   revealjs:
-    theme: simple
     slide-number: true
     transition: fade
 ---
