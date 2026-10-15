@@ -227,27 +227,46 @@ Paper Eq. 1, p. 6488. Nonnegative shares follow the text and reported zero-weigh
 4 minutes. Preserve the paper's equality target. An at-least return constraint agrees on the upper efficient branch but differs below the global minimum-variance mean. Eq. 1 prints a strict positivity symbol even though the text and results permit zero. A valid covariance matrix is positive semidefinite, so the program is convex. The Table 1 matrices used here are positive definite.
 :::
 
-## KKT conditions explain regional entry and exit {.small}
+## Full KKT conditions {.small}
 
-Use the Lagrangian
+For the expected-return and land-share equalities, use multipliers $\lambda$ and $\eta$. For $w_i\geq0$, use $\nu_i$.
 
 $$\mathcal L=w^\top\Sigma w+\lambda(\bar R-\mu^\top w)
 +\eta(1-\mathbf1^\top w)-\nu^\top w.$$
 
 $$
 \begin{aligned}
-2\Sigma w-\lambda\mu-\eta\mathbf1-\nu&=0,\\
-\mu^\top w=\bar R,\quad\mathbf1^\top w=1,\quad w&\geq0,\\
-\nu&\geq0,\qquad\nu_iw_i=0.
+\text{Stationarity:}\quad &2\Sigma w-\lambda\mu-\eta\mathbf1-\nu=0,\\
+\text{Primal feasibility:}\quad &\mu^\top w=\bar R,\quad\mathbf1^\top w=1,\quad w_i\geq0,\\
+\text{Dual feasibility:}\quad &\nu_i\geq0,\quad\lambda,\eta\in\mathbb R,\\
+\text{Complementary slackness:}\quad &\nu_iw_i=0,\qquad i\in\{W,C,E\}.
 \end{aligned}
 $$
 
-An included region has $2(\Sigma w)_i=\lambda\mu_i+\eta$.
-
-A zero-weight region can satisfy an inequality instead.
+**Equality multipliers can have either sign.** Each nonnegativity bound has its own multiplier.
 
 ::: {.notes}
-5 minutes. Equality multipliers are unrestricted. At regular solutions, lambda is the derivative of minimum variance with respect to the expected-return target, not the slope in SD-return coordinates. For an excluded region, 2(Sigma w)_i-lambda mu_i-eta=nu_i>=0. This connects directly to the recent corner-solution material. Avoid interpreting positive nu as standalone regional risk.
+4 minutes. All expressions use the same candidate allocation and multipliers. Stationarity represents three scalar equations, one per region. Primal feasibility contains two equalities and three lower bounds; dual feasibility and complementary slackness apply separately to all three lower bounds. The equality constraints hold regardless of their multipliers, so there is no complementary-slackness restriction or nonnegative-sign restriction on lambda or eta. With positive semidefinite Sigma and affine constraints, a feasible KKT solution is globally optimal. Positive definite Sigma gives a unique allocation whenever the target is feasible. Upper bounds w_i<=1 follow from the simplex constraints and need no separate multipliers.
+:::
+
+## KKT conditions explain regional entry and exit
+
+For each region $i$, stationarity gives
+
+$$2(\Sigma w)_i-\lambda\mu_i-\eta=\nu_i.$$
+
+**Included region:** $w_i>0$ implies $\nu_i=0$, so
+
+$$2(\Sigma w)_i=\lambda\mu_i+\eta.$$
+
+**Excluded region:** $w_i=0$ permits $\nu_i\geq0$, so
+
+$$2(\Sigma w)_i\geq\lambda\mu_i+\eta.$$
+
+An excluded region can satisfy equality when its bound multiplier is zero.
+
+::: {.notes}
+3 minutes. The marginal variance contribution is 2(Sigma w)_i and depends on the entire portfolio. The comparison adjusts for both the expected-return requirement and the land-share equality. A binding lower bound does not require a strictly positive multiplier: nu_i can be zero when a region enters or exits the allocation. At regular solutions, lambda is the derivative of minimum variance with respect to the expected-return target, not the slope in SD-return coordinates. Avoid interpreting positive nu as standalone regional risk.
 :::
 
 ## One numerical solution
@@ -267,26 +286,48 @@ The all-Eastern allocation has expected CCI **`r fmt(max(uniform$mu))`** and sta
 3 minutes. These are computed Table 1 results, not literal coordinates copied from Table 2. Requiring 0.51 keeps almost all the maximum expected benefit while substantially reducing risk. Ask why Western gets a small positive share despite its low expected CCI.
 :::
 
-## Solving one portfolio in R {.solver-slide}
+## Setting up SQP in R {.solver-slide}
 
-```{r solver-code, eval=FALSE, echo=TRUE}
+```{r solver-setup, echo=TRUE}
 mu <- moments_example$mu
 Sigma <- moments_example$Sigma
-fit <- quadprog::solve.QP(
-  Dmat = 2 * Sigma,
-  dvec = rep(0, 3),
-  Amat = cbind(rep(1, 3), mu, diag(3)),
-  bvec = c(1, 0.51, 0, 0, 0),
-  meq = 2
-)
-fit$solution
+target <- 0.51
+objective <- function(w) drop(t(w) %*% Sigma %*% w)
+gradient <- function(w) drop(2 * Sigma %*% w)
+equalities <- function(w) c(sum(w) - 1, sum(mu * w) - target)
+jacobian <- function(w) rbind(rep(1, 3), mu)
 ```
 
-`Amat` stores constraint coefficients in columns. The first two constraints are equalities.
+Equalities are written as **residuals equal to zero**. Each Jacobian **row** contains the derivatives of one constraint.
 
 ::: {.notes}
-4 minutes. quadprog minimizes one-half w'Dw-d'w, hence D=2 Sigma. It imposes t(Amat) w>=bvec, with the first meq constraints interpreted as equalities. The identity matrix imposes the three lower bounds. AM_model.R wraps this call so we can repeatedly solve different targets. This exact quadratic structure makes a dedicated QP solver convenient even though the course has also used SLSQP.
+4 minutes. The objective is variance, with gradient 2 Sigma w. The two constraints require total shares of one and mean CCI of 0.51. The Jacobian is constant because both constraints are linear. SQP repeatedly solves a quadratic approximation with linearized constraints; here the objective is already quadratic and the constraints already linear. SLSQP approximates the Lagrangian Hessian internally, so it can still take several iterations.
 :::
+
+## Solving one portfolio in R {.solver-slide}
+
+```{r solver-code, echo=TRUE}
+fit <- nloptr::nloptr(
+  x0 = rep(1/3, 3), lb = rep(0, 3),
+  eval_f = objective, eval_grad_f = gradient,
+  eval_g_eq = equalities, eval_jac_g_eq = jacobian,
+  opts = list(algorithm = "NLOPT_LD_SLSQP",
+              xtol_rel = 1e-12, maxeval = 2000)
+)
+setNames(fit$solution, names(mu))
+```
+
+`x0` starts at equal thirds; `lb` enforces nonnegative shares. Check convergence and both equality residuals.
+
+::: {.notes}
+4 minutes. NLOPT_LD_SLSQP selects sequential least-squares quadratic programming. The starting allocation sums to one but need not meet the return target. Inspect fit$status, fit$message, and equalities(fit$solution). Status codes 1 through 4 indicate successful termination; iteration limits are not evidence of an optimum. The standalone AM_teaching.R walks through these checks. AM_model.R uses the same algorithm, with scaling for repeated solves across units and direct handling of uniquely determined extreme portfolios.
+:::
+
+```{r check-slide-solution, include=FALSE}
+stopifnot(fit$status %in% 1:4,
+          max(abs(equalities(fit$solution))) < 1e-8,
+          max(abs(fit$solution - target_fit$w)) < 1e-6)
+```
 
 ## The efficient frontier contains the best tradeoffs
 
@@ -371,7 +412,7 @@ si_figure3
 4 minutes. Lines reproduce all 200 Figure 3 portfolios in Dataset S1 to numerical precision. Open circles are the authors' SI coordinates. This match uses regional means and covariances rounded to two decimals, an inferred implementation detail rather than an author-confirmed specification. Both maximum-return endpoints allocate entirely to Central. Explain the zero-risk left endpoint on the following slide before drawing a policy conclusion from it.
 :::
 
-## Input precision affects the measured risk
+<!-- ## Input precision affects the measured risk
 
 The SI benefit–cost results match **two-decimal means and covariances**.
 
@@ -387,7 +428,7 @@ The original scenario outcomes imply **positive risk** for the same allocation.
 
 ::: {.notes}
 3 minutes. This numerical issue matters for interpretation of the published figure. It is not an assigned student extension. reproduce_SI.R confirms the matching arithmetic and optimal weights across all 200 SI points. We cannot establish the authors' exact implementation without their code. The main Table 1 implementation keeps full computed moments, with its separate figure3 object. Rounding changes a positive definite covariance matrix into a singular positive semidefinite matrix.
-:::
+::: -->
 
 ## The model connects risk to the allocation decision
 
@@ -449,10 +490,11 @@ Ando, Amy W., and Mindy L. Mallory. 2012. “Optimal portfolio design to reduce 
 
 [doi:10.1073/pnas.1114653109](https://doi.org/10.1073/pnas.1114653109)
 
-Classroom code: `AM_model.R`  
+Interactive walkthrough: `AM_teaching.R`  
+Model and publication audit: `AM_model.R`  
 SI reconstruction: `reproduce_SI.R`  
 Numerical checks: `validate_model.R`
 
 ::: {.notes}
-The author calculations used MATLAB frontcon. This course implementation uses R's quadprog and derives inputs from the main paper's Table 1. The later portn package by Seong Yun supplies an independent software example, not an author-issued replication archive.
+The author calculations used MATLAB frontcon. This course implementation uses SLSQP through R's nloptr package and derives inputs from the main paper's Table 1. The later portn package by Seong Yun supplies an independent software example, not an author-issued replication archive.
 :::

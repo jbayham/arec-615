@@ -1,7 +1,7 @@
 # Ando and Mallory (2012): conservation portfolios under climate uncertainty
 # AREC 615. Run numbered sections in order in RStudio, or source this file.
 # From the repository root: Rscript modules/nonlinear_programming/Ando/AM_model.R
-# Dependencies: install.packages(c("quadprog", "ggplot2"))
+# Dependencies: install.packages(c("nloptr", "ggplot2"))
 # No downloads or file writes. Results and ggplot objects remain in memory.
 #
 # SOURCE: references/Ando-portfolio_design.pdf, Tables 1-2, equations 1-5.
@@ -19,7 +19,7 @@
 # Its rounded moment inputs are not used here. We derive moments from outcomes.
 # The supplied SI contains result tables rather than MATLAB source code.
 
-library(quadprog)
+library(nloptr)
 library(ggplot2)
 
 # 1. Read the scenario table -----------------------------------------------
@@ -84,10 +84,9 @@ solve_portfolio <- function(moments, target = NULL) {
   mu <- moments$mu
   Sigma <- moments$Sigma
   n <- length(mu)
-  # quadprog requires positive definiteness, which holds for these inputs.
-  # Stop for a singular extension instead of silently changing its risk model.
-  if (min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values) <= 1e-12)
-    stop("Covariance is singular or not positive definite; use a PSD-capable solver.")
+  # SQP supports positive semidefinite covariance, including the singular SI case.
+  if (min(eigen(Sigma, symmetric = TRUE, only.values = TRUE)$values) < -1e-10)
+    stop("Covariance must be positive semidefinite.")
   if (!is.null(target)) {
     stopifnot(length(target) == 1, is.finite(target))
     if (target < min(mu) - 1e-10 || target > max(mu) + 1e-10)
@@ -102,25 +101,35 @@ solve_portfolio <- function(moments, target = NULL) {
                   target = target, fit = NULL, endpoint = TRUE))
     }
   }
-  # solve.QP minimizes (1/2) w'Dw - d'w and imposes t(Amat) %*% w >= bvec.
-  # Equality constraints MUST come first. meq counts those equalities.
-  Amat <- matrix(1, nrow = n, ncol = 1)
-  bvec <- 1
-  meq <- 1
-  if (!is.null(target)) {
-    Amat <- cbind(Amat, mu)
-    bvec <- c(bvec, target)
-    meq <- 2
+  # Scale objective and return equality to make tolerances insensitive to units.
+  # This leaves the allocation unchanged; reported outcomes use original units.
+  variance_scale <- max(abs(Sigma))
+  if (variance_scale == 0) variance_scale <- 1
+  return_scale <- max(abs(mu))
+  if (return_scale == 0) return_scale <- 1
+  equalities <- function(w) {
+    if (is.null(target)) return(sum(w) - 1)
+    c(sum(w) - 1, (sum(mu * w) - target) / return_scale)
   }
-  Amat <- cbind(Amat, diag(n))
-  bvec <- c(bvec, rep(0, n))
-  fit <- solve.QP(Dmat = 2 * Sigma, dvec = rep(0, n),
-                  Amat = Amat, bvec = bvec, meq = meq)
+  equality_jacobian <- function(w) {
+    if (is.null(target)) return(matrix(1, nrow = 1, ncol = n))
+    rbind(rep(1, n), mu / return_scale)
+  }
+  fit <- nloptr(
+    x0 = rep(1/n, n), lb = rep(0, n), ub = rep(1, n),
+    eval_f = function(w) drop(crossprod(w, Sigma %*% w)) / variance_scale,
+    eval_grad_f = function(w) drop(2 * Sigma %*% w) / variance_scale,
+    eval_g_eq = equalities, eval_jac_g_eq = equality_jacobian,
+    opts = list(algorithm = "NLOPT_LD_SLSQP", xtol_rel = 1e-12,
+                ftol_abs = 1e-15, tol_constraints_eq = rep(1e-10, if(is.null(target)) 1 else 2),
+                maxeval = 2000)
+  )
+  if (!(fit$status %in% 1:4)) stop("SQP did not converge: ", fit$message)
   w <- setNames(fit$solution, names(mu))
   stopifnot(abs(sum(w) - 1) < 1e-8, min(w) > -1e-8)
   if (!is.null(target)) stopifnot(abs(sum(mu * w) - target) < 1e-8)
   list(w = w, outcomes = portfolio_outcomes(w, moments), target = target,
-       fit = fit, Amat = Amat, bvec = bvec, meq = meq, endpoint = FALSE)
+       fit = fit, endpoint = FALSE)
 }
 
 example_fit <- solve_portfolio(moments_example, target = 0.51)
@@ -236,83 +245,3 @@ diversification <- do.call(rbind, lapply(names(models), function(key) {
                    compare_benchmark(models[[key]], fws_weights)))
 }))
 
-# 7. Audit the published Table 2 independently ------------------------------
-# Published values are ONLY comparison targets, never solver inputs.
-paper_table2 <- read.table(header = TRUE, text = '
-figure point belief Western Central Eastern paper_sd paper_mean
-2 A N 0.00 1.00 0.00 0.11 0.67
-2 B N 0.04 0.47 0.47 0.03 0.51
-2 C N 0.25 0.32 0.42 0.02 0.44
-2 D U 0.00 0.00 1.00 0.13 0.53
-2 E U 0.05 0.38 0.57 0.06 0.51
-2 F U 0.34 0.20 0.47 0.04 0.41
-2 G N 0.33 0.33 0.33 0.11 0.44
-2 H U 0.33 0.33 0.33 0.13 0.41
-3 A N 0.00 1.00 0.00 0.17 0.96
-3 B N 0.00 0.57 0.43 0.08 0.68
-3 C N 0.18 0.36 0.45 0.05 0.57
-3 D U 0.00 1.00 0.00 0.24 0.74
-3 E U 0.00 0.85 0.15 0.19 0.69
-3 F U 0.00 0.71 0.29 0.15 0.65
-3 G U 0.08 0.26 0.66 0.04 0.50
-3 H N 0.14 0.76 0.10 0.13 0.82
-3 I U 0.14 0.76 0.10 0.19 0.65
-3 J N 0.33 0.33 0.33 0.06 0.57
-3 K U 0.33 0.33 0.33 0.09 0.50
-')
-paper_audit <- do.call(rbind, lapply(seq_len(nrow(paper_table2)), function(i) {
-  row <- paper_table2[i, ]
-  metric <- if (row$figure == 2) "CCI" else "CCI/cost"
-  belief <- if (row$belief == "N") "No change likely" else "Uniform"
-  w <- as.numeric(row[regions])
-  # Evaluate literally printed weights, even where they do not sum to one.
-  # Also show explicitly normalized weights, rather than silently fixing them.
-  raw <- portfolio_outcomes(w, models[[paste(metric, belief, sep = ": ")]])
-  normalized <- portfolio_outcomes(w/sum(w), models[[paste(metric, belief, sep = ": ")]])
-  data.frame(row, weight_sum = sum(w), calculated_mean = raw["mean"],
-    calculated_sd = raw["sd"], normalized_mean = normalized["mean"],
-    normalized_sd = normalized["sd"], mean_gap = raw["mean"] - row$paper_mean,
-    sd_gap = raw["sd"] - row$paper_sd, row.names = NULL)
-}))
-# In particular, Figure 2's equal-thirds SDs are about .027 and .053 from
-# Table 1, versus .11 and .13 in Table 2. Ordinary rounding cannot explain this.
-
-# 8. The paper's $1 billion illustration -----------------------------------
-# The maximizers are all Eastern (benefits) and all Central (benefit/cost).
-# The Methods formula scales expected per-acre CCI by acres affordable.
-# It does not uniquely identify which scenario cost Ci1 enters this example.
-# Report historic and probability-weighted costs separately, without fitting.
-budget <- 1e9
-p <- probabilities$Uniform
-mu_cci <- models[["CCI: Uniform"]]$mu
-budget_audit <- do.call(rbind, lapply(c("CCI", "CCI/cost"), function(metric) {
-  m <- models[[paste(metric, "Uniform", sep = ": ")]]
-  w <- solve_portfolio(m, max(m$mu))$w
-  expected_cost <- sum(w * drop(crossprod(p, cost))) * 1000
-  historic_cost <- sum(w * cost["Historic", ]) * 1000
-  data.frame(metric, region = regions[which.max(w)],
-    published_total = if (metric == "CCI") 357442 else 1057183,
-    using_expected_cost = budget / expected_cost * sum(w * mu_cci),
-    using_historic_cost = budget / historic_cost * sum(w * mu_cci),
-    # A third timing convention: buy a scenario-dependent acreage ex post.
-    expected_scenario_total = sum(p * budget /
-      (drop(cost %*% w) * 1000) * drop(CCI %*% w)))
-}))
-
-# 9. Inspect the results ---------------------------------------------------
-# quiet/plot options allow the slides and validation script to reuse the code.
-if (!isTRUE(getOption("ando.quiet", FALSE))) {
-  cat("\nAndo-Mallory: Table 1 reconstruction; exact replication unresolved.\n")
-  print(diversification, digits = 4, row.names = FALSE)
-  cat("\nTable 2 audit (literal published weights):\n")
-  print(paper_audit[c("figure", "point", "weight_sum", "paper_mean", "calculated_mean",
-                      "paper_sd", "calculated_sd")], digits = 4, row.names = FALSE)
-  cat("\nBudget illustration: cost conventions shown explicitly\n")
-  print(budget_audit, digits = 7, row.names = FALSE)
-}
-if (isTRUE(getOption("ando.plot", interactive()))) {
-  print(scenario_plot)
-  print(figure2)
-  print(figure3)
-  print(weights_plot)
-}

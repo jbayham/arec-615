@@ -1617,22 +1617,45 @@ overflow: hidden!important;
 display:block!important;
 }</style></aside>
 </section>
-<section id="kkt-conditions-explain-regional-entry-and-exit" class="slide level2 small">
-<h2>KKT conditions explain regional entry and exit</h2>
-<p>Use the Lagrangian</p>
+<section id="full-kkt-conditions" class="slide level2 small">
+<h2>Full KKT conditions</h2>
+<p>For the expected-return and land-share equalities, use multipliers <span class="math inline">\lambda</span> and <span class="math inline">\eta</span>. For <span class="math inline">w_i\geq0</span>, use <span class="math inline">\nu_i</span>.</p>
 <p><span class="math display">\mathcal L=w^\top\Sigma w+\lambda(\bar R-\mu^\top w)
 +\eta(1-\mathbf1^\top w)-\nu^\top w.</span></p>
 <p><span class="math display">
 \begin{aligned}
-2\Sigma w-\lambda\mu-\eta\mathbf1-\nu&amp;=0,\\
-\mu^\top w=\bar R,\quad\mathbf1^\top w=1,\quad w&amp;\geq0,\\
-\nu&amp;\geq0,\qquad\nu_iw_i=0.
+\text{Stationarity:}\quad &amp;2\Sigma w-\lambda\mu-\eta\mathbf1-\nu=0,\\
+\text{Primal feasibility:}\quad &amp;\mu^\top w=\bar R,\quad\mathbf1^\top w=1,\quad w_i\geq0,\\
+\text{Dual feasibility:}\quad &amp;\nu_i\geq0,\quad\lambda,\eta\in\mathbb R,\\
+\text{Complementary slackness:}\quad &amp;\nu_iw_i=0,\qquad i\in\{W,C,E\}.
 \end{aligned}
 </span></p>
-<p>An included region has <span class="math inline">2(\Sigma w)_i=\lambda\mu_i+\eta</span>.</p>
-<p>A zero-weight region can satisfy an inequality instead.</p>
+<p><strong>Equality multipliers can have either sign.</strong> Each nonnegativity bound has its own multiplier.</p>
 <aside class="notes">
-<p>5 minutes. Equality multipliers are unrestricted. At regular solutions, lambda is the derivative of minimum variance with respect to the expected-return target, not the slope in SD-return coordinates. For an excluded region, 2(Sigma w)_i-lambda mu_i-eta=nu_i&gt;=0. This connects directly to the recent corner-solution material. Avoid interpreting positive nu as standalone regional risk.</p>
+<p>4 minutes. All expressions use the same candidate allocation and multipliers. Stationarity represents three scalar equations, one per region. Primal feasibility contains two equalities and three lower bounds; dual feasibility and complementary slackness apply separately to all three lower bounds. The equality constraints hold regardless of their multipliers, so there is no complementary-slackness restriction or nonnegative-sign restriction on lambda or eta. With positive semidefinite Sigma and affine constraints, a feasible KKT solution is globally optimal. Positive definite Sigma gives a unique allocation whenever the target is feasible. Upper bounds w_i&lt;=1 follow from the simplex constraints and need no separate multipliers.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
+</section>
+<section id="kkt-conditions-explain-regional-entry-and-exit" class="slide level2">
+<h2>KKT conditions explain regional entry and exit</h2>
+<p>For each region <span class="math inline">i</span>, stationarity gives</p>
+<p><span class="math display">2(\Sigma w)_i-\lambda\mu_i-\eta=\nu_i.</span></p>
+<p><strong>Included region:</strong> <span class="math inline">w_i&gt;0</span> implies <span class="math inline">\nu_i=0</span>, so</p>
+<p><span class="math display">2(\Sigma w)_i=\lambda\mu_i+\eta.</span></p>
+<p><strong>Excluded region:</strong> <span class="math inline">w_i=0</span> permits <span class="math inline">\nu_i\geq0</span>, so</p>
+<p><span class="math display">2(\Sigma w)_i\geq\lambda\mu_i+\eta.</span></p>
+<p>An excluded region can satisfy equality when its bound multiplier is zero.</p>
+<aside class="notes">
+<p>3 minutes. The marginal variance contribution is 2(Sigma w)_i and depends on the entire portfolio. The comparison adjusts for both the expected-return requirement and the land-share equality. A binding lower bound does not require a strictly positive multiplier: nu_i can be zero when a region enters or exits the allocation. At regular solutions, lambda is the derivative of minimum variance with respect to the expected-return target, not the slope in SD-return coordinates. Avoid interpreting positive nu as standalone regional risk.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
@@ -1690,23 +1713,51 @@ overflow: hidden!important;
 display:block!important;
 }</style></aside>
 </section>
-<section id="solving-one-portfolio-in-r" class="slide level2 solver-slide">
-<h2>Solving one portfolio in R</h2>
+<section id="setting-up-sqp-in-r" class="slide level2 solver-slide">
+<h2>Setting up SQP in R</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a>mu <span class="ot">&lt;-</span> moments_example<span class="sc">$</span>mu</span>
 <span id="cb1-2"><a href="#cb1-2"></a>Sigma <span class="ot">&lt;-</span> moments_example<span class="sc">$</span>Sigma</span>
-<span id="cb1-3"><a href="#cb1-3"></a>fit <span class="ot">&lt;-</span> quadprog<span class="sc">::</span><span class="fu">solve.QP</span>(</span>
-<span id="cb1-4"><a href="#cb1-4"></a>  <span class="at">Dmat =</span> <span class="dv">2</span> <span class="sc">*</span> Sigma,</span>
-<span id="cb1-5"><a href="#cb1-5"></a>  <span class="at">dvec =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>),</span>
-<span id="cb1-6"><a href="#cb1-6"></a>  <span class="at">Amat =</span> <span class="fu">cbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">3</span>), mu, <span class="fu">diag</span>(<span class="dv">3</span>)),</span>
-<span id="cb1-7"><a href="#cb1-7"></a>  <span class="at">bvec =</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fl">0.51</span>, <span class="dv">0</span>, <span class="dv">0</span>, <span class="dv">0</span>),</span>
-<span id="cb1-8"><a href="#cb1-8"></a>  <span class="at">meq =</span> <span class="dv">2</span></span>
-<span id="cb1-9"><a href="#cb1-9"></a>)</span>
-<span id="cb1-10"><a href="#cb1-10"></a>fit<span class="sc">$</span>solution</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-3"><a href="#cb1-3"></a>target <span class="ot">&lt;-</span> <span class="fl">0.51</span></span>
+<span id="cb1-4"><a href="#cb1-4"></a>objective <span class="ot">&lt;-</span> <span class="cf">function</span>(w) <span class="fu">drop</span>(<span class="fu">t</span>(w) <span class="sc">%*%</span> Sigma <span class="sc">%*%</span> w)</span>
+<span id="cb1-5"><a href="#cb1-5"></a>gradient <span class="ot">&lt;-</span> <span class="cf">function</span>(w) <span class="fu">drop</span>(<span class="dv">2</span> <span class="sc">*</span> Sigma <span class="sc">%*%</span> w)</span>
+<span id="cb1-6"><a href="#cb1-6"></a>equalities <span class="ot">&lt;-</span> <span class="cf">function</span>(w) <span class="fu">c</span>(<span class="fu">sum</span>(w) <span class="sc">-</span> <span class="dv">1</span>, <span class="fu">sum</span>(mu <span class="sc">*</span> w) <span class="sc">-</span> target)</span>
+<span id="cb1-7"><a href="#cb1-7"></a>jacobian <span class="ot">&lt;-</span> <span class="cf">function</span>(w) <span class="fu">rbind</span>(<span class="fu">rep</span>(<span class="dv">1</span>, <span class="dv">3</span>), mu)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p><code>Amat</code> stores constraint coefficients in columns. The first two constraints are equalities.</p>
+<p>Equalities are written as <strong>residuals equal to zero</strong>. Each Jacobian <strong>row</strong> contains the derivatives of one constraint.</p>
 <aside class="notes">
-<p>4 minutes. quadprog minimizes one-half w’Dw-d’w, hence D=2 Sigma. It imposes t(Amat) w&gt;=bvec, with the first meq constraints interpreted as equalities. The identity matrix imposes the three lower bounds. AM_model.R wraps this call so we can repeatedly solve different targets. This exact quadratic structure makes a dedicated QP solver convenient even though the course has also used SLSQP.</p>
+<p>4 minutes. The objective is variance, with gradient 2 Sigma w. The two constraints require total shares of one and mean CCI of 0.51. The Jacobian is constant because both constraints are linear. SQP repeatedly solves a quadratic approximation with linearized constraints; here the objective is already quadratic and the constraints already linear. SLSQP approximates the Lagrangian Hessian internally, so it can still take several iterations.</p>
+<style type="text/css">
+span.MJX_Assistive_MathML {
+position:absolute!important;
+clip: rect(1px, 1px, 1px, 1px);
+padding: 1px 0 0 0!important;
+border: 0!important;
+height: 1px!important;
+width: 1px!important;
+overflow: hidden!important;
+display:block!important;
+}</style></aside>
+</section>
+<section id="solving-one-portfolio-in-r" class="slide level2 solver-slide">
+<h2>Solving one portfolio in R</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>fit <span class="ot">&lt;-</span> nloptr<span class="sc">::</span><span class="fu">nloptr</span>(</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="at">x0 =</span> <span class="fu">rep</span>(<span class="dv">1</span><span class="sc">/</span><span class="dv">3</span>, <span class="dv">3</span>), <span class="at">lb =</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="dv">3</span>),</span>
+<span id="cb2-3"><a href="#cb2-3"></a>  <span class="at">eval_f =</span> objective, <span class="at">eval_grad_f =</span> gradient,</span>
+<span id="cb2-4"><a href="#cb2-4"></a>  <span class="at">eval_g_eq =</span> equalities, <span class="at">eval_jac_g_eq =</span> jacobian,</span>
+<span id="cb2-5"><a href="#cb2-5"></a>  <span class="at">opts =</span> <span class="fu">list</span>(<span class="at">algorithm =</span> <span class="st">&quot;NLOPT_LD_SLSQP&quot;</span>,</span>
+<span id="cb2-6"><a href="#cb2-6"></a>              <span class="at">xtol_rel =</span> <span class="fl">1e-12</span>, <span class="at">maxeval =</span> <span class="dv">2000</span>)</span>
+<span id="cb2-7"><a href="#cb2-7"></a>)</span>
+<span id="cb2-8"><a href="#cb2-8"></a><span class="fu">setNames</span>(fit<span class="sc">$</span>solution, <span class="fu">names</span>(mu))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   Western    Central    Eastern 
+0.03986907 0.38486910 0.57526182 </code></pre>
+</div>
+</div>
+<p><code>x0</code> starts at equal thirds; <code>lb</code> enforces nonnegative shares. Check convergence and both equality residuals.</p>
+<aside class="notes">
+<p>4 minutes. NLOPT_LD_SLSQP selects sequential least-squares quadratic programming. The starting allocation sums to one but need not meet the return target. Inspect fit<span class="math inline">status, fit</span>message, and equalities(fit$solution). Status codes 1 through 4 indicate successful termination; iteration limits are not evidence of an optimum. The standalone AM_teaching.R walks through these checks. AM_model.R uses the same algorithm, with scaling for repeated solves across units and direct handling of uniquely determined extreme portfolios.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
@@ -1883,28 +1934,24 @@ width: 1px!important;
 overflow: hidden!important;
 display:block!important;
 }</style></aside>
-</section>
-<section id="input-precision-affects-the-measured-risk" class="slide level2">
-<h2>Input precision affects the measured risk</h2>
-<p>The SI benefit–cost results match <strong>two-decimal means and covariances</strong>.</p>
-<p>For Western and Eastern regions, that rounding gives</p>
-<p><span class="math display">\sigma_W^2=\sigma_E^2=0.01,\qquad\sigma_{WE}=-0.01.</span></p>
-<p>A half-Western, half-Eastern portfolio therefore has variance</p>
-<p><span class="math display">\tfrac14(0.01)+\tfrac14(0.01)+\tfrac12(-0.01)=0.</span></p>
-<p>The original scenario outcomes imply <strong>positive risk</strong> for the same allocation.</p>
-<aside class="notes">
-<p>3 minutes. This numerical issue matters for interpretation of the published figure. It is not an assigned student extension. reproduce_SI.R confirms the matching arithmetic and optimal weights across all 200 SI points. We cannot establish the authors’ exact implementation without their code. The main Table 1 implementation keeps full computed moments, with its separate figure3 object. Rounding changes a positive definite covariance matrix into a singular positive semidefinite matrix.</p>
-<style type="text/css">
-span.MJX_Assistive_MathML {
-position:absolute!important;
-clip: rect(1px, 1px, 1px, 1px);
-padding: 1px 0 0 0!important;
-border: 0!important;
-height: 1px!important;
-width: 1px!important;
-overflow: hidden!important;
-display:block!important;
-}</style></aside>
+
+<!-- ## Input precision affects the measured risk
+
+The SI benefit–cost results match **two-decimal means and covariances**.
+
+For Western and Eastern regions, that rounding gives
+
+$$\sigma_W^2=\sigma_E^2=0.01,\qquad\sigma_{WE}=-0.01.$$
+
+A half-Western, half-Eastern portfolio therefore has variance
+
+$$\tfrac14(0.01)+\tfrac14(0.01)+\tfrac12(-0.01)=0.$$
+
+The original scenario outcomes imply **positive risk** for the same allocation.
+
+::: {.notes}
+3 minutes. This numerical issue matters for interpretation of the published figure. It is not an assigned student extension. reproduce_SI.R confirms the matching arithmetic and optimal weights across all 200 SI points. We cannot establish the authors' exact implementation without their code. The main Table 1 implementation keeps full computed moments, with its separate figure3 object. Rounding changes a positive definite covariance matrix into a singular positive semidefinite matrix.
+::: -->
 </section>
 <section id="the-model-connects-risk-to-the-allocation-decision" class="slide level2">
 <h2>The model connects risk to the allocation decision</h2>
@@ -2009,11 +2056,12 @@ display:block!important;
 <h2>Reference</h2>
 <p>Ando, Amy W., and Mindy L. Mallory. 2012. “Optimal portfolio design to reduce climate-related conservation uncertainty in the Prairie Pothole Region.” <em>Proceedings of the National Academy of Sciences</em> 109(17):6484–6489.</p>
 <p><a href="https://doi.org/10.1073/pnas.1114653109">doi:10.1073/pnas.1114653109</a></p>
-<p>Classroom code: <code>AM_model.R</code><br>
+<p>Interactive walkthrough: <code>AM_teaching.R</code><br>
+Model and publication audit: <code>AM_model.R</code><br>
 SI reconstruction: <code>reproduce_SI.R</code><br>
 Numerical checks: <code>validate_model.R</code></p>
 <aside class="notes">
-<p>The author calculations used MATLAB frontcon. This course implementation uses R’s quadprog and derives inputs from the main paper’s Table 1. The later portn package by Seong Yun supplies an independent software example, not an author-issued replication archive.</p>
+<p>The author calculations used MATLAB frontcon. This course implementation uses SLSQP through R’s nloptr package and derives inputs from the main paper’s Table 1. The later portn package by Seong Yun supplies an independent software example, not an author-issued replication archive.</p>
 <style type="text/css">
 span.MJX_Assistive_MathML {
 position:absolute!important;
