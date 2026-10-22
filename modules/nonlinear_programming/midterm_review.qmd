@@ -144,35 +144,7 @@ At each step evaluate the midpoint, then retain the half with a sign change.
 | 3 | $[4,6]$ | 5 | 0 | Stop: exact root. |
 
 
-## Gradient ascent is a fixed-point iteration
 
-- **Fixed point:** rewrite the equation as $x=T(x)$ and iterate
-  $x^{k+1}=T(x^k)$. For a continuously differentiable map, $|T'(x^*)|<1$
-  gives local convergence from sufficiently nearby starting points.
-- **Gradient direction:** use $x^{k+1}=x^k+\alpha_k\nabla f(x^k)$ for
-  maximization and a minus sign for minimization. The gradient gives steepest
-  local increase under Euclidean distance; the step size controls how far to move.
-- **Step size matters:** too small can make progress slow; too large can cause
-  oscillation or divergence. Different fixed-point rearrangements can converge
-  differently even when they have the same solution.
-
-Use marginal benefits to choose an adjustment:
-
-$$
-b^{k+1}=b^k+\alpha g(b^k)
-=T(b^k),\qquad T(b)=(1-2\alpha)b+10\alpha.
-$$
-
-With $\alpha=1/4$ and $b^0=0$, the sequence is
-
-$$0\ \longrightarrow\ 2.5\ \longrightarrow\ 3.75\ \longrightarrow\ 4.375\ \longrightarrow\cdots\longrightarrow\ 5.$$
-
-Writing $e^k=b^k-5$ gives $e^{k+1}=(1-2\alpha)e^k$. Thus this iteration converges
-from any starting point when $|1-2\alpha|<1$, or **$0<\alpha<1$**.
-At $\alpha=1$, errors oscillate without shrinking; larger positive steps diverge
-unless started exactly at the solution.
-
-\newpage
 
 ## Newton: use curvature to scale the adjustment
 
@@ -253,7 +225,7 @@ $$
 
 The unrestricted choice $(5,5)$ spends $15<20$. 
 
-## Moderate budget: $B=5$ (\$50,000), both treatments positive
+## Moderate budget: $B=5$ (\$50,000)
 
 Assume $b,m>0$. The conditions $b\mathcal L_b=0$ and $m\mathcal L_m=0$
 force $\mathcal L_b=\mathcal L_m=0$, reducing the KKT system to

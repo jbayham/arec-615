@@ -92,7 +92,7 @@ e.	Interpretation of $\lambda$:
 
 f.	Comparative statics: Suppose $E$ decreases by one unit (stricter regulation). Use $\lambda^*$ to predict the change in the firm’s profit.
 
-g.	Dual problem: Formulate the dual problem and interpret its objective function in this context.
+g.	For a required output level $\bar q$, formulate the firm’s cost-minimization problem subject to the production requirement and emissions cap. Derive its cost function, then show how the firm chooses output to maximize profit.
 
 
 ## Problem 4: Product Mix 
