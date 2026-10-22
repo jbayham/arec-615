@@ -1,0 +1,242 @@
+---
+number-sections: false
+format:
+  pdf:
+    fontsize: 10pt
+    geometry: margin=0.8in
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Nonlinear Programming: Answer Key
+
+
+
+# 3. Pollution Abatement under an Emissions Cap
+
+## a. Formulation and Lagrangian
+
+The firm's problem is
+$$
+\max_{q,a}\;100q-2q^2-\tfrac12a^2
+\quad\text{subject to}\quad E-q+a\geq0,\quad q\geq0,\quad a\geq0.
+$$
+Thus
+$$
+\boxed{\mathcal L=100q-2q^2-\tfrac12a^2
++\lambda(E-q+a)+\mu_q q+\mu_a a.}
+$$
+
+## b. KKT conditions
+
+**Stationarity:**
+$$
+100-4q-\lambda+\mu_q=0,\qquad -a+\lambda+\mu_a=0.
+$$
+**Primal feasibility:** $E-q+a\geq0$, $q\geq0$, $a\geq0$.
+
+**Dual feasibility:** $\lambda\geq0$, $\mu_q\geq0$, $\mu_a\geq0$.
+
+**Complementary slackness:**
+$$
+\lambda(E-q+a)=0,\qquad \mu_q q=0,\qquad \mu_a a=0.
+$$
+
+## c. Unregulated and regulated optima
+
+Without the emissions cap, $100-4q=0$ and $-a=0$ give
+$(q^u,a^u)=(25,0)$ and profit $1250$. Net emissions are $25>20$, so this
+allocation violates the cap. The regulated optimum must use a binding cap:
+if it had slack, $\lambda=0$ and the KKT conditions would return $(25,0)$.
+
+Try $q>0$ and $a>0$, so $\mu_q=\mu_a=0$. Stationarity and the binding cap give
+$$
+q=\frac{100-\lambda}{4},\qquad a=\lambda,\qquad q-a=20.
+$$
+Hence $100-5\lambda=80$ and
+$$
+\boxed{q^*=24,\quad a^*=4,\quad\lambda^*=4,\quad\mu_q^*=\mu_a^*=0.}
+$$
+This candidate satisfies the assumed positivity, the cap $24-4=20$, and
+both stationarity equations: $100-96-4=0$ and $-4+4=0$.
+All multipliers are nonnegative and all complementary products vanish.
+Profit is $100(24)-2(24)^2-\tfrac12(4)^2=\boxed{1240}$.
+
+## d. Second-order conditions
+
+All constraints are affine, so the Lagrangian Hessian equals the profit Hessian:
+$$
+\nabla^2_{q,a}\mathcal L=\begin{pmatrix}-4&0\\0&-1\end{pmatrix}.
+$$
+The Hessian is negative definite (-4 < 0 and 4 > 0), confirming the solution is a strict local maximum.
+\newpage
+
+## e. Economic meaning of the emissions multiplier
+
+The emissions multiplier $\lambda^*$ represents the marginal value of one additional unit of permitted emissions. It indicates how much the firm is willing to pay for an extra unit of emissions allowance, reflecting the trade-off between abatement costs and the value of reduced emissions.
+
+## f. Tighten the cap by one unit
+
+For $\Delta E=-1$, the first-order prediction is
+$$
+\boxed{\Delta V\approx\lambda^*\Delta E=4(-1)=-4,}
+\qquad V(19)\approx1236.
+$$
+To distinguish this approximation from the exact change, solve for a general
+cap in the binding regime $0\leq E<25$:
+$$
+q^*(E)=20+\frac{E}{5},\qquad
+a^*(E)=\lambda^*(E)=20-\frac{4E}{5},\qquad
+V(E)=1250-\frac25(25-E)^2.
+$$
+At $E=19$, $(q^*,a^*)=(23.8,4.8)$ and $V(19)=1235.6$.
+The exact profit change is **$-4.4$**. Tightening raises the marginal cost,
+so the initial multiplier slightly understates the loss from a full unit.
+
+## g. Dual problem and interpretation
+
+Using the full Lagrangian from part (a), relax all three inequalities and
+maximize over unrestricted $q,a\in\mathbb R$. Completing the squares gives
+$$
+\begin{aligned}
+g(\lambda,\mu_q,\mu_a;E)
+&=\sup_{q,a\in\mathbb R}\mathcal L\\
+&=\lambda E+\frac{(100-\lambda+\mu_q)^2}{8}
++\frac{(\lambda+\mu_a)^2}{2}.
+\end{aligned}
+$$
+The dual is $\boxed{\min_{\lambda,\mu_q,\mu_a\geq0}g(\lambda,\mu_q,\mu_a;E)}$.
+For any primal-feasible choice, the added multiplier terms are nonnegative,
+so $g$ is an **upper bound** on attainable profit. The dual finds the tightest bound.
+
+Equivalently, retain $q,a\geq0$ in the inner maximization and dualize only the cap:
+$$
+\boxed{\min_{\lambda\geq0}\;
+D(\lambda;E)=\lambda E+\frac{[\max(100-\lambda,0)]^2}{8}
++\frac{\lambda^2}{2}.}
+$$
+Here $D=\lambda E+\sup_{q,a\geq0}[\pi(q,a)-\lambda(q-a)]$:
+profit after charging for net emissions, plus the value of the emissions
+allowance. At $E=20$, on $0\leq\lambda\leq100$,
+$$
+D'(\lambda)=20-\frac{100-\lambda}{4}+\lambda=0
+\quad\Rightarrow\quad\lambda^*=4.
+$$
+The dual objective is strictly convex and $D(4;20)=80+1152+8=1240$.
+Equality with primal profit certifies **zero duality gap**. The full dual
+attains the same value at $(\lambda,\mu_q,\mu_a)=(4,0,0)$.
+
+\newpage
+
+# 4. Product Mix
+
+## a. Optimum without the capacity constraint
+
+The first-order conditions are $12-2x=0$ and $4-2y=0$, giving
+$$
+\boxed{(x^u,y^u)=(6,2),\qquad\pi^u=40.}
+$$
+Both quantities are nonnegative, but $6+2=8>3$, so they violate capacity.
+
+## b. Lagrangian and KKT conditions
+
+Using the specified constraint signs,
+$$
+\boxed{\mathcal L=12x-x^2+4y-y^2+\lambda(3-x-y)+\mu_x x+\mu_y y.}
+$$
+**Stationarity:**
+$$
+12-2x-\lambda+\mu_x=0,\qquad
+4-2y-\lambda+\mu_y=0.
+$$
+**Primal feasibility:** $3-x-y\geq0$, $x\geq0$, $y\geq0$.
+
+**Dual feasibility:** $\lambda,\mu_x,\mu_y\geq0$.
+
+**Complementary slackness:**
+$$
+\lambda(3-x-y)=0,\qquad\mu_x x=0,\qquad\mu_y y=0.
+$$
+
+## c. Solve by cases
+
+**Case 1: capacity is slack, $x+y<3$.** Complementary slackness requires
+$\lambda=0$. If $x=0$, stationarity requires $\mu_x=-12$, violating dual
+feasibility; thus $x>0$, $\mu_x=0$, and $x=6$. Similarly, $y=0$ would
+require $\mu_y=-4$, so $y=2$. The resulting $(6,2)$ violates capacity.
+Therefore capacity must bind: $x+y=3$.
+
+**Case 2: both products are positive.** Then $\mu_x=\mu_y=0$, so
+$$
+12-2x=\lambda=4-2y\quad\Rightarrow\quad x-y=4.
+$$
+Together with $x+y=3$, this yields $(x,y)=(3.5,-0.5)$, violating $y\geq0$.
+An interior allocation on the capacity boundary is impossible.
+
+**Case 3: $x>0$, $y=0$.** Binding capacity gives $x=3$, and
+complementary slackness gives $\mu_x=0$. Stationarity then yields
+$$
+12-2(3)-\lambda=0\Rightarrow\lambda=6,\qquad
+4-6+\mu_y=0\Rightarrow\mu_y=2.
+$$
+Both multipliers are nonnegative, so this is a valid KKT candidate.
+
+**Case 4: $x=0$, $y>0$.** Binding capacity gives $y=3$ and $\mu_y=0$.
+Then $4-2(3)-\lambda=0$ requires $\lambda=-2$, violating dual feasibility.
+
+**Case 5: $x=y=0$.** This cannot satisfy binding capacity and was already
+excluded by the slack-capacity case. These cases exhaust the possibilities.
+
+\newpage
+
+## d. Optimal values, complete verification, and uniqueness
+
+The solution is
+$$
+\boxed{x^*=3,\qquad y^*=0,\qquad\pi^*=12(3)-3^2=27,}
+$$
+$$
+\boxed{\lambda^*=6,\qquad\mu_x^*=0,\qquad\mu_y^*=2.}
+$$
+
+Every KKT condition can be checked directly:
+
+| Condition | Verification |
+|:---|:---|
+| Stationarity in $x$ | $12-2(3)-6+0=0$ |
+| Stationarity in $y$ | $4-2(0)-6+2=0$ |
+| Capacity feasibility | $3-3-0=0\geq0$ |
+| Quantity feasibility | $3\geq0$, $0\geq0$ |
+| Dual feasibility | $6\geq0$, $0\geq0$, $2\geq0$ |
+| Capacity complementary slackness | $6(3-3-0)=0$ |
+| $x$ complementary slackness | $0(3)=0$ |
+| $y$ complementary slackness | $2(0)=0$ |
+
+The profit Hessian is
+$$
+\nabla^2\pi=\begin{pmatrix}-2&0\\0&-2\end{pmatrix},\qquad
+d^\top\nabla^2\pi\,d=-2d_x^2-2d_y^2<0\quad(d\ne0).
+$$
+Profit is strictly concave, and the feasible region is the convex, compact
+triangle with vertices $(0,0)$, $(3,0)$, and $(0,3)$. Thus a maximum exists,
+the KKT conditions are sufficient, and this solution is the **unique global maximum**.
+
+**Economic interpretation.** At $(3,0)$, the marginal profit of $x$ is 6,
+while the marginal profit of $y$ is 4. Moving a small amount of capacity
+from $x$ to $y$ lowers profit at rate $4-6=-2$. This explains why the firm
+produces no $y$, even though $y$ has positive marginal profit at zero.
+The capacity shadow price is $\lambda^*=6$, and $\mu_y^*=2$ records the
+gap between capacity's value and product $y$'s marginal profit.
+
+**Independent check.** Substitute $y=3-x$ on the binding capacity boundary:
+$$
+\pi(x,3-x)=3+14x-2x^2,\qquad 0\leq x\leq3.
+$$
+Its derivative is $14-4x\geq2>0$ throughout this interval, so the best
+boundary point is $x=3$, $y=0$, confirming the KKT solution.
+
+**Common error.** Imposing $\mu_y=0$ when $y=0$ incorrectly forces
+equal marginal profits across the two products. Complementary slackness
+allows a positive multiplier on a binding nonnegativity constraint.
