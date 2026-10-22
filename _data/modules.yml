@@ -52,7 +52,7 @@
 - title: "Unconstrained and Constrained Nonlinear Programming"
   filename: "notes" 
   dirname: modules/nonlinear_programming
-  desc: "This unit introduces nonlinear programming (NLP) and covers both univariate and multivariate unconstrained and constrained optimization. Submit problem set on Canvas."
+  desc: "This unit introduces nonlinear programming (NLP) and covers both univariate and multivariate unconstrained and constrained optimization."
   readings:
     - title: "Kaiser and Messer Ch. 8"
 #       url: "course-materials/"
@@ -62,7 +62,11 @@
   ps:
     - title: "Problem Set"
       url: "problem_set.pdf"
+    - title: "Problem Set Solutions"
+      url: "problem_set_key.pdf"
   materials:
+    - title: "Midterm Review"
+      url: "midterm_review.pdf"
     - title: "Rootfinding Demo"
       url: "rootfinding/index.html"
     - title: "Emissions Cap Example"
@@ -77,18 +81,13 @@
       url: "Ando/Ando_Slides.html"
     - title: "Ando and Mallory R Code"
       url: "Ando/AM_model.R"
-#     - title: "Portfolio Problem"
-#       url: "portfolio_problem.r"
-#     - title: "Simulated Method of Moments"
-#       url: "SMM.r"
-#     - title: "Bootstrap Example"
-#       url: "bootstrap_example.R"
+
 
   
-# - title: "Dynamic Programming: Part A"
-#   filename: "notes" 
-#   dirname: modules/dynamic_programming_A
-#   desc: "This unit introduces dynamic programming. Submit problem set on Canvas."
+- title: "Dynamic Programming"
+  filename: "notes" 
+  dirname: modules/dynamic_programming
+  desc: "This unit introduces dynamic programming."
 #   readings:
 #     - title: "Miranda & Fackler Ch. 7"
 #       url: "course-materials/"
@@ -103,32 +102,3 @@
 #     - title: "Fishery Example"
 #       url: "fishery.R"
   
-# - title: "Dynamic Programming: Part B"
-#   filename: "notes" 
-#   dirname: modules/dynamic_programming_B
-#   desc: "This unit introduces dynamic programming. Submit problem set on Canvas."
-#   readings:
-#     - title: "Miranda & Fackler Ch. 8"
-#       url: "course-materials/"
-#   ps:
-#     - title: "Problem Set 4"
-#       url: "problem_set.pdf"
-#   materials:
-#     - title: "Consumption-Savings Example"
-#       url: "consumption_savings_sim.R"
-#     - title: "Hotelling Extraction"
-#       url: "extraction_sim.R"
-#     - title: "Final Review"
-#       url: "final_review.pdf"
-      
-# - title: "Presentation"
-#   #filename: "notes" 
-#   dirname: modules/presentation
-#   desc: "Notes on presentation"
-#   materials:
-#     - title: "Presentation Slides"
-#       url: "presentation.html"
-#     - title: "Presentation Workshop"
-#       url: "presentation_workshop.html"
-#     - title: "Storyboard Exercise"
-#       url: "storyboard_exercise.pdf"
