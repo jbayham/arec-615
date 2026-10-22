@@ -1,0 +1,408 @@
+---
+title: "Nonlinear Programming: Midterm Review"
+toc: false
+format:
+  pdf:
+    fontsize: 10pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+
+
+
+# Running example: wildfire treatment
+
+**Review points: formulation**
+
+- **LP versus NLP:** an NLP has a nonlinear objective or at least one nonlinear
+  constraint. Marginal benefits or resource requirements can vary with decisions.
+- **Model components:** identify decision variables and units, the objective,
+  resource limits, and sign restrictions. 
+- **Feasibility versus optimality:** constraints determine which choices are
+  possible; the objective ranks those choices.
+
+**Apply: define the treatment choices.**
+
+A land-management agency chooses prescribed burning, $b$, and mechanical
+thinning, $m$, on separate eligible areas. Each unit is a **10-acre treatment
+block**; fractional blocks are allowed. The agency treats the highest-priority
+sites first, so additional blocks generate diminishing marginal net benefits.
+For this hypothetical exercise, net benefits are
+
+$$
+N(b,m)=10b-b^2+10m-m^2.
+$$
+
+Net benefits are measured in **units of \$10,000** and represent expected avoided
+wildfire losses minus treatment costs, evaluated over the same planning period.
+The two areas' benefits are additive; this example excludes interactions such as
+fire spreading between treatment areas. The quadratic functions are stylized
+approximations, not estimates of treatment effectiveness.
+
+| Treatment | Decision (10-acre blocks) | Cost per block | Net-benefit contribution |
+|---|---|---|---|
+| Prescribed burning | $b$ | \$10,000 | $10b-b^2$ |
+| Mechanical thinning | $m$ | \$20,000 | $10m-m^2$ |
+
+With budget $B$, also in \$10,000 units, spending must satisfy $b+2m\leq B$.
+Costs reduce net benefits **and** use available funding. These are different
+roles, so including costs in the objective and a spending constraint does not
+double-count them. The agency maximizes net benefits, not acres treated.
+
+
+\newpage
+
+# Unconstrained optimization
+
+**Review points: FOCs, SOCs, and global optimality**
+
+- **Interior FOC:** for a differentiable objective, $f'(x^*)=0$ in one dimension
+  and $\nabla f(x^*)=0$ in several dimensions. Every partial derivative must equal 0.
+- **One-variable SOC:** at a stationary point, $f''<0$ gives a strict local
+  maximum, $f''>0$ a strict local minimum, and $f''=0$ is inconclusive.
+- **Multivariate SOC:** use the full Hessian, including cross derivatives.
+  A negative-definite Hessian gives a strict local maximum; positive definite
+  gives a strict local minimum; indefinite gives a saddle point.
+- **Two-variable test:** for a symmetric Hessian, $f_{11}<0$ and
+  $\det(H)=f_{11}f_{22}-f_{12}^2>0$ establish negative definiteness. In higher
+  dimensions its leading principal minors alternate signs, starting negative.
+- **Local versus global:** a local maximum dominates nearby feasible choices;
+  a global maximum dominates all feasible choices. Concavity on a convex domain
+  makes an interior stationary point a global maximizer; strict concavity ensures
+  uniqueness. Stationarity alone proves neither.
+
+
+
+First ignore the budget and solve over real-valued choices. The resulting
+positive choices will also satisfy the physical nonnegativity restrictions.
+
+## Solve without a budget
+
+For burning alone,
+
+$$
+\max_b n(b)=10b-b^2,
+\qquad n'(b)=10-2b=0
+\quad\Rightarrow\quad b^*=5.
+$$
+
+Since $n''(b)=-2<0$ everywhere, this is the unique global maximum. Below five
+blocks, another block has positive marginal net benefits; above five, it has
+negative marginal net benefits.
+
+With both treatments,
+
+$$
+\nabla N=
+\begin{bmatrix}10-2b\\10-2m\end{bmatrix},
+\qquad
+H=\nabla^2N=
+\begin{bmatrix}-2&0\\0&-2\end{bmatrix}.
+$$
+
+The FOCs give $(b^u,m^u)=(5,5)$. Net benefits are $50$ (\$500,000), and spending
+is $5+2(5)=15$ (\$150,000). Each treatment covers 50 acres.
+
+The leading principal minors are $-2<0$ and $4>0$, so $H$ is negative definite.
+Because this holds everywhere, $N$ is strictly concave, establishing a unique
+global maximum. 
+
+\newpage
+
+# Numerical methods: finding a zero marginal net benefit
+
+**Review points: optimization as rootfinding**
+
+- Solve the FOC by finding a root of $g=f'$, or of $\nabla f$ with several
+  decisions. A root of the objective itself is not the optimization target.
+- A numerical root identifies a stationary candidate; check curvature and
+  feasibility before calling it an optimum.
+
+Here $g(b)=n'(b)=10-2b$. We know the answer analytically and can use it to
+check each algorithm.
+
+## Bisection: maintain a bracket
+
+- **Requirements:** a continuous root function and endpoints with opposite
+  signs. A root without a sign change can be missed; multiple roots need not be
+  distinguished by one bracket.
+- **Update:** evaluate the midpoint and retain the half with a sign change.
+  The bracket width halves each iteration (linear convergence).
+- **Stopping:** width at most $2\epsilon$ places the midpoint within
+  $\epsilon$ of a bracketed root. Also inspect the function residual.
+
+Start with $[a,c]=[0,8]$. Continuity and $g(0)=10>0>g(8)=-6$ bracket a root.
+At each step evaluate the midpoint, then retain the half with a sign change.
+
+| Step | Bracket | Midpoint | $g(\text{midpoint})$ | Next action |
+|---|---|---|---|---|
+| 1 | $[0,8]$ | 4 | 2 | Keep $[4,8]$. |
+| 2 | $[4,8]$ | 6 | $-2$ | Keep $[4,6]$. |
+| 3 | $[4,6]$ | 5 | 0 | Stop: exact root. |
+
+
+## Gradient ascent is a fixed-point iteration
+
+- **Fixed point:** rewrite the equation as $x=T(x)$ and iterate
+  $x^{k+1}=T(x^k)$. For a continuously differentiable map, $|T'(x^*)|<1$
+  gives local convergence from sufficiently nearby starting points.
+- **Gradient direction:** use $x^{k+1}=x^k+\alpha_k\nabla f(x^k)$ for
+  maximization and a minus sign for minimization. The gradient gives steepest
+  local increase under Euclidean distance; the step size controls how far to move.
+- **Step size matters:** too small can make progress slow; too large can cause
+  oscillation or divergence. Different fixed-point rearrangements can converge
+  differently even when they have the same solution.
+
+Use marginal benefits to choose an adjustment:
+
+$$
+b^{k+1}=b^k+\alpha g(b^k)
+=T(b^k),\qquad T(b)=(1-2\alpha)b+10\alpha.
+$$
+
+With $\alpha=1/4$ and $b^0=0$, the sequence is
+
+$$0\ \longrightarrow\ 2.5\ \longrightarrow\ 3.75\ \longrightarrow\ 4.375\ \longrightarrow\cdots\longrightarrow\ 5.$$
+
+Writing $e^k=b^k-5$ gives $e^{k+1}=(1-2\alpha)e^k$. Thus this iteration converges
+from any starting point when $|1-2\alpha|<1$, or **$0<\alpha<1$**.
+At $\alpha=1$, errors oscillate without shrinking; larger positive steps diverge
+unless started exactly at the solution.
+
+\newpage
+
+## Newton: use curvature to scale the adjustment
+
+- **Rootfinding update:** $x^{k+1}=x^k-g(x^k)/g'(x^k)$. For optimization,
+  substitute $g=f'$ to obtain $x^{k+1}=x^k-f'(x^k)/f''(x^k)$.
+- **Convergence:** under suitable smoothness, a simple root, and a sufficiently
+  close starting point, Newton converges quadratically. It is a local guarantee.
+- **Failure modes:** a small or zero denominator, a poor starting value, or an
+  inappropriate step can prevent convergence or lead to the wrong stationary point.
+
+Apply Newton to $g=0$:
+
+$$
+b^{k+1}=b^k-\frac{g(b^k)}{g'(b^k)}
+=b^k-\frac{10-2b^k}{-2}=5.
+$$
+
+Newton reaches the answer in one step because $g$ is linear.
+
+
+\newpage
+
+# KKT: evaluate different budget levels
+
+**Review points: inequalities and active constraints**
+
+- **Lagrangian:** for maximization with $g(x)\leq B$, use
+  $\mathcal L=f(x)+\lambda[B-g(x)]$ with $\lambda\geq0$. An equality
+  multiplier, by contrast, is unrestricted in sign.
+- **Complementarity logic:** slack constraint $\Rightarrow$ zero multiplier;
+  positive multiplier $\Rightarrow$ binding constraint. A binding constraint
+  can have a zero multiplier.
+- **Case analysis:** hypothesize the binding constraints, solve the resulting
+  equations, and reject candidates violating any primal or dual condition.
+
+
+For any budget $B>0$, write the complete problem:
+
+$$
+\max_{b,m}\;N(b,m)
+\quad\text{s.t.}\quad b+2m\leq B,\quad b,m\geq0,
+$$
+
+Lagrangian:
+
+$$\mathcal L=10b-b^2+10m-m^2+\lambda(B-b-2m) + \eta_b b + \eta_m m $$
+
+We will apply the same conditions at $B=20$, $B=5$, and $B=2$.
+
+## Full KKT conditions in inequality form
+
+- **Stationarity with nonnegative choices:** each choice derivative of
+  $\mathcal L$ is nonpositive, and equals zero whenever that choice is positive.
+- **Primal feasibility:** both choices and the budget slack are nonnegative.
+- **Dual feasibility:** the budget multiplier is nonnegative.
+- **Complementary slackness:** each choice times its Lagrangian derivative
+  is zero; the budget multiplier times unused funding is zero.
+
+Written out in full, these conditions are
+
+$$
+\begin{aligned}
+\mathcal L_b=10-2b-\lambda&\leq0,
+&b&\geq0,
+&b(10-2b-\lambda)&=0,\\[4pt]
+\mathcal L_m=10-2m-2\lambda&\leq0,
+&m&\geq0,
+&m(10-2m-2\lambda)&=0,\\[4pt]
+\mathcal L_\lambda=B-b-2m&\geq0,
+&\lambda&\geq0,
+&\lambda(B-b-2m)&=0.
+\end{aligned}
+$$
+
+
+
+## Loose budget: $B=20$ (\$200,000)
+
+The unrestricted choice $(5,5)$ spends $15<20$. 
+
+## Moderate budget: $B=5$ (\$50,000), both treatments positive
+
+Assume $b,m>0$. The conditions $b\mathcal L_b=0$ and $m\mathcal L_m=0$
+force $\mathcal L_b=\mathcal L_m=0$, reducing the KKT system to
+
+$$
+10-2b-\lambda=0,\qquad
+10-2m-2\lambda=0,\qquad b+2m=5.
+$$
+
+The stationarity equations give $b=5-\lambda/2$ and $m=5-\lambda$. Insert these
+into the binding budget:
+
+$$
+\left(5-\frac{\lambda}{2}\right)+2(5-\lambda)=5
+\quad\Rightarrow\quad\lambda^*=4,\qquad(b^*,m^*)=(3,1).
+$$
+
+**Check all four conditions:** both marginal inequalities hold at equality,
+$10-6-4=0$ and $10-2-8=0$; spending is $3+2(1)=5$ with positive choices;
+$\lambda=4\geq0$; and all three complementary products are zero. Net benefits are
+$N(3,1)=30$ (\$300,000).
+
+## Hessian check for the positive-treatment solution
+
+**Review points: second-order conditions**
+
+- **Constrained SOC:** at a regular equality-constrained stationary point,
+  negative curvature in every nonzero tangent direction implies a strict local
+  maximum. The bordered Hessian incorporates the active constraint.
+
+
+For the decision vector $x=(b,m)^\top$,
+
+$$
+H=\nabla^2_{xx}\mathcal L
+=\begin{bmatrix}-2&0\\0&-2\end{bmatrix}.
+$$
+
+Its leading principal minors are $-2<0$ and $(-2)^2-0=4>0$, so it is negative definite.
+
+
+$$
+H_B=\begin{bmatrix}0&-1&-2\\-1&-2&0\\-2&0&-2\end{bmatrix},
+\qquad\det(H_B)=10.
+$$
+
+The principal minors of $H_B$ alternate signs:
+$$
+\det\begin{bmatrix}0\end{bmatrix}=0,\quad
+\det\begin{bmatrix}0&-1\\-1&-2\end{bmatrix}=-1<0,\quad
+\det(H_B)=10>0.
+$$
+
+Starting with the first nonzero minor, the signs alternate, so $H_B$ is negative definite.
+
+\newpage
+
+## Tighten the budget to $B=2$ (\$20,000)
+
+
+**Case 1: binding budget, both treatments positive.** Complementary slackness
+requires $\mathcal L_b=\mathcal L_m=0$. As before,
+
+$$b=5-\lambda/2,\qquad m=5-\lambda,\qquad
+15-\tfrac52\lambda=2.
+$$
+
+This gives $\lambda=26/5$, $b=12/5$, and $m=-1/5$. The negative thinning choice
+violates primal feasibility. Reject the assumption of two positive treatments.
+
+**Case 2: burning positive, thinning zero.** Set $m=0$. The binding budget
+gives $b=2$. Because $b>0$, complementary slackness requires $\mathcal L_b=0$:
+
+$$10-2(2)-\lambda=0\quad\Rightarrow\quad\lambda=6,$$
+
+Because $m=0$, the thinning condition remains an inequality:
+
+$$\mathcal L_m=10-2(0)-2(6)=-2\leq0,\qquad m\mathcal L_m=0(-2)=0.$$
+
+Therefore
+
+$$\boxed{(b^*,m^*)=(2,0),\qquad\lambda^*=6.}$$
+
+In the equivalent explicit-multiplier form, $\eta_b=0$ and $\eta_m=2$.
+
+
+
+## Verify the accepted solution
+
+| Condition | Check at $(b,m,\lambda)=(2,0,6)$ |
+|---|---|
+| Marginal inequalities | $\mathcal L_b=10-4-6=0\leq0$; $\mathcal L_m=10-0-12=-2\leq0$. |
+| Primal feasibility | $2+2(0)=2$; both treatments nonnegative. |
+| Dual feasibility | $\lambda=6\geq0$. |
+| Complementary slackness | $2(0)=0$; $0(-2)=0$; $6(2-2)=0$. |
+
+Net benefits are $N(2,0)=16$ (\$160,000). The agency burns 20 acres and funds no
+mechanical thinning. This conclusion follows from these hypothetical returns,
+costs, and budget; it is not a general ranking of wildfire treatments.
+
+
+
+# See the three allocations
+
+- **Contour interpretation:** move toward higher objective contours while
+  remaining feasible. The gradient is perpendicular to an objective contour.
+- **Location of an optimum:** an NLP can attain its optimum in the interior,
+  along an edge, or at a corner. Checking only vertices can miss the answer.
+- **Binding versus valuable:** a boundary limits feasible choices; its
+  multiplier measures the marginal value of relaxing it. These are distinct concepts.
+
+```{r}
+#| label: fig-wildfire-allocations
+#| fig-width: 6.5
+#| fig-height: 4.6
+#| fig-pos: H
+#| fig-cap: "Net-benefit contours and two budget sets. The moderate-budget optimum is on an edge with both treatments positive. The tight-budget optimum is a corner where thinning is zero. Axes are 10-acre blocks."
+library(ggplot2)
+grid <- expand.grid(b = seq(0, 6, length.out = 181),
+                    m = seq(0, 6, length.out = 181))
+grid$N <- with(grid, 10*b - b^2 + 10*m - m^2)
+ggplot(grid, aes(b, m)) +
+  annotate("polygon", x = c(0, 5, 0), y = c(0, 0, 2.5),
+           fill = "#DCEAF3", color = NA) +
+  annotate("polygon", x = c(0, 2, 0), y = c(0, 0, 1),
+           fill = "#F5D9B8", color = NA) +
+  geom_contour(aes(z = N), breaks = c(16, 30, 40, 46, 49),
+               color = "gray55", linewidth = 0.4) +
+  annotate("segment", x = 0, xend = 5, y = 2.5, yend = 0,
+           color = "#0072B2", linewidth = 0.9) +
+  annotate("segment", x = 0, xend = 2, y = 1, yend = 0,
+           color = "#B65B00", linewidth = 0.9) +
+  annotate("point", x = c(5, 3, 2), y = c(5, 1, 0), size = 2.7) +
+  annotate("text", x = 4.9, y = 5.45, label = "Unrestricted (5, 5)", size = 3.5) +
+  annotate("text", x = 3.15, y = 1.35, label = "B = 5: (3, 1)", hjust = 0,
+           color = "#0072B2", size = 3.4) +
+  annotate("text", x = 2.12, y = 0.28, label = "B = 2: (2, 0)", hjust = 0,
+           color = "#B65B00", size = 3.4) +
+  coord_equal(xlim = c(0, 6), ylim = c(-0.12, 6), expand = FALSE) +
+  scale_x_continuous(breaks = 0:6) + scale_y_continuous(breaks = 0:6) +
+  labs(x = "Prescribed burning, b", y = "Mechanical thinning, m") +
+  theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank())
+```
+
+| Budget $B$ | Burning $b^*$ | Thinning $m^*$ | Net benefits $N^*$ | Budget multiplier |
+|---|---|---|---|---|
+| Unrestricted | 5 | 5 | 50 | -- |
+| 20 (slack) | 5 | 5 | 50 | 0 |
+| 5 (binding) | 3 | 1 | 30 | 4 |
+| 2 (binding, corner) | 2 | 0 | 16 | 6 |
+
+
