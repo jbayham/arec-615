@@ -88,6 +88,9 @@
   filename: "notes" 
   dirname: modules/dynamic_programming
   desc: "This unit introduces dynamic programming."
+  materials:
+    - title: "Interactive Mining Walkthrough"
+      url: "mining_walkthrough.html"
 #   readings:
 #     - title: "Miranda & Fackler Ch. 7"
 #       url: "course-materials/"
