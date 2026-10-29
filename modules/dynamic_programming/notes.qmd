@@ -3,7 +3,8 @@ title: "Dynamic Programming"
 ---
 
 
-## Motivation: Why Dynamics Matter
+
+# Motivation: Why Dynamics Matter
 
 - Many economic problems involve *decisions over time*.  
 - In static optimization, we choose a single vector $x$ to maximize $f(x)$ once.  
@@ -11,9 +12,8 @@ title: "Dynamic Programming"
 $$
 \sum_{t=0}^T \beta^t u(s_t, x_t)
 $$
-subject to evolving constraints.
 
-The key feature of a dynamic problem is **intertemporal dependence** today’s decision affects tomorrow’s feasible set.
+The key feature of a dynamic problem is **intertemporal dependence** - today’s decision affects tomorrow’s feasible set.
 
 Consider a groundwater extraction problem:
 
@@ -26,129 +26,81 @@ $$
 s_2 = s_1 - q_1, \quad q_t \le s_t, \quad s_t \ge 0.
 $$
 
-It will not be optimal to leave any resource in the ground at the end, so $s_2 = 0$ and $q_2 = s_1 - q_1$. Substituting $q_2$ into the objective gives
+Let's assume it will not be optimal to leave any resource in the ground at the end, so $s_2 = 0$ and $q_2 = s_1 - q_1$. Substituting $q_2$ into the objective gives
 $$
-\max_{q_1} \; \pi_1(q_1) + \beta \pi_2(s_1 - q_1).
+\max_{q_1} \;  \pi_1(q_1) + \beta \pi_2(s_1 - q_1).
 $$
 
-The first-order conditions give
+The first-order conditions  give
 $$
-\pi_1'(q_1) - \beta \pi_2'(q_2)=0,
+\frac{\partial \left[ \pi_1(q_1) + \beta \pi_2(s_1 - q_1) \right]}{\partial q_1} = \pi_1'(q_1) - \beta \pi_2'(s_1 - q_1)=0,
 $$
 which equates the **marginal benefit of current extraction** to the **discounted marginal benefit of future extraction**.
+
+
+
+
 
 **Examples**
 
 - Resource extraction (trade-off between current and future use)
-  - Suppose a manager extracts a nonrenewable resource such as groundwater or oil. Each period, extraction reduces the remaining stock. The manager faces a trade-off between the *immediate profit* from extracting today and the *future value* of the remaining stock. Dynamic optimization determines the optimal extraction path balancing current and future gains — the or *shadow value* of the resource.
+  - Suppose a manager extracts a nonrenewable resource such as groundwater or oil. 
+  - Each period, extraction reduces the remaining stock. 
+  - The manager faces a trade-off between the *immediate profit* from extracting today and the *future value* of the remaining stock. 
+  - Dynamic optimization determines the optimal extraction path balancing current and future gains — or the *shadow value* of the resource.
   
 - Investment and capital accumulation  
-  - Firms decide how much to invest in physical capital (machinery, buildings) or human capital (training, education). Investment today increases the productive capacity tomorrow, affecting future profits. The firm must weigh the *cost of investment* against the *expected future returns*, leading to an optimal investment strategy over time.
+  - Firms decide how much to invest in physical capital (machinery, buildings) or human capital (training, education). 
+  - Investment today increases the productive capacity tomorrow, affecting future profits. 
+  - The firm must weigh the *cost of investment* against the *expected future returns*, leading to an optimal investment strategy over time.
   
 - Crop rotations or livestock feeding  
-  - Farmers choose how to allocate land and resources over multiple periods. Planting a crop today may deplete soil nutrients, affecting yields in subsequent seasons. Similarly, feeding strategies for livestock impact their growth and productivity over time. Dynamic programming helps determine optimal crop rotations or feeding schedules that maximize long-term farm profitability.
+  - Farmers choose how to allocate land and resources over multiple periods. 
+  - Planting a crop today may deplete soil nutrients, affecting yields in subsequent seasons. 
+  - Similarly, feeding strategies for livestock impact their growth and productivity over time. 
+  - Dynamic programming helps determine optimal crop rotations or feeding schedules that maximize long-term farm profitability.
   
 - Forest rotation and timber harvesting  
-  - Forest managers decide when to harvest trees to maximize the value of timber while ensuring sustainability. Harvesting too early may yield lower quantities of wood, while waiting too long can lead to overgrowth where the marginal wood growth does not justify the cost. Dynamic optimization helps find the optimal rotation period that balances immediate revenue with future discounted value.
+  - Forest managers decide when to harvest trees to maximize the value of timber while ensuring sustainability. 
+  - Harvesting too early may yield lower quantities of wood, while waiting too long can lead to overgrowth where the marginal biomass growth does not justify the cost. 
+  - Dynamic optimization helps find the optimal rotation period that balances immediate revenue with future discounted value.
   
 - Pollution control and climate policy
-  - Governments and firms must decide how much to invest in pollution abatement technologies or carbon reduction strategies. Reducing emissions today can mitigate future environmental damage and associated costs. Dynamic programming helps evaluate the trade-offs between current abatement costs and long-term benefits, guiding optimal policy decisions over time.
+  - Governments and firms must decide how much to invest in pollution abatement technologies or carbon reduction strategies. 
+  - Reducing emissions today can mitigate future environmental damage and associated costs. 
+  - Dynamic programming helps evaluate the trade-offs between current abatement costs and long-term benefits, guiding optimal policy decisions over time.
 
-
----
 
 
 ## Backward Induction
 
+
+
 - In a *finite-horizon sequential decision problem*, one can solve by starting at the last period and then working backward.
 - At the final period, the decision is trivial (or known) because nothing is left to optimize afterward.
 - Then one moves to the second-to-last period: given that the future is solved optimally, choose your action now to maximize current payoff plus continuation value.
-- This process continues backward until reaching the initial period. This is the logic of dynamic programming in finite-horizon settings.
+- This process continues backward until reaching the initial period. 
 - Backward induction is prefered over brute force enumeration because it simplifies potentially complex problems. Starting from the beginning, the number of paths can explode combinatorially, making it infeasible to evaluate all possible sequences of decisions.
-- This was the intuition in the problem above: we used the constraint to eliminate $q_2$ and reduce the problem to a single decision variable $q_1$. Because there was no salvage value (no value to not using all of the resource at the end), we could assume that $q_2=s_2=s_1-q_1$.
 - In a finite-horizon problem, backward induction works because there is a last period: after that, no decisions remain. We can anchor the recursion at $T$ and move backward.
 - In an infinite-horizon problem, there is no terminal period. We need a different anchor. What we look for is a stationary path (or policy) that is internally consistent over time: i.e. at every date, given the current state, the decision you make will also be optimal for the continuation. In other words, you want a path or policy such that there is no incentive to deviate at any point — because the same ‘value’ structure recurs over time. That is what gives the stability and time-independence of the optimal policy in many infinite-horizon problems.
 
 
----
-
-## Stochastic Dynamic Programming
-
-- In many problems, there is uncertainty about future states or payoffs.
-- The state variable $s_t$ may evolve according to a stochastic process, influenced by random shocks.
-- The decision-maker must consider the expected value of future payoffs, integrating over possible future states.
-
-### Markov property
-
-A problem is **Markovian** if the current state $s_t$ contains all relevant information from the past. The future state depends only on the current state and decision. 
-
-**Examples**
-
-- Stochastic resource growth model:   
-Let fish stock evolve as
-$$
-s_{t+1} = G(s_t) + \varepsilon_{t+1} - h_t
-$$
-where $\varepsilon_{t+1}$ is a random growth shock (possibly discrete). Then transition probabilities $P(s^\prime \mid s, h)$ come from the distribution of $\varepsilon$. Note that $s_{t+1}$ depends only on $s_t$ and $h_t$, not on earlier states or actions.
-
--	Crop yield shocks in agriculture:   
-A farmer chooses input (fertilizer) $x_t$. The next soil state evolves as 
-$$s_{t+1} = g(s_t, x_t)$$. 
-The stochastic yield shock induces $P(s_{t+1} \mid s_t, x_t)$.
-	
--	Capital accumulation with productivity shocks:    
-Suppose production is 
-$$y_t = F(k_t, z_t)$$ 
-where $z_t$ is a stochastic productivity state evolving as a Markov chain (discrete or discretized AR(1)). The decision is investment $i_t$, state vector is $(k_t, z_t)$, and transitions are given by $\Pr(z_{t+1} \mid z_t)$ combined with deterministic $k_{t+1} = (1-\delta)k_t + i_t$.
 
 
----
 
 ## Vocabulary and the components of dynamic programming problem
 
 - **State variable** $s_t$: summarizes all relevant information at time $t$ needed to make decisions and predict future states. Examples: resource stock, capital stock, productivity level.
 - **Control variable** $x_t$: the decision made at time $t$. Examples: extraction quantity, investment amount, input usage.
-- **Transition function** $s_{t+1} = g(s_t, x_t, \varepsilon_{t+1})$: describes how the state evolves from $t$ to $t+1$ given current state, action, and random shocks.
+- **Transition function** $s_{t+1} = g(s_t, x_t, \varepsilon_{t+1})$: describes how the state evolves from $t$ to $t+1$ given current state, action, and random shocks. Also called the **law of motion** for the state variable.
 - **Reward function** $u(s_t, x_t)$: the immediate payoff from taking action $x_t$ in state $s_t$. Examples: profit, utility, yield.
 - **Policy** $\{x_t(s_t)\}$: a rule that specifies the action to take in each state at each time.
 - **Value function** $V_t(s_t)$: the maximum expected discounted sum of future rewards starting from state $s_t$ at time $t$.
 - **Discount factor** $\beta \in (0,1)$: reflects the preference for current rewards over future rewards. It reflects time preference or impatience: how much less future utility / profit is worth relative to now. In growth / resource models, discounting ensures that long-run payoffs are “worth less” the farther they are in the future, which prevents over-emphasis on infinitely deferred rewards. 
   - It also enables contraction mappings in infinite-horizon problems. 
   - We often assume a constant discount factor for simplicity, but in reality, discounting may vary over time or depend on circumstances.
-- **Salvage value**: the value of remaining resources or capital at the end of the planning horizon. In finite-horizon problems, this can be zero or some terminal value function.
+- **Salvage value** $V_T(s_T)$: the value of remaining resources or capital at the end of the planning horizon. In finite-horizon problems, this can be zero or some terminal value function.
 
-## Problem Types
-
-1. Here is a finite time discrete state and time example:    
-$$\max_{h_t}  \left[ \sum_{t=0}^{T-1} \beta^t \pi_t(h_t) + \beta^{T} V_T(s_T) \right]$$
-subject to the simple deterministic transition dynamics:
-$$s_{t+1} = s_t - h_t + G(s_t) $$
-Identify the components of the problem
-
-- State: $s_t$ (can be either discrete or continuous)
-- Control: $h_t$
-- Transition: $s_{t+1} = s_t - h_t + G(s_t)$ 
-- Reward: $\pi_t(h_t)$
-- Policy: $h_t(s_t)$
-- Value function: $V_t(s_t)$
-- Discount factor: $\beta$
-- Salvage value: $V_T(s_T) = 0$ or some terminal value
-
-2. If time is continuous:
-$$
-\max_{h(t)} \; \int_{0}^{T} e^{-\rho t} \, \pi(s(t), h(t)) \, dt \;+\; e^{-\rho T} \, V_T(s(T))
-$$
-subject to
-$$\frac{ds}{dt} = G(s(t)) - h(t), \quad s(0) = s_0 $$
-The components are similar, but the transition is now a differential equation.
-
-3. In an infinite-horizon problem:
-$$\max_{\{h_t\}_{t=0}^\infty} \; \sum_{t=0}^\infty \beta^t \pi(h_t)$$
-subject to
-$$s_{t+1} = s_t - h_t + G(s_t), \quad s_0 \text{ given}$$
-The components are the same, but there is no terminal time or salvage value. The problem is usually well-behaved when $\beta < 1$ and $\pi(h_t)$ is bounded.
-
-----------
 
 # Discrete time and state space
 
@@ -181,6 +133,10 @@ $$
 with an initial state $s_0$ given.
 
 
+> Does our simple 2 period problem fit into this framework?
+
+
+
 ## Bellman Equation
 
 - The recursive formulation expresses the problem in terms of a **value function** $V_t(s_t)$ that gives the maximal attainable value starting from state $s_t$ at time $t$:
@@ -196,35 +152,50 @@ $$
 - The **terminal condition** closes the recursion:
 
 $$
-V_T(s_T) = \pi_T(s_T) \quad \text{or a given terminal value function.}
+V_T(s_T) = \pi_T(s_T) 
 $$
 
-The Bellman equation expresses the principle of optimality:   
+- Imagine we arrive at date $t$ with state $s_t$. We choose the action $x_t$, not the current state.
+- Todays decision determines both today’s payoff and tomorrow’s state. 
+- All future decisions are summarized by the value function $V_{t+1}(s_{t+1})$.
+- The largest attainable payoff is the value function $V_t(s)$; the action that achieves it is the policy $x_t^*(s)$.
+
+The Bellman equation expresses the **principle of optimality**:
 
 > The value of being in state $s_t$ is the maximum over current actions of the immediate payoff plus the discounted value of the next state. 
 
-### Backward Recursion (Finite Horizon)
+### Example: Extract or Wait?
 
-To solve:
+Suppose we have one unit of a resource, $s_t=1$. We can extract it today ($x_t=1$) for a payoff of \$8, or wait ($x_t=0$) and keep it for tomorrow. The next state is $s_{t+1}=s_t-x_t$.
 
-1. Start from the terminal period $T$, where $V_T(s_T)$ is known.
-2. For each earlier period $t = T-1, \dots, 0$, compute $V_t(s_t)$ from the Bellman equation.
-3. The corresponding optimal policy is
-   $$
-   x_t^*(s_t) =
-   \max_{x_t \in X(s_t)}
-   \Big\{
-   \pi(s_t, x_t) + \beta \, V_{t+1}(f(s_t, x_t))
-   \Big\}.
-   $$
+Suppose we have already solved tomorrow's problem: $V_{t+1}(1)=10$ and $V_{t+1}(0)=0$. With a discount factor of $\beta=0.9$, compare the two actions:
 
-This recursion yields both the value function and the optimal policy for each possible state.
+| Today's action | Payoff now | Discounted continuation value | Total |
+|:--|--:|--:|--:|
+| Extract | $8$ | $0.9(0)=0$ | $8$ |
+| Wait | $0$ | $0.9(10)=9$ | $9$ |
 
----
+The Bellman equation makes this comparison:
 
-### Example Template
+$$
+V_t(1)=\max\left\{
+\underbrace{8+0.9(0)}_{\text{extract}},
+\underbrace{0+0.9(10)}_{\text{wait}}
+\right\}=9.
+$$
 
-Once this structure is clear, we can apply it directly to the **mine management problem**, where:
+- The **value** is $V_t(1)=9$: the best attainable discounted payoff from this state.
+- The **policy** is $x_t^*(1)=0$: wait and preserve the resource.
+- Tomorrow's choices are already summarized in $V_{t+1}(1)=10$. In the decision tree, we replace the branches beginning at tomorrow's node with their optimal value.
+
+> What current extraction payoff would make us indifferent between extracting and waiting?
+
+We would be indifferent at \$9, the discounted value of keeping the resource for tomorrow.
+
+
+### Mining problem
+
+Consider a mine management problem, where:
 
 - state: remaining ore $s_t$, and initial stock $s_0=4$,
 - control: extraction $x_t \in \{0,1,\dots,s_t\}$,
@@ -234,22 +205,14 @@ Once this structure is clear, we can apply it directly to the **mine management 
 - horizon: $T=3$,
 - discount factor: $\beta=0.9$.
 
-**Students: set up the problem/Bellman equation and solve via backward induction.**
+> Set up the problem/Bellman equation and solve via backward induction.
 
 We solve by **backward induction**:
 $$
 V_t(s)=\max_{x\in\{0,\dots,s\}}\{\pi(x)+\beta V_{t+1}(s-x)\},\quad V_3(s)\equiv 0.
 $$
 
-Lookup:
-- $\pi(0)=0$, $\pi(1)=7$, $\pi(2)=12$, $\pi(3)=15$, $\pi(4)=16$.
 
-We solve by **backward induction**:
-$$
-V_t(s)=\max_{x\in\{0,\dots,s\}}\{\pi(x)+\beta V_{t+1}(s-x)\},\quad V_3(s)\equiv 0.
-$$
-
----
 
 ### Step 1: Final decision period $t=2$
 Here $V_3(\cdot)=0$, so extract to maximize $\pi(x)$ subject to $x\le s$:
@@ -263,6 +226,7 @@ Here $V_3(\cdot)=0$, so extract to maximize $\pi(x)$ subject to $x\le s$:
 Optimal action at $t=2$ is $x_2^*(s)=s$ (extract all that remains).
 
 ---
+
 
 ### Step 2: Period $t=1$
 Compute $V_1(s)=\max_{x\le s}\{\pi(x)+\beta V_2(s-x)\}$:
@@ -296,6 +260,7 @@ $V_1(0)=0,\;V_1(1)=7,\;V_1(2)=13.3,\;V_1(3)=18.3,\;V_1(4)=22.8$.
 
 ---
 
+
 ### Step 3: Initial period $t=0$ (with $s_0=4$)
 Compute $V_0(4)=\max_{x\le 4}\{\pi(x)+\beta V_1(4-x)\}$:
 
@@ -308,6 +273,7 @@ Compute $V_0(4)=\max_{x\le 4}\{\pi(x)+\beta V_1(4-x)\}$:
 $\Rightarrow$ **Optimal** $x_0^*(4)=2$ and $V_0(4)=23.97$.
 
 ---
+
 
 ### Optimal path and value
 
@@ -331,8 +297,6 @@ Thus, the optimal extraction policy is to extract 2 units at $t=0$, 1 unit at $t
 See excel example for full table.
 
 \newpage 
-
-
 
 
 ## The Curse of Dimensionality
@@ -433,8 +397,6 @@ We can solve this problem by **backward induction** starting from the terminal p
 - Even though the payoff function is discrete, we can still solve via backward induction by simulating outcomes at each state.
 
 
-
-
 ### Implementation in R
 
 Go to the R script `forest_harvest.R`
@@ -509,7 +471,7 @@ Interpretation: harvest up to the point where the marginal net revenue equals th
 
 We’ll solve by value function iteration on a coarse grid—this is the standard workhorse for discrete-time, discrete-state models.
 
-Grid, dynamics, and payoffs
+**Grid, dynamics, and payoffs**
 
 -	State grid: $s\in{0,1,2,\dots,20}$.
 -	Actions: $h\in{0,1,\dots,s}$.
@@ -526,7 +488,6 @@ Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $|
 See R script `fishery.R` for implementation details.
 
 
-
 \newpage
 
 
@@ -535,6 +496,7 @@ See R script `fishery.R` for implementation details.
 Dynamic programming problems often lead to **functional equations**—equations in which the *unknown* is a function rather than a scalar. The **Bellman equation** is the most important example in economics. Instead of solving for a scalar like $x$, we are solving for an entire function $V(\cdot)$ that satisfies a relationship involving itself.
 
 ---
+
 
 ## What Is a Functional Equation?
 
@@ -571,7 +533,7 @@ where:
 
 The equation says: *The value of being in state $s$ today equals the current payoff plus the discounted value of the next state, assuming optimal choice $x$.*
 
-------
+---
 
 ### Functional Equations in Economics
 
@@ -608,12 +570,11 @@ $$
 
 The agent trades off **current utility** $u(c)$ versus the **future value** $\beta V(a')$.
 
------
+---
 
 **Firm Investment Problem**
 
 A firm with capital stock $k_t$ chooses investment $i_t$:
-
 
 
 $$
@@ -636,8 +597,7 @@ $$
 $$
 
 
---------
-
+---
 
 **Resource Extraction Problem**
 
@@ -655,7 +615,7 @@ Here:
 The functional equation states that the value of the resource today equals profit from extraction plus the discounted value of what remains for tomorrow.
 
 
-------
+---
 
 ## The Bellman Operator
 
@@ -690,7 +650,7 @@ $$
 
 In other words, if you already know the correct $V^*$, thinking one step ahead doesn’t change your beliefs because you are already correct about the future.
 
-Why this matters
+**Why this matters**
 
 - The operator gives us a **recipe for computing** $V^*$: 
     - start with a guess and keep applying $\mathcal{T}$ repeatedly.
@@ -698,13 +658,13 @@ Why this matters
 - Economically, this process mirrors **learning or planning**:  
     - we evaluate today’s decisions using our expectations of tomorrow, adjust, and repeat until everything is internally consistent.
 
-Visual Intuition
+**Visual Intuition**
 
 - If you plotted $V_0(s)$ (your first guess) and then $V_1(s) = \mathcal{T}V_0(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.  
 
 - That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
 
-In the context of economics
+**In the context of economics**
 
 - For a **consumer**, $\mathcal{T}$ means re-evaluating how much future consumption is worth.  
 - For a **firm**, it means updating the expected profitability of holding or investing capital.  
@@ -721,7 +681,7 @@ Each application of $\mathcal{T}$ corresponds to "thinking one step further ahea
 
 This is **Value Function Iteration (VFI)**.
 
------
+---
 
 ## Existence and Uniqueness: Why the Bellman Equation Has a Single Solution
 
@@ -796,7 +756,6 @@ We often need the derivative $V'(s)$ to derive first-order conditions or Euler e
 - The envelope theorem tells us we can ignore that part.
 
 
-
 ### The Envelope Condition
 
 At the optimum $x^*(s)$,
@@ -812,7 +771,6 @@ $$
 - We only need to consider the **direct** effects of $s$ on the current payoff and next-period state.
 
 
-
 ### Dynamic Envelope Condition (Benveniste–Scheinkman Theorem)
 
 In discrete time, the theorem states:
@@ -824,7 +782,7 @@ $$
 
 - You can interpret $V'(s)$ as the **shadow value of the state variable** - the marginal increase in lifetime value from a marginal increase in the current state.
 
-------
+---
 
 ### Example: Consumption–Savings Problem
 
@@ -849,7 +807,7 @@ $$
 V'(a_t)=u'(c_t)\cdot(1+r).
 $$
 
-Euler equation
+**Euler equation**
 
 Apply the envelope condition at $t+1$:
 $$
@@ -866,19 +824,10 @@ $$
 
 - An extra dollar of wealth today raises lifetime value by $(1+r)u'(c_t)$ - it can either be consumed now (worth $u'(c_t)$) or saved to yield $(1+r)u'(c_{t+1})$ next period. The household is indifferent between consuming today and saving for tomorrow when the Euler equation holds.
 
-------
+---
 
 ### Why This Matters
 
 - The envelope theorem allows us to link **marginal value** ($V'(s)$) to **marginal utility** or **marginal profit**, depending on context.
 - It simplifies derivations of **Euler equations**, **costate equations**, and **first-order necessary conditions**.
 - It provides a recursive way to compute derivatives of value functions in both analytical and numerical work.
-
-
-
-
-
-
-
-
-
