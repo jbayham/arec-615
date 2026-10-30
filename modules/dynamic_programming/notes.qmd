@@ -8,10 +8,7 @@ title: "Dynamic Programming"
 
 - Many economic problems involve *decisions over time*.  
 - In static optimization, we choose a single vector $x$ to maximize $f(x)$ once.  
-- In dynamic optimization, we choose an entire sequence $\{x_t\}_{t=0}^T$ to maximize
-$$
-\sum_{t=0}^T \beta^t u(s_t, x_t)
-$$
+- In dynamic optimization, we choose an entire sequence $\{x_t\}_{t=0}^T$ to maximize $\sum_{t=0}^T \beta^t u(s_t, x_t)$
 
 The key feature of a dynamic problem is **intertemporal dependence** - today’s decision affects tomorrow’s feasible set.
 
@@ -101,6 +98,23 @@ which equates the **marginal benefit of current extraction** to the **discounted
   - We often assume a constant discount factor for simplicity, but in reality, discounting may vary over time or depend on circumstances.
 - **Salvage value** $V_T(s_T)$: the value of remaining resources or capital at the end of the planning horizon. In finite-horizon problems, this can be zero or some terminal value function.
 
+## A Taxonomy
+
+
+**Deterministic**: The next state is completely determined by the current state and decision.
+
+| State space | Discrete time | Continuous time |
+|:---|:---|:---|
+| Discrete | **Finite-state DP** <br> Shortest path; knapsack; equipment replacement with known deterioration | **Deterministic switching / hybrid control** <br> Scheduled machine switching; deterministic hybrid systems |
+| Continuous | **Continuous-state DP** <br> Capital accumulation; reservoir management with known inflows | **Deterministic optimal control** <br> Ramsey growth; renewable resource harvesting |
+
+**Stochastic**: The next state depends on random shocks governed by a probability distribution or stochastic process.
+
+| State space | Discrete time | Continuous time |
+|:---|:---|:---|
+| Discrete | **Markov Decision Process (MDP)** <br> Stochastic inventory management; equipment replacement with random failures | **Continuous-Time MDP (CTMDP)** <br> Queueing systems; equipment failure and repair |
+| Continuous | **Stochastic continuous-state DP** <br> Reservoir management with uncertain inflows; stochastic capital accumulation | **Stochastic optimal control** <br> Stochastic fisheries; portfolio optimization; resource extraction with stochastic prices |
+
 
 # Discrete time and state space
 
@@ -166,9 +180,9 @@ The Bellman equation expresses the **principle of optimality**:
 
 ### Example: Extract or Wait?
 
-Suppose we have one unit of a resource, $s_t=1$. We can extract it today ($x_t=1$) for a payoff of \$8, or wait ($x_t=0$) and keep it for tomorrow. The next state is $s_{t+1}=s_t-x_t$.
+Suppose we have one unit of a resource, $s_t=1$. We can extract it today for a payoff of \$8, or wait and keep it for tomorrow. If we wait, the price rises and the payoff is \$10.
 
-Suppose we have already solved tomorrow's problem: $V_{t+1}(1)=10$ and $V_{t+1}(0)=0$. With a discount factor of $\beta=0.9$, compare the two actions:
+With a discount factor of $\beta=0.9$, compare the two actions:
 
 | Today's action | Payoff now | Discounted continuation value | Total |
 |:--|--:|--:|--:|
@@ -186,7 +200,6 @@ $$
 
 - The **value** is $V_t(1)=9$: the best attainable discounted payoff from this state.
 - The **policy** is $x_t^*(1)=0$: wait and preserve the resource.
-- Tomorrow's choices are already summarized in $V_{t+1}(1)=10$. In the decision tree, we replace the branches beginning at tomorrow's node with their optimal value.
 
 > What current extraction payoff would make us indifferent between extracting and waiting?
 

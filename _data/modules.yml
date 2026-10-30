@@ -91,6 +91,12 @@
   materials:
     - title: "Interactive Mining Walkthrough"
       url: "mining_walkthrough.html"
+    - title: "Mine Example"
+      url: "mine_example.xlsx"
+    - title: "Forest Example"
+      url: "forest_harvest.R"
+    - title: "Fishery Example"
+      url: "fishery.R"
 #   readings:
 #     - title: "Miranda & Fackler Ch. 7"
 #       url: "course-materials/"
