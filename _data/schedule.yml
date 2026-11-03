@@ -65,20 +65,20 @@
   topic: Intro dynamic programming
   reading: ''
 - date: '2026-11-03'
-  topic: 'Discrete time finite horizon: formulation'
+  topic: 'Backward induction: mining and forestry problem'
   reading: ''
 - date: '2026-11-04'
-  topic: 'Wagar 107: Discrete time finite horizon: solution concepts'
+  topic: 'Wagar 107: Infinite time discrete and continuous state'
   reading: ''
 - date: '2026-11-05'
-  topic: Application
-  reading: ''
+  topic: 'Application: Groundwater'
+  reading: Burt (1964)
 - date: '2026-11-10'
   topic: Presentation/discussion
   reading: ''
 - date: '2026-11-12'
-  topic: Infinite-horizon Bellman equation and value function iteration
-  reading: ''
+  topic: 'Application: Forestry'
+  reading: Reed (1984)
 - date: '2026-11-17'
   topic: Presentation/discussion
   reading: ''

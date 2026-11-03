@@ -8,7 +8,7 @@ title: "Dynamic Programming"
 
 - Many economic problems involve *decisions over time*.  
 - In static optimization, we choose a single vector $x$ to maximize $f(x)$ once.  
-- In dynamic optimization, we choose an entire sequence $\{x_t\}_{t=0}^T$ to maximize $\sum_{t=0}^T \beta^t u(s_t, x_t)$
+- In dynamic optimization, we choose an entire sequence $\{x_t\}_{t=0}^T$ to maximize $\sum_{t=0}^T \beta^t \pi(s_t, x_t)$
 
 The key feature of a dynamic problem is **intertemporal dependence** - today’s decision affects tomorrow’s feasible set.
 
@@ -20,10 +20,10 @@ $$
 
 subject to
 $$
-s_2 = s_1 - q_1, \quad q_t \le s_t, \quad s_t \ge 0.
+s_{t+1} = s_t - q_t, \quad 0\le q_t\le s_t, \quad t=1,2.
 $$
 
-Let's assume it will not be optimal to leave any resource in the ground at the end, so $s_2 = 0$ and $q_2 = s_1 - q_1$. Substituting $q_2$ into the objective gives
+Let's assume it will not be optimal to leave any resource in the ground at the end, so $s_3 = 0$ and $q_2 = s_2 = s_1 - q_1$. Substituting $q_2$ into the objective gives
 $$
 \max_{q_1} \;  \pi_1(q_1) + \beta \pi_2(s_1 - q_1).
 $$
@@ -89,8 +89,8 @@ which equates the **marginal benefit of current extraction** to the **discounted
 
 - **State variable** $s_t$: summarizes all relevant information at time $t$ needed to make decisions and predict future states. Examples: resource stock, capital stock, productivity level.
 - **Control variable** $x_t$: the decision made at time $t$. Examples: extraction quantity, investment amount, input usage.
-- **Transition function** $s_{t+1} = g(s_t, x_t, \varepsilon_{t+1})$: describes how the state evolves from $t$ to $t+1$ given current state, action, and random shocks. Also called the **law of motion** for the state variable.
-- **Reward function** $u(s_t, x_t)$: the immediate payoff from taking action $x_t$ in state $s_t$. Examples: profit, utility, yield.
+- **Transition function** $s_{t+1} = f(s_t, x_t, \varepsilon_{t+1})$: describes how the state evolves from $t$ to $t+1$ given current state, action, and random shocks. Also called the **law of motion** for the state variable.
+- **Reward function** $\pi(s_t, x_t)$: the immediate payoff from taking action $x_t$ in state $s_t$. Examples: profit, utility, yield.
 - **Policy** $\{x_t(s_t)\}$: a rule that specifies the action to take in each state at each time.
 - **Value function** $V_t(s_t)$: the maximum expected discounted sum of future rewards starting from state $s_t$ at time $t$.
 - **Discount factor** $\beta \in (0,1)$: reflects the preference for current rewards over future rewards. It reflects time preference or impatience: how much less future utility / profit is worth relative to now. In growth / resource models, discounting ensures that long-run payoffs are “worth less” the farther they are in the future, which prevents over-emphasis on infinitely deferred rewards. 
@@ -163,7 +163,7 @@ V_t(s_t) =
 \Big\}.
 $$
 
-- The **terminal condition** closes the recursion:
+- The **terminal condition** closes the recursion. Let $\pi_T(s_T)$ denote the terminal payoff, including any final-date choice already optimized:
 
 $$
 V_T(s_T) = \pi_T(s_T) 
@@ -180,7 +180,7 @@ The Bellman equation expresses the **principle of optimality**:
 
 ### Example: Extract or Wait?
 
-Suppose we have one unit of a resource, $s_t=1$. We can extract it today for a payoff of \$8, or wait and keep it for tomorrow. If we wait, the price rises and the payoff is \$10.
+Suppose we have one unit of a resource, $s_t=1$. We can extract it today for a payoff of \$8, or wait and keep it for tomorrow. Tomorrow is the final decision date, and its higher price gives a harvest payoff of \$10. Thus $\pi_t(s_t,1)=8$ and $\pi_{t+1}(s_{t+1},1)=10$ when one unit is available; waiting earns zero before the terminal date, and any resource left after tomorrow has zero salvage value.
 
 With a discount factor of $\beta=0.9$, compare the two actions:
 
@@ -213,7 +213,7 @@ Consider a mine management problem, where:
 - state: remaining ore $s_t$, and initial stock $s_0=4$,
 - control: extraction $x_t \in \{0,1,\dots,s_t\}$,
 - transition: $s_{t+1} = s_t - x_t$,
-- reward: $\pi(s_t, x_t) = 10 x_t - (2x_t + x_t^2)$,
+- reward: $\pi(x_t) = 8x_t - x_t^2$, which depends only on extraction,
 - terminal condition: $V_{T}(s_{T}) = 0$
 - horizon: $T=3$,
 - discount factor: $\beta=0.9$.
@@ -354,48 +354,57 @@ We consider a simple **finite-horizon dynamic programming** problem for forest m
 
 ### Model Elements
 
-- **State variable**: $x_t$ = forest age at the beginning of period $t$
-- **Decision variable**: $u_t \in \{0, 1\}$  
-  - $u_t = 0$ means *wait* 
-  - $u_t = 1$ means *harvest*
-- **Immediate payoff** $r(x_t,u_t)$ depends on both stand age and the harvest decision. Before the terminal date:
-  - If we wait, $r(x_t,0)=0$.
-  - If we harvest, $r(x_t,1)=\text{pay}(x_t)$, where $\text{pay}(0)=-2$, $\text{pay}(50)=8$, and $\text{pay}(100)=10$.
+- **State variable**: $s_t$ = forest age at the beginning of period $t$
+- **Decision variable**: $x_t \in \{0, 1\}$  
+  - $x_t = 0$ means *wait* 
+  - $x_t = 1$ means *harvest*
+- **Immediate payoff** $\pi(s_t,x_t)$ depends on both stand age and the harvest decision. Before the terminal date:
+  - If we wait, $\pi(s_t,0)=0$.
+  - If we harvest, the payoff depends on age: $\pi(0,1)=-2$, $\pi(50,1)=8$, and $\pi(100,1)=10$.
 
   $$
-  r(x_t,u_t)=
+  \pi(s_t,x_t)=
   \begin{cases}
-  0, & u_t=0 \quad \text{(wait)},\\
-  \text{pay}(x_t), & u_t=1 \quad \text{(harvest)}.
+  0, & x_t=0 \quad \text{(wait)},\\
+  -2, & x_t=1,\ s_t=0,\\
+  8, & x_t=1,\ s_t=50,\\
+  10, & x_t=1,\ s_t=100.
   \end{cases}
   $$
 
-- **Transition**:
-  - If not harvested, the stand grows: $x_{t+1} = \min(x_t + 50, 100)$ 
-  - If harvested: $x_{t+1} = 0$
-- **Terminal value**: $V_T(x_T) = \max\{\text{salv}(x_T), \text{pay}(x_T)\}$ where 
-  - $\text{salv}(x_T)$ = salvage value if not harvested at end, $\text{salv}(0) = 0$, $\text{salv}(50) = 20$, $\text{salv}(100) = 60$
-  - $\text{pay}(x_T)=r(x_T,1)$ is the harvest payoff defined above. At the terminal date, leaving the stand uncut earns its salvage value instead of the zero immediate payoff from waiting in earlier periods.
-- **Discount factor**: $\beta = (1/1.04)^{50}$  (discounting 50 years at 4%)
+- **Transition**: $s_{t+1}=f(s_t,x_t)$, where
+
+  $$
+  f(s_t,x_t)=
+  \begin{cases}
+  \min(s_t+50,100), & x_t=0 \quad \text{(wait)},\\
+  0, & x_t=1 \quad \text{(harvest)}.
+  \end{cases}
+  $$
+
+- **Terminal value**: $V_T(s_T) = \max\{\text{salv}(s_T), \pi(s_T,1)\}$ where
+  - $\text{salv}(s_T)$ = salvage value if not harvested at end, $\text{salv}(0) = 0$, $\text{salv}(50) = 20$, $\text{salv}(100) = 60$
+  - $\pi(s_T,1)$ is the harvest payoff defined above. At the terminal date, leaving the stand uncut earns its salvage value instead of the zero immediate payoff from waiting in earlier periods.
+- **Discount factor**: $\beta = (1/1.04)^{50} \approx 0.1405$  (discounting 50 years at 4%)
 
 ### Bellman Equation
 
 The Bellman equation for this problem is:
 
 $$
-V_t(x_t) = \max_{u_t \in \{0,1\}} \left[ r(x_t,u_t) + \beta \, V_{t+1}(x_{t+1}) \right],
+V_t(s_t) = \max_{x_t \in \{0,1\}} \left[ \pi(s_t,x_t) + \beta \, V_{t+1}(s_{t+1}) \right],
 $$
 
 where  
 
-- $r(x_t,u_t)$ is the **immediate payoff**, and
-- $x_{t+1}= \min(x_t + 50, 100)$ follows the **transition rule**.
+- $\pi(s_t,x_t)$ is the **immediate payoff**, and
+- $s_{t+1}=f(s_t,x_t)$ follows the **transition function** defined above.
 
 We can solve this problem by **backward induction** starting from the terminal period $T$ and moving backward to $t=0$ without defining initial conditions.
 
 ### Intuition
 
-- What is the intuition behind the optimal policy? At each age $x_t$, we compare the value of harvesting now versus waiting for future growth. 
+- What is the intuition behind the optimal policy? At each age $s_t$, we compare the value of harvesting now versus waiting for future growth.
 
 
 - Even though the payoff function is discrete, we can still solve via backward induction by simulating outcomes at each state.
@@ -435,13 +444,13 @@ where we note that there is no time index on $V(s)$ since the value function is 
 We study a single-stock fishery with:
 
 - discrete state $s \in \{0,1,2,\dots,S_{\max}\}$ (biomass), 
-- control (harvest) $h\in=\{0,1,\dots,s\}$
+- control (harvest) $h\in\{0,1,\dots,s\}$
 - next period’s stock is $s^\prime=G(s-h)$. 
-- Per-period payoff is $\pi(h)=p\,h-c\,h$ (constant net price for simplicity).
+- Per-period payoff is $\pi(s,h)=p\,h-c\,h$ (constant net price for simplicity).
 
 The infinite-horizon Bellman equation (time-stationary) is
 $$
-V(s)=\max_h \{\pi(h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
+V(s)=\max_h \{\pi(s,h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
 $$
 where $s^\prime=G(s-h)$ where we assume a logistic growth function
 $$G(s)=s+r s\left(1-\frac{s}{S_{\max }}\right)$$
@@ -455,7 +464,7 @@ If we relax to continuous $s$ and $h$ and interior choices (we’ll still solve 
 -	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime)\,G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
 -	Complementary slackness for the bounds $h\ge 0$ and $h\le s$.
 
-With $\pi_h(h)=p-c$ and $G^\prime(s-h) = 1 + r(1-2c/s_{max})$, the interior FOC is
+With $\pi_h(s,h)=p-c$ and $G^\prime(s-h) = 1+r\left(1-\frac{2(s-h)}{S_{\max}}\right)$, the interior FOC is
 $$
 p-c - \beta V^\prime(s^\prime)\,G^\prime(s-h)=0
 $$
@@ -477,17 +486,17 @@ We’ll solve by value function iteration on a coarse grid—this is the standar
 
 **Grid, dynamics, and payoffs**
 
--	State grid: $s\in{0,1,2,\dots,20}$.
--	Actions: $h\in{0,1,\dots,s}$.
+-	State grid: $s\in\{0,1,2,\dots,S_{\max}\}$ with $S_{\max}=20$.
+-	Actions: $h\in\{0,1,\dots,s\}$.
 -	Discount: $\beta=0.95$.
--	Logistic growth: $G(s)=s+r s (1-s/K)$ with $r=0.5$, $K=20$. After computing $G$, round to the nearest state in ${0,\dots,20}$.
+-	Logistic growth: $G(s)=s+r s (1-s/S_{\max})$ with $r=0.5$, $S_{\max}=20$. After computing $G$, round to the nearest state in $\{0,\dots,S_{\max}\}$.
 -	Payoff: $\pi(s,h)=p\,h-c\,h$, with $p=1$, $c=0$ (net price $=1$).
 
 For each $s$,
 $$
-(\mathcal{T}V)(s)=\max_{0\le h\le s}\left\{h+\beta V\left(\text{round}\big(G(s-h)\big)\right)\right\}.
+(\mathcal{T}V)(s)=\max_{h\in\{0,\ldots,s\}}\left\{h+\beta V\left(\text{round}\big(G(s-h)\big)\right)\right\}.
 $$
-Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $|V^{(k+1)}-V^{(k)}|_\infty<10^{-8}$. 
+Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $\|V^{(k+1)}-V^{(k)}\|_\infty<10^{-8}$.
 
 **Why value function iteration solves the problem**
 
@@ -562,7 +571,7 @@ In other words, if you already know the correct $V^*$, thinking one step ahead d
 
 **Visual Intuition**
 
-- If you plotted $V_0(s)$ (your first guess) and then $V_1(s) = \mathcal{T}V_0(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.  
+- If you plotted $V^{(0)}(s)$ (your first guess) and then $V^{(1)}(s) = \mathcal{T}V^{(0)}(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.
 
 - That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
 
@@ -577,8 +586,8 @@ today’s value depends on how optimally we plan for tomorrow.
 
 Each application of $\mathcal{T}$ corresponds to "thinking one step further ahead."
 
-- Starting with any initial guess $V_0(s)$,
-- Repeatedly applying $\mathcal{T}$, $V_{k+1} = \mathcal{T}V_k$,
+- Starting with any initial guess $V^{(0)}(s)$,
+- Repeatedly applying $\mathcal{T}$, $V^{(k+1)} = \mathcal{T}V^{(k)}$,
 - Converges to the true value function $V^*$ under mild conditions.
 
 This is **Value Function Iteration (VFI)**.
@@ -598,12 +607,12 @@ The reason is the **contraction mapping property**.
 A **contraction mapping** is a transformation that *pulls things closer together* every time you apply it.  
 
 $$
-\| \mathcal{T}V_1 - \mathcal{T}V_2 \|_\infty \leq \beta \, \| V_1 - V_2 \|_\infty
+\| \mathcal{T}W - \mathcal{T}Z \|_\infty \leq \beta \, \| W - Z \|_\infty
 $$
 
-Here, $\|V_1-V_2\|_\infty$ is the largest absolute difference between the two value functions across all states. One Bellman update reduces this maximum difference by at least the factor $\beta$.
+Here, $\|W-Z\|_\infty$ is the largest absolute difference between the two value functions across all states. One Bellman update reduces this maximum difference by at least the factor $\beta$.
 
-Imagine taking two different guesses about the value function, say $V_1(s)$ and $V_2(s)$. When we apply the Bellman operator to both, the resulting functions $\mathcal{T}V_1$ and $\mathcal{T}V_2$ are **closer to each other** than the originals.
+Imagine taking two different guesses about the value function, say $W(s)$ and $Z(s)$. When we apply the Bellman operator to both, the resulting functions $\mathcal{T}W$ and $\mathcal{T}Z$ are **closer to each other** than the originals.
 
 Each round of updating reduces the distance between our guesses — eventually, all sequences converge to the same point, the **true value function** $V^*$.
 
@@ -626,9 +635,9 @@ There is one internally consistent way to value the future that agrees with itse
 
 Because $\mathcal{T}$ is a contraction, we can find $V^*$ by **value function iteration**:
 
-1. Start with any initial guess $V_0(s)$ — even something crude.
-2. Apply $\mathcal{T}$ to get an updated guess $V_1 = \mathcal{T}V_0$.
-3. Keep repeating: $V_{n+1} = \mathcal{T}V_n$.
+1. Start with any initial guess $V^{(0)}(s)$ — even something crude.
+2. Apply $\mathcal{T}$ to get an updated guess $V^{(1)} = \mathcal{T}V^{(0)}$.
+3. Keep repeating: $V^{(k+1)} = \mathcal{T}V^{(k)}$.
 
 Each iteration gets us closer to the truth.  
 No calculus tricks, no global search — just forward iteration guided by economic logic.
@@ -695,32 +704,32 @@ Suppose an agent chooses consumption $c_t$ and next-period assets $a_{t+1}$.
 
 $$
 \begin{aligned}
-&\max_{\{c_t,a_{t+1}\}_{t=0}^\infty} \sum_{t=0}^\infty \beta^t u(c_t) \\
-&\text{s.t. } c_t + a_{t+1} = (1+r)a_t + y_t, \quad a_t \ge 0
+&\max_{\{c_t,a_{t+1}\}_{t=0}^\infty} \sum_{t=0}^\infty \beta^t \pi(c_t) \\
+&\text{s.t. } c_t + a_{t+1} = (1+r)a_t + y, \quad a_t \ge 0
 \end{aligned}
 $$
 
 where:
 
-- $u(c)$ is the utility function (e.g., $u(c)=\log(c)$),
+- $\pi(c)$ is the single-period payoff, interpreted here as utility (e.g., $\pi(c)=\log(c)$),
 - $r$ is the interest rate,
-- $y_t$ is income,
+- $y$ is constant income in every period (we assume it does not vary with time),
 - $\beta \in (0,1)$ is the discount factor.
 
 
 Then the Bellman equation is
 $$
-V(a_t) = \max_{a_{t+1}\ge0} \{ u((1+r)a_t + y - a_{t+1}) + \beta V(a_{t+1}) \}.
+V(a_t) = \max_{a_{t+1}\ge0} \{ \pi((1+r)a_t + y - a_{t+1}) + \beta V(a_{t+1}) \}.
 $$
 FOC (interior) with respect to $a_{t+1}$
 
 Let $c_t=(1+r)a_t+y-a_{t+1}$. Then
 $$
-\frac{\partial}{\partial a_{t+1}}\Big[u((1+r)a_t + y - a_{t+1})+\beta V(a_{t+1})\Big]
-=-u'(c_t)+\beta V'(a_{t+1})=0,
+\frac{\partial}{\partial a_{t+1}}\Big[\pi((1+r)a_t + y - a_{t+1})+\beta V(a_{t+1})\Big]
+=-\pi'(c_t)+\beta V'(a_{t+1})=0,
 $$
 
-The agent trades off **current utility** $u(c)$ versus the **future value** $\beta V(a')$.
+Here we retain $\pi$ for the payoff function even though the payoff is utility rather than profit. The agent trades off **current utility** $\pi(c)$ versus the **future value** $\beta V(a')$.
 
 ---
 
@@ -821,41 +830,41 @@ $$
 
 Bellman equation:
 $$
-V(a_t)=\max_{a_{t+1}}\{u((1+r)a_t+y-a_{t+1})+\beta V(a_{t+1})\}.
+V(a_t)=\max_{a_{t+1}}\{\pi((1+r)a_t+y-a_{t+1})+\beta V(a_{t+1})\}.
 $$
 
 FOC w.r.t. $a_{t+1}$:
 $$
--u'(c_t)+\beta V'(a_{t+1})=0 \quad \rightarrow \quad u'(c_t)=\beta V'(a_{t+1}).
+-\pi'(c_t)+\beta V'(a_{t+1})=0 \quad \rightarrow \quad \pi'(c_t)=\beta V'(a_{t+1}).
 $$
 
 Envelope condition:
 $$
-V'(a_t)=u'(c_t)\cdot(1+r).
+V'(a_t)=\pi'(c_t)\cdot(1+r).
 $$
 
 
 Differentiate the Bellman RHS w.r.t. $a_t$ holding the optimizer fixed:
 $$
-V'(a_t)=u'(c_t)\cdot(1+r).
+V'(a_t)=\pi'(c_t)\cdot(1+r).
 $$
 
 **Euler equation**
 
 Apply the envelope condition at $t+1$:
 $$
-V'(a_{t+1})=(1+r)u'(c_{t+1}).
+V'(a_{t+1})=(1+r)\pi'(c_{t+1}).
 $$
 
 Substitute into the FOC:
 $$
-u'(c_t)=\beta(1+r)u'(c_{t+1}).
+\pi'(c_t)=\beta(1+r)\pi'(c_{t+1}).
 $$
 
 
 **Interpretation:**  
 
-- An extra dollar of wealth today raises lifetime value by $(1+r)u'(c_t)$ - it can either be consumed now (worth $u'(c_t)$) or saved to yield $(1+r)u'(c_{t+1})$ next period. The household is indifferent between consuming today and saving for tomorrow when the Euler equation holds.
+- An extra dollar of wealth today raises lifetime value by $(1+r)\pi'(c_t)$ - it can either be consumed now (worth $\pi'(c_t)$) or saved to yield $(1+r)\pi'(c_{t+1})$ next period. The household is indifferent between consuming today and saving for tomorrow when the Euler equation holds.
 
 ---
 
