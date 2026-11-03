@@ -13,3 +13,4 @@ FALL_2026*
 tmp/
 .vscode/
 *exam*
+!modules/dynamic_programming/mine_example.xlsx
