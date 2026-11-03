@@ -90,9 +90,9 @@ for (t in (T - 1):1) {
   }
   
   # Optimal value and policy for each state
-  V[t, ] <- apply(ut1, 1, max)
-  I[t, ] <- apply(ut1, 1, which.max) %>% unlist()
-  pol[t, ] <- u[I[t, ]]
+  V[t, ] <- apply(ut1, 1, max) #the max of each row
+  I[t, ] <- apply(ut1, 1, which.max) #the index of the max of each row
+  pol[t, ] <- u[I[t, ]] #translate the index to the actual control variable (0 or 1)
   
   rm(ut1)
 }
@@ -107,7 +107,7 @@ pol
 V
 
 #Convert uT to a data frame and plot using ggplot2
-library(ggplot2)
+library(tidyverse)
 uT_df <- as.data.frame(uT)
 colnames(uT_df) <- c("Not_Cut", "Cut")
 uT_df$State <- factor(c("Age_0", "Age_050", "Age_100"))
@@ -131,13 +131,68 @@ pivot_longer(V_df, cols = c("Age_0", "Age_050", "Age_100"), names_to = "State", 
   theme_minimal()
 
 
-#Plot the optimal policy over time for each state in a heatmap
-pol_df <- as.data.frame(pol)
-colnames(pol_df) <- c("Age_0", "Age_050", "Age_100")
-pol_df$Period <- factor(1:T)
-pivot_longer(pol_df, cols = c("Age_0", "Age_050", "Age_100"), names_to = "State", values_to = "Policy") %>%
-  ggplot(aes(y = State, x = Period, fill = factor(Policy))) +
-  geom_tile(color = "white") +
-  scale_fill_manual(values = c("0" = "lightblue", "1" = "salmon"), labels = c("Wait", "Cut")) +
-  labs(title = "Optimal Policy Over Time", y = "Period", x = "Forest Age State", fill = "Policy") +
-  theme_minimal()
+# Compare the optimal decision and its value on the same date-state grid.
+# V includes current payoff and discounted future payoffs, valued at each date.
+policy_value_df <- expand.grid(Period = seq_len(T), Age = as.vector(x)) %>%
+  mutate(
+    Policy = as.vector(pol),
+    Value = as.vector(V),
+    Decision = case_when(
+      Policy == 1 ~ "Cut",
+      Period == T ~ "Salvage",
+      TRUE ~ "Wait"
+    ),
+    Decision = factor(Decision, levels = c("Wait", "Cut", "Salvage")),
+    Period = factor(Period, levels = seq_len(T)),
+    Age = factor(Age, levels = as.vector(x))
+  )
+
+panel_theme <- theme_minimal(base_size = 12) +
+  theme(
+    panel.grid = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(size = 10)
+  )
+
+policy_plot <- ggplot(policy_value_df, aes(x = Period, y = Age)) +
+  geom_tile(aes(fill = Decision), color = "white", linewidth = 1) +
+  geom_text(aes(label = Decision), size = 4) +
+  scale_fill_manual(
+    values = c("Wait" = "lightblue", "Cut" = "salmon", "Salvage" = "#C7DFC5"),
+    drop = FALSE
+  ) +
+  scale_x_discrete(drop = FALSE) +
+  scale_y_discrete(drop = FALSE) +
+  coord_equal() +
+  labs(
+    title = "Optimal policy",
+    subtitle = "Best action at each date and stand age",
+    x = "Period", y = "Stand age (years)", fill = "Decision"
+  ) +
+  panel_theme
+
+value_plot <- ggplot(policy_value_df, aes(x = Period, y = Age)) +
+  geom_tile(aes(fill = Value), color = "white", linewidth = 1) +
+  geom_text(aes(label = sprintf("%.2f", Value)), size = 4) +
+  scale_fill_gradient(low = "#F0F5FA", high = "#7BAACB") +
+  scale_x_discrete(drop = FALSE) +
+  scale_y_discrete(drop = FALSE) +
+  coord_equal() +
+  labs(
+    title = "Optimal payoff: V(t, age)",
+    subtitle = "Current plus discounted future payoffs",
+    x = "Period", y = "Stand age (years)", fill = "Value"
+  ) +
+  panel_theme
+
+policy_value_plot <- patchwork::wrap_plots(policy_plot, value_plot, nrow = 1) +
+  patchwork::plot_annotation(
+    title = "Forest harvest: decisions and values",
+    caption = paste(
+      "Each cell is a date-state combination, not a trajectory.",
+      "Salvage means leave standing and collect terminal value.",
+      "Values are measured at each cell's date."
+    )
+  )
+print(policy_value_plot)

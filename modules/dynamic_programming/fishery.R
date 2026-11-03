@@ -4,8 +4,8 @@
 # -------------------------------------------
 
 # Parameters
-beta <- 0.98    # discount factor
-r <- 0.8        # intrinsic growth rate
+beta <- 0.95    # discount factor
+r <- 0.5        # intrinsic growth rate
 K <- 30         # carrying capacity
 p <- 1          # price per unit harvest
 c <- 0.05          # cost per unit harvest
@@ -38,8 +38,8 @@ max_iter <- 10000
 
 while (diff > tol && iter < max_iter) {
   V_new <- numeric(length(S))
-  for (i in seq_along(S)) {
-    s <- S[i]
+  for (ii in seq_along(S)) {
+    s <- S[ii]
     # feasible harvests h = 0,...,s
     h_set <- 0:s
     # next state after harvest
@@ -49,8 +49,8 @@ while (diff > tol && iter < max_iter) {
     # Bellman RHS for each h
     val_h <- profit + beta * V[s_next + 1]  # +1 for R's 1-indexing
     # choose best
-    V_new[i] <- max(val_h)
-    policy[i] <- h_set[which.max(val_h)]
+    V_new[ii] <- max(val_h)
+    policy[ii] <- h_set[which.max(val_h)]
   }
   diff <- max(abs(V_new - V))
   V <- V_new
@@ -91,49 +91,57 @@ results <- data.frame(
 
 print(results, row.names = FALSE)
 
-# Plot policy function
-plot(S, policy, type = "b", pch = 19, col = "steelblue",
-     xlab = "Stock (s)", ylab = "Optimal harvest h*(s)",
-     main = "Optimal Harvest Policy (VFI)")
-abline(v = 4, lty = 2, col = "gray")  # approximate target escapement
-
-
+# Plot the optimal harvest policy at each feasible stock.
+policy_plot <- ggplot(results, aes(x = stock, y = harvest)) +
+  geom_line(color = "steelblue", linewidth = 0.7) +
+  geom_point(color = "steelblue", size = 2) +
+  scale_x_continuous(breaks = scales::breaks_pretty()) +
+  labs(
+    title = "Optimal Harvest Policy (VFI)",
+    x = "Current stock (s)", y = "Optimal harvest h*(s)",
+    caption = "Points are feasible stock levels; connecting lines are visual guides."
+  ) +
+  theme_minimal(base_size = 12)
+print(policy_plot)
 
 # -------------------------------------------
 # Phase diagram: stock dynamics under optimal policy
 # -------------------------------------------
 
-# Compute next-period stock under optimal policy
-s_next <- G(S - policy)
+results$next_stock <- G(results$escapement)
+# Identify every exact fixed point on the discrete grid, including extinction.
+steady_states <- results %>% filter(next_stock == stock)
 
-# Plot state transition
-plot(S, s_next, type = "b", pch = 19, col = "darkorange",
-     xlab = expression(paste("Current stock  ", s[t])),
-     ylab = expression(paste("Next-period stock  ", s[t+1])),
-     main = "Phase Diagram of the Fishery")
+phase_plot <- ggplot(results, aes(x = stock, y = next_stock)) +
+  geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray40") +
+  geom_line(color = "darkorange", linewidth = 0.7) +
+  geom_point(color = "darkorange", size = 2) +
+  geom_point(data = steady_states, shape = 21, fill = "white",
+             color = "firebrick", size = 3, stroke = 1) +
+  geom_text(data = steady_states, aes(label = paste0("s* = ", stock)),
+            nudge_y = 0.8, color = "firebrick", size = 3.5) +
+  coord_equal(xlim = c(0, Smax), ylim = c(0, Smax + 1.5)) +
+  labs(
+    title = "Stock Dynamics under the Optimal Harvest Policy",
+    subtitle = "Above the dashed line: stock increases; below: stock decreases",
+    x = expression(paste("Current stock  ", s[t])),
+    y = expression(paste("Next-period stock  ", s[t+1])),
+    caption = paste(
+      "Dashed line: unchanged stock. Outlined points: steady states.",
+      "Connecting lines are visual guides between discrete states.",
+      sep = "\n"
+    )
+  ) +
+  theme_minimal(base_size = 12)
+print(phase_plot)
 
-# Add 45-degree line
-abline(0, 1, lty = 2, col = "gray40")
-
-# Find steady state visually (intersection point)
-steady_index <- which.min(abs(s_next - S))
-points(S[steady_index], s_next[steady_index],
-       pch = 19, col = "red", cex = 1.4)
-text(S[steady_index], s_next[steady_index] + 1,
-     labels = bquote(s^"*" == .(S[steady_index])),
-     col = "red", cex = 0.9)
-
-# Optional: annotate regions
-text(15, 10, "Stock declines", col = "gray30")
-text(3, 6, "Stock increases", col = "gray30")
-
-# create bar chart with the composition of harvest and escapement at steady state using ggplot2
-library(ggplot2)
-results %>%
-  tidyr::pivot_longer(cols = c(harvest, escapement),
-                      names_to = "type", values_to = "amount") %>%
+# Harvest and escapement at every stock
+composition_plot <- results %>%
+  pivot_longer(cols = c(harvest, escapement),
+               names_to = "type", values_to = "amount") %>%
   ggplot(aes(x = stock, y = amount, fill = type)) +
-  geom_col( width = 0.5) +
-  labs(title = paste("Harvest and Escapement at Steady State (s* =", S[steady_index], ")"),
-       fill = "Type") +
-  theme_minimal()
+  geom_col(width = 0.5) +
+  labs(title = "Harvest and Escapement by Current Stock",
+       x = "Current stock (s)", y = "Amount", fill = "Type") +
+  theme_minimal(base_size = 12)
+print(composition_plot)

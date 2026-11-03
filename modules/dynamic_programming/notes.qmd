@@ -305,11 +305,10 @@ Starting at $s_0=4$:
 Total $=12+6.3+5.67=23.97=V_0(4)$.
 Thus, the optimal extraction policy is to extract 2 units at $t=0$, 1 unit at $t=1$, and 1 unit at $t=2$, yielding a total discounted profit of 23.97.
 
-![](mine_tree_with_values.pdf)
+
 
 See excel example for full table.
 
-\newpage 
 
 
 ## The Curse of Dimensionality
@@ -347,26 +346,7 @@ Each additional state dimension multiplies the size of:
 
 This explosion makes naive enumeration infeasible.
 
-For instance, if we allowed both **ore stock** and **equipment age** as states:
-$$
-s_t = (s_t^{ore}, s_t^{equip}),
-$$
-and if each dimension had only 10 discrete values, then $V_t$ must be evaluated at $10 \times 10 = 100$ points per period. Add one more variable (say, capital), and it jumps to $1{,}000$ points. For higher dimensions, this quickly exceeds computational limits.
 
-The curse of dimensionality is not merely a computational nuisance—it shapes how economists model behavior.
-
-In applied work, we rarely solve high-dimensional dynamic programs exactly.
-Instead, we rely on:
-
-- **Approximations**: e.g., functional forms or interpolation of $V(s)$
-- **Monte Carlo methods**: random sampling of states rather than full enumeration
-- **Problem decomposition**: splitting the model into subproblems or exploiting structure (e.g., separability)
-- **Aggregation or discretization**: grouping similar states or actions
-
-These methods trade accuracy for tractability.
-
-
-\newpage
 
 ## Forest Harvest Problem
 
@@ -376,15 +356,26 @@ We consider a simple **finite-horizon dynamic programming** problem for forest m
 
 - **State variable**: $x_t$ = forest age at the beginning of period $t$
 - **Decision variable**: $u_t \in \{0, 1\}$  
-  - $u_t = 0$ means *wait*  
+  - $u_t = 0$ means *wait* 
   - $u_t = 1$ means *harvest*
-- **Payoff**:
-  - Depends on age: $x_t=0$: payoff $=0$; $x_t=50$: payoff $=8$; $x_t=100$: payoff $=10$
+- **Immediate payoff** $r(x_t,u_t)$ depends on both stand age and the harvest decision. Before the terminal date:
+  - If we wait, $r(x_t,0)=0$.
+  - If we harvest, $r(x_t,1)=\text{pay}(x_t)$, where $\text{pay}(0)=-2$, $\text{pay}(50)=8$, and $\text{pay}(100)=10$.
+
+  $$
+  r(x_t,u_t)=
+  \begin{cases}
+  0, & u_t=0 \quad \text{(wait)},\\
+  \text{pay}(x_t), & u_t=1 \quad \text{(harvest)}.
+  \end{cases}
+  $$
+
 - **Transition**:
-  - If not harvested: $x_{t+1} = \min(x_t + 50, 100)$  
+  - If not harvested, the stand grows: $x_{t+1} = \min(x_t + 50, 100)$ 
   - If harvested: $x_{t+1} = 0$
 - **Terminal value**: $V_T(x_T) = \max\{\text{salv}(x_T), \text{pay}(x_T)\}$ where 
-  - $\text{salv}(x_T)$ = salvage value if not harvested at end (0, 20, 60)  
+  - $\text{salv}(x_T)$ = salvage value if not harvested at end, $\text{salv}(0) = 0$, $\text{salv}(50) = 20$, $\text{salv}(100) = 60$
+  - $\text{pay}(x_T)=r(x_T,1)$ is the harvest payoff defined above. At the terminal date, leaving the stand uncut earns its salvage value instead of the zero immediate payoff from waiting in earlier periods.
 - **Discount factor**: $\beta = (1/1.04)^{50}$  (discounting 50 years at 4%)
 
 ### Bellman Equation
@@ -496,9 +487,157 @@ For each $s$,
 $$
 (\mathcal{T}V)(s)=\max_{0\le h\le s}\left\{h+\beta V\left(\text{round}\big(G(s-h)\big)\right)\right\}.
 $$
-Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $|V^{(k+1)}-V^{(k)}|_\infty<10^{-8}$. The greedy action at convergence is the optimal policy $h^*(s)$.
+Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $|V^{(k+1)}-V^{(k)}|_\infty<10^{-8}$. 
+
+**Why value function iteration solves the problem**
+
+- **We want a decision rule for every possible state.** For each stock level, what action gives the highest current payoff plus discounted future value?
+
+- **The challenge is valuing what we leave for tomorrow.** We know today's payoff and how the state changes, but we initially do not know the value of arriving at each future state.
+
+- **Start with a guess for those future values**, such as $V^{(0)}(s)=0$ for every state.
+
+- **Use that guess to compare all feasible actions at each state:**
+
+  $$
+  V^{(k+1)}(s)=\max_{h\in\{0,\ldots,s\}}
+  \left\{\pi(s,h)+\beta V^{(k)}\!\left(\operatorname{round}(G(s-h))\right)\right\}.
+  $$
+
+  Record both the highest total payoff—the updated **value**—and the action that achieves it—the **policy**. Use the previous iteration's values to update every state.
+
+- **Each update incorporates another period of consequences.** Starting from zero, the first update considers only current profit; the second accounts for two periods of optimally chosen actions; and so on. The index $k$ counts computational iterations, not calendar periods.
+
+- **Future opportunities change today's optimal response.** Leaving fish unharvested may initially look worthless. As the updates account for future growth and harvests, preserving stock can become the better choice.
+
+- **Discounting makes distant payoffs matter less.** With bounded payoffs and $\beta<1$, extending the planning horizon eventually adds very little to the value at any state.
+
+- **Stop when the values barely change at every state.** The resulting values are approximately consistent with the decisions they imply: optimizing today using those continuation values reproduces essentially the same values.
+
+- **Recover the policy by choosing the best action using the final values.** This gives an approximately optimal response at every state on our grid. An initial stock is needed only afterward, to trace the path generated by following that policy.
 
 See R script `fishery.R` for implementation details.
+
+
+## The Bellman Operator
+
+The Bellman equation tells us that the value of being in a given state today, $V(s)$, equals the best possible current payoff plus the discounted value of what happens next.
+
+We can think of this process as an **operator** — a kind of "machine" that takes a guess about the value function and produces a new, updated guess.
+
+
+### How it works
+
+Start with any function $V(s)$ that tells you what the value might be for each state.  
+Then define a new function:
+$$
+(\mathcal{T}V)(s) = \max_{x \in X(s)} \big\{ \pi(s,x) + \beta V(f(s,x)) \big\}.
+$$
+
+What this says in words:
+
+> “Given my current guess about how valuable future states are (that’s $V$), what would be the total value of making the best decision today?”
+
+So $\mathcal{T}$ takes the *old* value function and gives you a *new* one that’s a little closer to the truth.  
+It’s a way to **think one step ahead**.
+
+
+### The Fixed Point Idea
+
+The true value function, $V^*(s)$, is the one that **doesn’t change** when we apply this operation again:
+
+$$
+V^*(s) = (\mathcal{T}V^*)(s).
+$$
+
+In other words, if you already know the correct $V^*$, thinking one step ahead doesn’t change your beliefs because you are already correct about the future.
+
+**Why this matters**
+
+- The operator gives us a **recipe for computing** $V^*$: 
+    - start with a guess and keep applying $\mathcal{T}$ repeatedly.
+    - Each time, you’re improving your estimate of the value of being in each state.
+- Economically, this process mirrors **learning or planning**:  
+    - we evaluate today’s decisions using our expectations of tomorrow, adjust, and repeat until everything is internally consistent.
+
+**Visual Intuition**
+
+- If you plotted $V_0(s)$ (your first guess) and then $V_1(s) = \mathcal{T}V_0(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.  
+
+- That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
+
+**In the context of economics**
+
+- For a **consumer**, $\mathcal{T}$ means re-evaluating how much future consumption is worth.  
+- For a **firm**, it means updating the expected profitability of holding or investing capital.  
+- For a **resource owner**, it means revising how valuable it is to leave part of the stock for tomorrow.
+
+In all cases, the Bellman operator captures the logic of **forward-looking behavior**:  
+today’s value depends on how optimally we plan for tomorrow.
+
+Each application of $\mathcal{T}$ corresponds to "thinking one step further ahead."
+
+- Starting with any initial guess $V_0(s)$,
+- Repeatedly applying $\mathcal{T}$, $V_{k+1} = \mathcal{T}V_k$,
+- Converges to the true value function $V^*$ under mild conditions.
+
+This is **Value Function Iteration (VFI)**.
+
+
+### Contraction Mapping: Why Value Function Iteration Converges
+
+Once we define the Bellman operator $\mathcal{T}$ - the rule that takes a guess about future value and updates it - we can ask two key questions:
+
+1. Does this process always lead to a stable value function?
+2. Will it always settle on the **same** function, no matter where we start?
+
+For our finite state and action grids, the answer is yes when each state has at least one feasible action, payoffs are bounded, and $0<\beta<1$.
+
+The reason is the **contraction mapping property**.
+
+A **contraction mapping** is a transformation that *pulls things closer together* every time you apply it.  
+
+$$
+\| \mathcal{T}V_1 - \mathcal{T}V_2 \|_\infty \leq \beta \, \| V_1 - V_2 \|_\infty
+$$
+
+Here, $\|V_1-V_2\|_\infty$ is the largest absolute difference between the two value functions across all states. One Bellman update reduces this maximum difference by at least the factor $\beta$.
+
+Imagine taking two different guesses about the value function, say $V_1(s)$ and $V_2(s)$. When we apply the Bellman operator to both, the resulting functions $\mathcal{T}V_1$ and $\mathcal{T}V_2$ are **closer to each other** than the originals.
+
+Each round of updating reduces the distance between our guesses — eventually, all sequences converge to the same point, the **true value function** $V^*$.
+
+Discounting is what makes this work. Because future rewards are multiplied by $\beta < 1$, any disagreement about the future is automatically **shrunk** when we think one step ahead.
+
+Small differences in how we value the future can’t explode backward into large differences today — they fade over time.
+
+This gives the Bellman operator its *gravitational pull* toward a single stable value function.
+
+If applying $\mathcal{T}$ repeatedly always pulls guesses closer together, there must be one and only one function that can’t be improved upon —  that’s the **fixed point**:
+$$
+V^*(s) = \mathcal{T}V^*(s).
+$$
+
+Mathematically, this follows from the **Contraction Mapping Theorem**, but economically, you can think of it as saying:
+
+There is one internally consistent way to value the future that agrees with itself when we plan forward.
+
+#### How this helps us in practice
+
+Because $\mathcal{T}$ is a contraction, we can find $V^*$ by **value function iteration**:
+
+1. Start with any initial guess $V_0(s)$ — even something crude.
+2. Apply $\mathcal{T}$ to get an updated guess $V_1 = \mathcal{T}V_0$.
+3. Keep repeating: $V_{n+1} = \mathcal{T}V_n$.
+
+Each iteration gets us closer to the truth.  
+No calculus tricks, no global search — just forward iteration guided by economic logic.
+
+#### The big takeaway
+
+- On our finite grids, bounded payoffs, nonempty feasible action sets, and $0<\beta<1$ guarantee a **unique value function** and convergence of value function iteration.
+- Diminishing returns are not required for this result.
+- A unique value function does not require a unique optimal action: two actions can tie for the same highest value.
 
 
 \newpage
@@ -629,125 +768,6 @@ The functional equation states that the value of the resource today equals profi
 
 
 ---
-
-## The Bellman Operator
-
-The Bellman equation tells us that the value of being in a given state today, $V(s)$, equals the best possible current payoff plus the discounted value of what happens next.
-
-We can think of this process as an **operator** — a kind of "machine" that takes a guess about the value function and produces a new, updated guess.
-
-
-### How it works
-
-Start with any function $V(s)$ that tells you what the value might be for each state.  
-Then define a new function:
-$$
-(\mathcal{T}V)(s) = \max_{x \in X(s)} \big\{ \pi(s,x) + \beta V(f(s,x)) \big\}.
-$$
-
-What this says in words:
-
-> “Given my current guess about how valuable future states are (that’s $V$), what would be the total value of making the best decision today?”
-
-So $\mathcal{T}$ takes the *old* value function and gives you a *new* one that’s a little closer to the truth.  
-It’s a way to **think one step ahead**.
-
-
-### The Fixed Point Idea
-
-The true value function, $V^*(s)$, is the one that **doesn’t change** when we apply this operation again:
-
-$$
-V^*(s) = (\mathcal{T}V^*)(s).
-$$
-
-In other words, if you already know the correct $V^*$, thinking one step ahead doesn’t change your beliefs because you are already correct about the future.
-
-**Why this matters**
-
-- The operator gives us a **recipe for computing** $V^*$: 
-    - start with a guess and keep applying $\mathcal{T}$ repeatedly.
-    - Each time, you’re improving your estimate of the value of being in each state.
-- Economically, this process mirrors **learning or planning**:  
-    - we evaluate today’s decisions using our expectations of tomorrow, adjust, and repeat until everything is internally consistent.
-
-**Visual Intuition**
-
-- If you plotted $V_0(s)$ (your first guess) and then $V_1(s) = \mathcal{T}V_0(s)$, the curves would move closer and closer together until they line up at $V^*(s)$.  
-
-- That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
-
-**In the context of economics**
-
-- For a **consumer**, $\mathcal{T}$ means re-evaluating how much future consumption is worth.  
-- For a **firm**, it means updating the expected profitability of holding or investing capital.  
-- For a **resource owner**, it means revising how valuable it is to leave part of the stock for tomorrow.
-
-In all cases, the Bellman operator captures the logic of **forward-looking behavior**:  
-today’s value depends on how optimally we plan for tomorrow.
-
-Each application of $\mathcal{T}$ corresponds to "thinking one step further ahead."
-
-- Starting with any initial guess $V_0(s)$,
-- Repeatedly applying $\mathcal{T}$, $V_{k+1} = \mathcal{T}V_k$,
-- Converges to the true value function $V^*$ under mild conditions.
-
-This is **Value Function Iteration (VFI)**.
-
----
-
-## Existence and Uniqueness: Why the Bellman Equation Has a Single Solution
-
-Once we define the Bellman operator $\mathcal{T}$ - the rule that takes a guess about future value and updates it - we can ask two key questions:
-
-1. Does this process always lead to a stable value function?
-2. Will it always settle on the **same** function, no matter where we start?
-
-The answer is yes — as long as future payoffs are **discounted** (so $\beta < 1$).  
-
-The reason is the **contraction mapping property**.
-
-A **contraction mapping** is a transformation that *pulls things closer together* every time you apply it.  
-
-$$
-|| \mathcal{T}V_1 - \mathcal{T}V_2 || \leq \gamma \, || V_1 - V_2 ||
-$$
-
-Imagine taking two different guesses about the value function, say $V_1(s)$ and $V_2(s)$. When we apply the Bellman operator to both, the resulting functions $\mathcal{T}V_1$ and $\mathcal{T}V_2$ are **closer to each other** than the originals.
-
-Each round of updating reduces the distance between our guesses — eventually, all sequences converge to the same point, the **true value function** $V^*$.
-
-Discounting is what makes this work. Because future rewards are multiplied by $\beta < 1$, any disagreement about the future is automatically **shrunk** when we think one step ahead.
-
-Small differences in how we value the future can’t explode backward into large differences today — they fade over time.
-
-This gives the Bellman operator its *gravitational pull* toward a single stable value function.
-
-If applying $\mathcal{T}$ repeatedly always pulls guesses closer together, there must be one and only one function that can’t be improved upon —  that’s the **fixed point**:
-$$
-V^*(s) = \mathcal{T}V^*(s).
-$$
-
-Mathematically, this follows from the **Contraction Mapping Theorem**, but economically, you can think of it as saying:
-
-There is one internally consistent way to value the future that agrees with itself when we plan forward.
-
-### How this helps us in practice
-
-Because $\mathcal{T}$ is a contraction, we can find $V^*$ by **value function iteration**:
-
-1. Start with any initial guess $V_0(s)$ — even something crude.
-2. Apply $\mathcal{T}$ to get an updated guess $V_1 = \mathcal{T}V_0$.
-3. Keep repeating: $V_{n+1} = \mathcal{T}V_n$.
-
-Each iteration gets us closer to the truth.  
-No calculus tricks, no global search — just forward iteration guided by economic logic.
-
-### The big takeaway
-
-- Discounting and diminishing returns make the future “well-behaved.”  
-- Together they guarantee that the Bellman equation has **one** solution, and that repeated forward-looking reasoning will find it.
-- This is why we can compute dynamic equilibria with confidence: as long as the problem is discounted and well-behaved, there is a single, stable value function waiting to be found.
 
 ## The Envelope Theorem in Dynamic Programming
 
