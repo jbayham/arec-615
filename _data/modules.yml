@@ -89,13 +89,11 @@
   dirname: modules/dynamic_programming
   desc: "This unit introduces dynamic programming."
   materials:
-    - title: "Interactive Mining Walkthrough"
-      url: "mining_walkthrough.html"
-    - title: "Mine Example"
+    - title: "Mine Example Spreadsheet"
       url: "mine_example.xlsx"
-    - title: "Forest Example"
+    - title: "Forest Example R Script"
       url: "forest_harvest.R"
-    - title: "Fishery Example"
+    - title: "Fishery Example R Script"
       url: "fishery.R"
 #   readings:
 #     - title: "Miranda & Fackler Ch. 7"

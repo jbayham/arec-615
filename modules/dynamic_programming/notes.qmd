@@ -4,6 +4,10 @@ title: "Dynamic Programming"
 
 
 
+**Reading companion.** References below to **M&F** mean Mario J. Miranda and Paul L. Fackler (2002), *Applied Computational Economics and Finance*, MIT Press, Chapters 7 and 8 (course references). Page numbers are the book's printed page numbers, not the PDF viewer's page count. Chapter 7 develops discrete-state models and algorithms; Chapter 8 develops continuous-state theory. Our fishery discussion draws on Chapter 8 for the economic reasoning and Chapter 7 for the discrete numerical solution.
+
+**Translating notation.** M&F use $f$ for the reward (our $\pi$), $g$ for the state transition (our $f$), and $\delta$ for the discount factor (our $\beta$). Their shadow price $\lambda(s)$ is $V^\prime(s)$. Their finite-horizon convention has decisions at $1,\ldots,T$ followed by terminal value $V_{T+1}$; our general finite-horizon formulation uses decisions at $0,\ldots,T-1$ followed by $V_T$. Our examples simplify or adapt the book's models, so their numerical answers need not match ours.
+
 # Motivation: Why Dynamics Matter
 
 - Many economic problems involve *decisions over time*.  
@@ -71,6 +75,8 @@ which equates the **marginal benefit of current extraction** to the **discounted
 
 ## Backward Induction
 
+*Further reading: M&F §7.1, pp. 156–157, explains the terminal condition and recursive logic; §7.3.1, pp. 164–165, gives the backward-recursion algorithm.*
+
 
 
 - In a *finite-horizon sequential decision problem*, one can solve by starting at the last period and then working backward.
@@ -86,6 +92,8 @@ which equates the **marginal benefit of current extraction** to the **discounted
 
 
 ## Vocabulary and the components of dynamic programming problem
+
+*Further reading: M&F §7.1, pp. 155–157, defines discrete-state model elements. Compare §8.1, pp. 190–191, for continuous states and the distinction between continuous and discrete choices.*
 
 - **State variable** $s_t$: summarizes all relevant information at time $t$ needed to make decisions and predict future states. Examples: resource stock, capital stock, productivity level.
 - **Control variable** $x_t$: the decision made at time $t$. Examples: extraction quantity, investment amount, input usage.
@@ -153,6 +161,8 @@ with an initial state $s_0$ given.
 
 ## Bellman Equation
 
+*Further reading: M&F §7.1, pp. 156–157, develops the principle of optimality, finite-horizon Bellman equation, and terminal values. The book includes uncertainty; our deterministic transition is the special case in which the next state is known.*
+
 - The recursive formulation expresses the problem in terms of a **value function** $V_t(s_t)$ that gives the maximal attainable value starting from state $s_t$ at time $t$:
 
 $$
@@ -207,6 +217,8 @@ We would be indifferent at \$9, the discounted value of keeping the resource for
 
 
 ### Mining problem
+
+*Further reading: M&F §7.2.1, pp. 157–158, sets up mine management; §7.6.1, pp. 172–175, works through a numerical implementation and plots. Our three-period example uses a simpler payoff and smaller stock grid.*
 
 Consider a mine management problem, where:
 
@@ -313,6 +325,8 @@ See excel example for full table.
 
 ## The Curse of Dimensionality
 
+*Further reading: M&F §7.3.4, pp. 166–167, relates computational work to the numbers of states, actions, and iterations.*
+
 Dynamic programming offers an elegant recursive solution principle, but it suffers from a major practical limitation known as the **curse of dimensionality**.
 
 The term was coined by Richard Bellman to describe the exponential growth in computational complexity as the number of state or control variables increases.
@@ -349,6 +363,8 @@ This explosion makes naive enumeration infeasible.
 
 
 ## Forest Harvest Problem
+
+*Further reading: M&F Exercise 7.1, p. 185, offers a related timber-harvest problem with different growth, rewards, and replanting timing. For the analogous keep-or-replace structure, see §7.2.2, pp. 158–159; for terminal and salvage values, see §7.1, p. 156.*
 
 We consider a simple **finite-horizon dynamic programming** problem for forest management. At each decision date, the forest is characterized by its *age*, and the decision is whether to **cut** or **wait**.
 
@@ -419,7 +435,9 @@ Go to the R script `forest_harvest.R`
 
 # Infinite Horizon Problems
 
-- In many economic applications, we consider **infinite-horizon** dynamic programming problems where the decision-maker optimizes over an infinite sequence of periods. Intuitively, the solution to infinite horizon problems often converges to a **steady-state policy** that does not depend on time.
+Time remains discrete throughout this section. We first study the fishery with continuous stock and harvest to derive the economic tradeoffs, then approximate it with discrete states and actions for numerical solution.
+
+- In many economic applications, we consider **infinite-horizon** dynamic programming problems where the decision-maker optimizes over an infinite sequence of periods. With time-invariant model elements and suitable regularity conditions, we can use a **stationary policy** that depends on the current state but not on calendar time. A stationary policy need not produce a constant stock; a steady-state stock is a separate property of the resulting dynamics.
 
 - The general infinite-horizon problem is to choose a sequence $\{x_t\}_{t=0}^\infty$ to maximize the expected discounted sum of single-period payoffs:
 $$
@@ -441,94 +459,178 @@ where we note that there is no time index on $V(s)$ since the value function is 
 
 ## Fishery Problem
 
-We study a single-stock fishery with:
+*Further reading: M&F §8.1, pp. 190–191, gives the continuous-state formulation; §8.4.2, pp. 198–200, develops renewable-resource harvesting. That example uses net social surplus with a demand curve and harvest costs; we use constant net revenue per unit and logistic growth. In §8.4.2, the book's harvest $x$ is our $h$, and its growth function $h$ is our $G$.*
 
-- discrete state $s \in \{0,1,2,\dots,S_{\max}\}$ (biomass), 
-- control (harvest) $h\in\{0,1,\dots,s\}$
-- next period’s stock is $s^\prime=G(s-h)$. 
-- Per-period payoff is $\pi(s,h)=p\,h-c\,h$ (constant net price for simplicity).
+We study a fishery in **discrete time with continuous stock and harvest**. At each date, the manager observes the stock, chooses harvest, and leaves the remaining fish to grow before the next date.
 
-The infinite-horizon Bellman equation (time-stationary) is
+### Model Elements
+
+**Notation:** Because this infinite-horizon model has payoffs, transitions, and feasible choices that do not depend on calendar time, we drop time subscripts below: $s$ denotes current stock $s_t$, $h$ denotes current harvest $h_t$, and $e=s-h$ denotes current escapement $e_t$. We write $s^\prime$ for next period's stock $s_{t+1}$. The prime on $s$ means "next period," whereas primes on functions, such as $V^\prime$ and $G^\prime$, denote derivatives. The stationary value function is $V(s)$ rather than $V_t(s)$; the stock and harvest can still change over time.
+
+- **State**: biomass $s\in[0,S_{\max}]$, where $S_{\max}$ is the carrying capacity.
+- **Control**: harvest $h\in[0,s]$.
+- **Reward/payoff**: $\pi(s,h)=(p-c)h$, with price $p>c\geq0$ and constant cost per unit $c$.
+- **Transition**: $s^\prime=f(s,h)=G(s-h)$, where
+
+  $$
+  G(e)=e+re\left(1-\frac{e}{S_{\max}}\right).
+  $$
+
+  Here $e=s-h$ is **escapement**, the stock left after harvest, and $r$ is the intrinsic growth rate. Assume $0<r\leq1$, so this growth function keeps next period's stock in $[0,S_{\max}]$.
+- **Discount factor**: $0<\beta<1$.
+
+The stationary Bellman equation is
 $$
-V(s)=\max_h \{\pi(s,h)+\beta V(s^\prime)\} = \max_h \{p\,h-c\,h +\beta V(G(s-h))\}
+V(s)=\max_{0\leq h\leq s}
+\left\{(p-c)h+\beta V\bigl(G(s-h)\bigr)\right\}.
 $$
-where $s^\prime=G(s-h)$ where we assume a logistic growth function
-$$G(s)=s+r s\left(1-\frac{s}{S_{\max }}\right)$$
-with intrinsic growth rate $r$ and carrying capacity $S_{\max}$.
+
+For a given stock $s$, this is a constrained nonlinear optimization problem in one variable, $h$. The additional challenge is that we do not yet know the continuation value function $V$.
 
 ### Building Intuition
 
-If we relax to continuous $s$ and $h$ and interior choices (we’ll still solve numerically on a grid), the maximizer $h^*(s)$ satisfies the KKT system:
+*Further reading: M&F §8.2, pp. 191–193, derives shadow prices, first-order conditions, and the adjustments needed for binding constraints. See §8.4.2, p. 199, for their resource-harvest interpretation.*
 
--	Feasibility: $0\le h\le s$.
--	Stationarity (interior): $\pi_h(s,h)-\beta V^\prime (s^\prime)\,G^\prime(s-h)=0$ with $s^\prime=G(s-h)$.
--	Complementary slackness for the bounds $h\ge 0$ and $h\le s$.
+Suppose for now that we know $V$ and it is differentiable at the relevant next-period stock. Define the objective at a given current stock as
+$$
+Q_s(h)=(p-c)h+\beta V\bigl(G(s-h)\bigr).
+$$
+Its derivative wrt $h$ is
+$$
+Q_s^\prime(h)=p-c-\beta V^\prime(s^\prime)G^\prime(s-h),
+\qquad s^\prime=G(s-h),
+$$
+where
+$$
+G^\prime(s-h)=1+r\left(1-\frac{2(s-h)}{S_{\max}}\right).
+$$
 
-With $\pi_h(s,h)=p-c$ and $G^\prime(s-h) = 1+r\left(1-\frac{2(s-h)}{S_{\max}}\right)$, the interior FOC is
+Here $G^\prime$ denotes the derivative with respect to escapement. Holding $s$ fixed and differentiating with respect to harvest instead, the chain rule gives
 $$
-p-c - \beta V^\prime(s^\prime)\,G^\prime(s-h)=0
+\begin{aligned}
+\frac{\partial G(s-h)}{\partial h}
+&=\frac{\partial}{\partial h}\left[(1+r)(s-h)-\frac{r}{S_{\max}}(s-h)^2\right]\\
+&=-(1+r)+\frac{2r(s-h)}{S_{\max}}\\
+&=-G^\prime(s-h).
+\end{aligned}
 $$
+The minus sign comes from $\partial(s-h)/\partial h=-1$ and explains the negative continuation-value term in $Q_s^\prime(h)$.
 
-We derive the envelope condition by differentiating the Bellman wrt to $s$ (no direct dependence of $\pi$ on $s$ here) gives
+- **Harvesting one more unit** earns $p-c$ today.
+- **Leaving that unit in the water** adds $G^\prime(s-h)$ units to next period's stock, each worth $V^\prime(s^\prime)$ next period. Discount that value by $\beta$.
+- At an **interior optimum**, $0<h^*(s)<s$, these marginal values are equal:
+
+  $$
+  p-c=\beta V^\prime(s^\prime)G^\prime(s-h^*(s)).
+  $$
+
+The bounds matter too. For $s>0$, the necessary first-order conditions can be written as
 $$
-V^\prime(s)= 0 + \beta V^\prime(s^\prime)\,G^\prime(s-h^*(s)).
+\begin{cases}
+Q_s^\prime(0)\leq0, & h^*(s)=0,\\
+Q_s^\prime(h^*(s))=0, & 0<h^*(s)<s,\\
+Q_s^\prime(s)\geq0, & h^*(s)=s.
+\end{cases}
 $$
-Note that the second term of the envelope condition is the same as in the stationary condition above. 
-Combining the two (interior) yields a classic shadow-value condition:
+These are the implications of the KKT conditions for this bounded choice. If the objective is concave, they also suffice for a global optimum; otherwise, we must compare candidate solutions. At $s=0$, the only feasible choice is $h=0$.
+
+*Further reading: M&F §8.2, p. 192, derives the action first-order condition and the envelope condition together, including state-dependent bounds.*
+
+**Why we need the envelope condition.** The harvest first-order condition tells us how to choose harvest given the marginal value of future stock, $V^\prime(s^\prime)$. But what determines the marginal value of stock today, $V^\prime(s)$? The envelope condition links these two marginal values. It lets us interpret the shadow value of fish without first solving for how optimal harvest changes with stock.
+
+To see where it comes from, write the Bellman equation evaluated at the optimal harvest rule:
 $$
-p-c=V^\prime(s)\quad\text{(if interior)}.
+V(s)=(p-c)h^*(s)+\beta V\bigl(G(s-h^*(s))\bigr).
 $$
-Interpretation: harvest up to the point where the marginal net revenue equals the marginal value of stock - the additional future discounted revenue from the growth of the stock (the shadow price or “user cost”). With bounds, policies tilt to no-harvest at very low $s$ (stock rebuilding) and binding-harvest (take most of the stock) when $s$ is very high.
+Suppose the optimum is interior and both $V$ and $h^*$ are differentiable locally. A change in stock affects value in two ways: directly, by leaving more fish available to grow, and indirectly, by changing the optimal harvest. Differentiating both sides with respect to $s$, with $s^\prime=G(s-h^*(s))$, gives
+$$
+\begin{aligned}
+V^\prime(s)
+&=(p-c)\frac{dh^*(s)}{ds}
++\beta V^\prime(s^\prime)G^\prime(s-h^*(s))
+\left(1-\frac{dh^*(s)}{ds}\right)\\
+&=\beta V^\prime(s^\prime)G^\prime(s-h^*(s))\\
+&\quad+\underbrace{\left[(p-c)-\beta V^\prime(s^\prime)G^\prime(s-h^*(s))\right]}_{=\,0\text{ by the interior harvest FOC}}
+\frac{dh^*(s)}{ds}.
+\end{aligned}
+$$
+The coefficient on the policy response $dh^*(s)/ds$ is zero because harvest is already chosen optimally. A small adjustment in harvest therefore has no first-order effect on value at an interior optimum. Only the direct effect of extra stock remains:
+$$
+\boxed{V^\prime(s)=\beta V^\prime(s^\prime)G^\prime(s-h^*(s)).}
+$$
+This is the **envelope condition**: to find the marginal value of the state, differentiate the Bellman objective with respect to the state while holding the optimal action fixed. Here the immediate payoff has no direct dependence on stock, so the direct effect comes entirely through future stock.
+
+Combining the envelope condition with the interior harvest first-order condition gives
+$$
+V^\prime(s)=p-c.
+$$
+An additional unit of stock is worth the net revenue from harvesting another unit when harvest is interior. This derivation applies locally at an interior solution; at a binding harvest bound, the constraint terms must also be considered.
+
 
 ### Numerical Solution via Value Function Iteration
 
-We’ll solve by value function iteration on a coarse grid—this is the standard workhorse for discrete-time, discrete-state models.
+*Further reading: M&F §7.3.2, p. 165, calls this algorithm “function iteration”; §7.5, pp. 169–172, shows its implementation in MATLAB/CompEcon. Our R script implements the discrete Bellman updates directly. These references explain the discrete algorithm, not a continuous-state numerical solver.*
 
-**Grid, dynamics, and payoffs**
+The theoretical model has continuous stock and harvest. For the numerical example, we approximate it with **discrete stock levels and harvest choices**. The economic tradeoff is the same, but we find the best harvest by comparing a finite list of feasible actions. The derivatives above explain the continuous model; we do not apply those first-order or envelope conditions to the discrete value table or rounded transition. Enumeration solves each numerical subproblem.
 
--	State grid: $s\in\{0,1,2,\dots,S_{\max}\}$ with $S_{\max}=20$.
--	Actions: $h\in\{0,1,\dots,s\}$.
--	Discount: $\beta=0.95$.
--	Logistic growth: $G(s)=s+r s (1-s/S_{\max})$ with $r=0.5$, $S_{\max}=20$. After computing $G$, round to the nearest state in $\{0,\dots,S_{\max}\}$.
--	Payoff: $\pi(s,h)=p\,h-c\,h$, with $p=1$, $c=0$ (net price $=1$).
+- Carrying capacity $S_{\max}=20$ and growth rate $r=0.5$.
+- Discount factor $\beta=0.95$, price $p=1$, and unit cost $c=0$.
+- State grid $\mathcal{S}=\{0,1,\ldots,20\}$.
+- At stock $s$, feasible harvests are $\mathcal{H}(s)=\{0,1,\ldots,s\}$.
+- Compute growth using $G(s-h)$, then round to the nearest grid point. Write this numerical transition as $\widehat f(s,h)=\operatorname{round}(G(s-h))$.
 
-For each $s$,
+For example, leaving $7$ units gives $G(7)=7+0.5(7)(1-7/20)=9.275$. The numerical model therefore moves to stock $9$. This rounding is part of our approximation, not part of the biological model.
+
+We write $\widehat V$ for a value table on the grid, distinguishing it from the continuous model's value function $V$. In the R script, this table is stored as `V`.
+
+**Solving the Bellman subproblems**
+
+Start with $\widehat V^{(0)}(s)=0$ for every $s\in\mathcal{S}$. Using the previous iteration's values, update each stock level:
 $$
-(\mathcal{T}V)(s)=\max_{h\in\{0,\ldots,s\}}\left\{h+\beta V\left(\text{round}\big(G(s-h)\big)\right)\right\}.
+\widehat V^{(k+1)}(s)=\max_{h\in\mathcal{H}(s)}
+\left\{(p-c)h+\beta \widehat V^{(k)}\bigl(\widehat f(s,h)\bigr)\right\}.
 $$
-Start with $V^{(0)}\equiv 0$ and iterate $V^{(k+1)}=\mathcal{T}V^{(k)}$ until $\|V^{(k+1)}-V^{(k)}\|_\infty<10^{-8}$.
+
+At each stock level:
+
+1. List every feasible harvest $h\in\mathcal{H}(s)$.
+2. Compute its current payoff and rounded next-period stock.
+3. Look up that next stock's value in $\widehat V^{(k)}$ and discount it by $\beta$.
+4. Choose the harvest with the highest current payoff plus discounted continuation value. Store both the maximizing harvest and the maximized value.
+
+Use the same previous-iteration value vector for every stock in an update. The outer VFI loop updates continuation values; the inner comparison chooses the best harvest given those values. At zero stock, the only feasible harvest is zero, and stock remains zero.
+
+Repeat until
+$$
+\max_{s\in\mathcal{S}}\left|\widehat V^{(k+1)}(s)-\widehat V^{(k)}(s)\right|<10^{-8}.
+$$
+Then compare the harvest choices once more using the final values to recover the policy at every stock on the grid. If several actions tie, any maximizing action is optimal for the discrete problem; use a consistent rule to select one.
 
 **Why value function iteration solves the problem**
 
-- **We want a decision rule for every possible state.** For each stock level, what action gives the highest current payoff plus discounted future value?
-
-- **The challenge is valuing what we leave for tomorrow.** We know today's payoff and how the state changes, but we initially do not know the value of arriving at each future state.
-
-- **Start with a guess for those future values**, such as $V^{(0)}(s)=0$ for every state.
-
-- **Use that guess to compare all feasible actions at each state:**
-
-  $$
-  V^{(k+1)}(s)=\max_{h\in\{0,\ldots,s\}}
-  \left\{\pi(s,h)+\beta V^{(k)}\!\left(\operatorname{round}(G(s-h))\right)\right\}.
-  $$
-
-  Record both the highest total payoff—the updated **value**—and the action that achieves it—the **policy**. Use the previous iteration's values to update every state.
-
-- **Each update incorporates another period of consequences.** Starting from zero, the first update considers only current profit; the second accounts for two periods of optimally chosen actions; and so on. The index $k$ counts computational iterations, not calendar periods.
-
-- **Future opportunities change today's optimal response.** Leaving fish unharvested may initially look worthless. As the updates account for future growth and harvests, preserving stock can become the better choice.
-
+- **We want a decision rule for every state on the grid.** For each stock level, what harvest gives the highest current payoff plus discounted future value?
+- **The challenge is valuing what we leave for tomorrow.** We know today's payoff and how the stock changes, but initially do not know the value of arriving at each future stock.
+- **Start with a guess for future values.** With $\widehat V^{(0)}=0$, the first update values only current harvest. Since $p>c$, it chooses $h=s$.
+- **Use the updated values to compare harvest choices again.** Future stock now has value, so preserving fish can become worthwhile. Use the same previous-iteration values for every state in an update.
+- **Each update incorporates another period of consequences.** Starting from zero, the first update solves a one-period problem, the second a two-period problem, and so on, for our discrete model. The index $k$ counts iterations, not calendar periods.
 - **Discounting makes distant payoffs matter less.** With bounded payoffs and $\beta<1$, extending the planning horizon eventually adds very little to the value at any state.
+- **Stop when the values barely change across the grid.** Optimizing with those continuation values then approximately reproduces the values we started with.
+- **Recover the policy from the final values.** An initial stock is needed only afterward, to trace the path generated by following that policy.
 
-- **Stop when the values barely change at every state.** The resulting values are approximately consistent with the decisions they imply: optimizing today using those continuation values reproduces essentially the same values.
+**Connecting back to the continuous model.** With the same parameters and sufficiently fine grids, we expect the discrete solution to approximate the continuous model's values and decisions. A coarse grid can change harvest thresholds and create apparent steady states because of rounding. To improve the approximation, reduce the spacing of both stocks and harvests, for example from $1$ to $0.5$ to $0.25$, and round growth to the nearest point on the chosen state grid. Compare values and policies at common stock levels.
 
-- **Recover the policy by choosing the best action using the final values.** This gives an approximately optimal response at every state on our grid. An initial stock is needed only afterward, to trace the path generated by following that policy.
+*Further reading: M&F §7.3.2, p. 165, gives a bound on iteration error for the discrete model. That bound concerns convergence to the discrete solution, not the additional error from discretizing a continuous model.*
 
-See R script `fishery.R` for implementation details.
+**Convergence versus accuracy.** A small change between iterations tells us that we have nearly solved the discrete model. It does not establish that this model closely approximates the continuous problem. Grid refinement checks that separate source of error; tightening the VFI stopping tolerance alone does not remove it.
+
+*Further reading: M&F §7.4, pp. 167–168, explains how an optimal policy generates state paths and how to identify deterministic steady states. This is the basis for interpreting our stock-dynamics figure.*
+
+The R script `fishery.R` implements this enumeration-and-rounding approach. It uses the parameters and state grid listed above and produces plots of convergence, optimal harvest, stock dynamics, and harvest versus escapement. At exact half-integers, R rounds to the nearest even integer; the script uses this rule consistently.
 
 
-## The Bellman Operator
+## A bit more depth: The Bellman Operator
+
+*Further reading: M&F §7.3, pp. 163–165, writes the discrete Bellman update as a vector fixed-point problem. Compare §8.1, p. 191, for the continuous-state functional fixed-point equation. We use $\mathcal{T}$ to name the updating rule.*
 
 The Bellman equation tells us that the value of being in a given state today, $V(s)$, equals the best possible current payoff plus the discounted value of what happens next.
 
@@ -542,6 +644,23 @@ Then define a new function:
 $$
 (\mathcal{T}V)(s) = \max_{x \in X(s)} \big\{ \pi(s,x) + \beta V(f(s,x)) \big\}.
 $$
+
+**Reading the notation:**
+
+- $\mathcal{T}$ is the **Bellman operator**, a rule that maps one function into another. It is not itself an equation.
+- $\mathcal{T}V$ is the **updated function** obtained by applying that rule to the candidate value function $V$. This notation means applying an operator, not multiplying by $\mathcal{T}$.
+- $(\mathcal{T}V)(s)$ is the **number** that the updated function assigns to a particular state $s$.
+
+Value function iteration repeatedly applies this rule: $V^{(k+1)}=\mathcal{T}V^{(k)}$.
+
+**Continuous model versus discrete approximation.** For the theoretical fishery, $X(s)=[0,s]$ (with action $h$) and $f(s,h)=G(s-h)$. For the numerical fishery, define a separate operator on value tables:
+$$
+(\widehat{\mathcal{T}}W)(s)=\max_{h\in\mathcal{H}(s)}
+\left\{(p-c)h+\beta W\bigl(\widehat f(s,h)\bigr)\right\},
+\qquad s\in\mathcal{S}.
+$$
+The R script performs $\widehat V^{(k+1)}=\widehat{\mathcal{T}}\widehat V^{(k)}$. Both operators use the same economic logic, but they solve different problems: one has continuous choices and unrounded growth, and the other has grid choices and rounded growth.
+
 
 What this says in words:
 
@@ -559,6 +678,8 @@ $$
 V^*(s) = (\mathcal{T}V^*)(s).
 $$
 
+Requiring this equality at every state gives the **Bellman functional equation**, written compactly as $V^*=\mathcal{T}V^*$. Its unknown is the entire function $V^*$. The discrete model instead has its own fixed point $\widehat V^*=\widehat{\mathcal{T}}\widehat V^*$. This table approximates $V^*$ at grid points; the two need not coincide even after numerical iteration has converged. Thus, $\mathcal{T}$ names the updating rule, while $V^*=\mathcal{T}V^*$ is the equation that the optimal value function must satisfy.
+
 In other words, if you already know the correct $V^*$, thinking one step ahead doesn’t change your beliefs because you are already correct about the future.
 
 **Why this matters**
@@ -575,14 +696,6 @@ In other words, if you already know the correct $V^*$, thinking one step ahead d
 
 - That’s what it means for the Bellman equation to be a **fixed point** — a steady state in your expectations about value.
 
-**In the context of economics**
-
-- For a **consumer**, $\mathcal{T}$ means re-evaluating how much future consumption is worth.  
-- For a **firm**, it means updating the expected profitability of holding or investing capital.  
-- For a **resource owner**, it means revising how valuable it is to leave part of the stock for tomorrow.
-
-In all cases, the Bellman operator captures the logic of **forward-looking behavior**:  
-today’s value depends on how optimally we plan for tomorrow.
 
 Each application of $\mathcal{T}$ corresponds to "thinking one step further ahead."
 
@@ -595,12 +708,14 @@ This is **Value Function Iteration (VFI)**.
 
 ### Contraction Mapping: Why Value Function Iteration Converges
 
+*Further reading: M&F §7.1, p. 157, and §7.3.2, p. 165, discuss contraction, uniqueness, and convergence for discrete models; §8.1, p. 191, gives the continuous-state counterpart. For an alternative algorithm, see policy iteration in §7.3.3, pp. 165–166.*
+
 Once we define the Bellman operator $\mathcal{T}$ - the rule that takes a guess about future value and updates it - we can ask two key questions:
 
 1. Does this process always lead to a stable value function?
 2. Will it always settle on the **same** function, no matter where we start?
 
-For our finite state and action grids, the answer is yes when each state has at least one feasible action, payoffs are bounded, and $0<\beta<1$.
+For the continuous fishery model, bounded continuous payoffs, continuous transitions, compact feasible choice sets, and $0<\beta<1$ give a well-defined Bellman operator on continuous value functions. The contraction argument below applies to this operator. It also applies separately to $\widehat{\mathcal{T}}$, since the discrete problem has bounded payoffs and nonempty finite action sets. Each operator converges to its own fixed point.
 
 The reason is the **contraction mapping property**.
 
@@ -640,11 +755,11 @@ Because $\mathcal{T}$ is a contraction, we can find $V^*$ by **value function it
 3. Keep repeating: $V^{(k+1)} = \mathcal{T}V^{(k)}$.
 
 Each iteration gets us closer to the truth.  
-No calculus tricks, no global search — just forward iteration guided by economic logic.
+Each update still requires solving the maximization problem at every state. Value function iteration organizes these optimizations into successive improvements in our estimate of future value. With a numerical grid, we converge to an approximate solution whose accuracy also depends on state and action grid spacing and the approximation of transitions.
 
 #### The big takeaway
 
-- On our finite grids, bounded payoffs, nonempty feasible action sets, and $0<\beta<1$ guarantee a **unique value function** and convergence of value function iteration.
+- On our finite grids, bounded payoffs, nonempty feasible action sets, and $0<\beta<1$ guarantee a **unique discrete value table** $\widehat V^*$ and convergence of value function iteration to that table. This guarantee does not measure its distance from the continuous solution $V^*$.
 - Diminishing returns are not required for this result.
 - A unique value function does not require a unique optimal action: two actions can tie for the same highest value.
 
@@ -653,6 +768,10 @@ No calculus tricks, no global search — just forward iteration guided by econom
 
 
 # Functional Equations and Value Function Properties
+
+*Further reading: M&F Chapter 8 introduction and §8.1, pp. 189–191, explain why continuous-state dynamic models lead to functional fixed-point problems.*
+
+The Bellman functional-equation idea applies to both continuous and discrete state models. The derivative and envelope arguments below concern continuous states and controls with the stated smoothness and interiority assumptions; they are not derivatives of the discrete fishery value table.
 
 Dynamic programming problems often lead to **functional equations**—equations in which the *unknown* is a function rather than a scalar. The **Bellman equation** is the most important example in economics. Instead of solving for a scalar like $x$, we are solving for an entire function $V(\cdot)$ that satisfies a relationship involving itself.
 
@@ -699,6 +818,8 @@ The equation says: *The value of being in state $s$ today equals the current pay
 ### Functional Equations in Economics
 
 **Example: A Simple Savings Problem**
+
+*Further reading: M&F §8.4.1, pp. 197–198, studies a related consumption–investment problem and interprets its Euler equation. Its production technology differs from our fixed-interest-rate savings example.*
 
 Suppose an agent chooses consumption $c_t$ and next-period assets $a_{t+1}$.
 
@@ -762,6 +883,8 @@ $$
 
 **Resource Extraction Problem**
 
+*Further reading: M&F §8.4.3, pp. 200–201, extends extraction to stock-dependent costs, a price that depends on extraction, and possible abandonment.*
+
 A resource owner decides how much to extract $x_t$ from stock $s_t$:
 $$
 V(s_t) = \max_{0\le x_t\le s_t} \{ p x_t - c(x_t) + \beta V(s_t - x_t) \}.
@@ -779,6 +902,8 @@ The functional equation states that the value of the resource today equals profi
 ---
 
 ## The Envelope Theorem in Dynamic Programming
+
+*Further reading: M&F §8.2, pp. 191–193, develops the shadow-price and Euler conditions. Page 192 shows how the envelope condition changes when action bounds depend on the state.*
 
 Consider a general Bellman equation:
 $$
@@ -800,7 +925,7 @@ We often need the derivative $V'(s)$ to derive first-order conditions or Euler e
 
 ### The Envelope Condition
 
-At the optimum $x^*(s)$,
+At a differentiable interior optimum $x^*(s)$, with no binding state-dependent constraints,
 $$
 V'(s) = \frac{\partial \pi(s,x)}{\partial s}\bigg|_{x=x^*(s)}
        + \beta\, V'(f(s,x^*(s)))\,\frac{\partial f(s,x)}{\partial s}\bigg|_{x=x^*(s)}.
@@ -819,7 +944,7 @@ In discrete time, the theorem states:
 
 - If the Bellman equation is differentiable and the policy function $x^*(s)$ is interior and continuous, then
 $$
-V'(s) = \frac{\partial}{\partial s}\Big[\pi(s,x^*(s)) + \beta V(f(s,x^*(s)))\Big].
+V'(s) = \left.\frac{\partial}{\partial s}\Big[\pi(s,x) + \beta V(f(s,x))\Big]\right|_{x=x^*(s)}.
 $$
 
 - You can interpret $V'(s)$ as the **shadow value of the state variable** - the marginal increase in lifetime value from a marginal increase in the current state.

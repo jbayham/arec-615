@@ -6,20 +6,21 @@
 # Parameters
 beta <- 0.95    # discount factor
 r <- 0.5        # intrinsic growth rate
-K <- 30         # carrying capacity
+Smax <- 20      # carrying capacity and largest state
 p <- 1          # price per unit harvest
-c <- 0.05          # cost per unit harvest
+c <- 0          # cost per unit harvest
 
 # State space (discrete stock levels)
-Smax <- 20
 S <- 0:Smax
 
 # Logistic growth function (deterministic)
 G <- function(x) {
-  x_next <- x + r * x * (1 - x / K)
-  # keep within bounds and round to nearest integer state
-  pmax(0, pmin(Smax, round(x_next)))
+  x + r * x * (1 - x / Smax)
 }
+
+# Numerical transition: round growth to the nearest integer state.
+# R rounds exact half-integers to the nearest even integer.
+f_grid <- function(s, h) round(G(s - h))
 
 # Initialize value and policy
 V <- rep(0, length(S))
@@ -43,7 +44,7 @@ while (diff > tol && iter < max_iter) {
     # feasible harvests h = 0,...,s
     h_set <- 0:s
     # next state after harvest
-    s_next <- G(s - h_set)
+    s_next <- f_grid(s, h_set)
     # current payoff
     profit <- (p - c) * h_set
     # Bellman RHS for each h
@@ -58,6 +59,14 @@ while (diff > tol && iter < max_iter) {
   Vstor[[iter]] <- V
 }
 
+if (diff > tol) stop("VFI did not converge within max_iter.")
+
+# Recover the policy using the final value vector; break ties toward less harvest.
+for (ii in seq_along(S)) {
+  h_set <- 0:S[ii]
+  val_h <- (p - c) * h_set + beta * V[f_grid(S[ii], h_set) + 1]
+  policy[ii] <- h_set[which.max(val_h)]
+}
 cat("VFI converged in", iter, "iterations.\n")
 
 # -------------------------------------------
@@ -65,21 +74,23 @@ cat("VFI converged in", iter, "iterations.\n")
 # -------------------------------------------
 library(tidyverse)
 #Plot how elements of the value function evolve over iterations
-to_plot <- map(1:21, function(i) {
+to_plot <- map(seq_along(S), function(i) {
   data.frame(
-    stock = i - 1,
+    stock = S[i],
     value = map_dbl(Vstor, i),
     iteration = 1:iter
   )}) %>%
   bind_rows()
 
-to_plot %>%
-  filter(#iteration %% 10 == 0 | iteration == 1 | iteration == iter,
-         iteration %in% c(1:300),
-         stock %in% c(1,7,15)) %>%
+convergence_plot <- to_plot %>%
+  filter(stock %in% c(1, 7, 15)) %>%
   ggplot(aes(x = iteration, y = value)) +
-  geom_line() +
-  facet_wrap(~ stock, ncol = 5) 
+  geom_line(color = "steelblue", linewidth = 0.7) +
+  facet_wrap(~ stock, ncol = 3, labeller = label_both) +
+  labs(title = "Value Function Iteration",
+       x = "Iteration", y = "Value") +
+  theme_minimal(base_size = 12)
+print(convergence_plot)
 
 
 results <- data.frame(
@@ -108,7 +119,7 @@ print(policy_plot)
 # Phase diagram: stock dynamics under optimal policy
 # -------------------------------------------
 
-results$next_stock <- G(results$escapement)
+results$next_stock <- f_grid(results$stock, results$harvest)
 # Identify every exact fixed point on the discrete grid, including extinction.
 steady_states <- results %>% filter(next_stock == stock)
 
