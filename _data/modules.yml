@@ -88,6 +88,10 @@
   filename: "notes" 
   dirname: modules/dynamic_programming
   desc: "This unit introduces dynamic programming."
+  readings:
+  - title: "Miranda & Fackler Ch. 7-8"
+  - title: "Burt (1964)"
+  - title: "Reed (1984)"
   materials:
     - title: "Mine Example Spreadsheet"
       url: "mine_example.xlsx"
@@ -95,17 +99,9 @@
       url: "forest_harvest.R"
     - title: "Fishery Example R Script"
       url: "fishery.R"
-#   readings:
-#     - title: "Miranda & Fackler Ch. 7"
-#       url: "course-materials/"
+
 #   ps:
 #     - title: "Problem Set 3"
 #       url: "problem_set.pdf"
-#   materials:
-#     - title: "Mine Example"
-#       url: "mine_example.xlsx"
-#     - title: "Forest Example"
-#       url: "forest_harvest.R"
-#     - title: "Fishery Example"
-#       url: "fishery.R"
+
   

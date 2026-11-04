@@ -123,28 +123,95 @@ results$next_stock <- f_grid(results$stock, results$harvest)
 # Identify every exact fixed point on the discrete grid, including extinction.
 steady_states <- results %>% filter(next_stock == stock)
 
-phase_plot <- ggplot(results, aes(x = stock, y = next_stock)) +
+# Cobweb paths: move vertically to the policy-induced transition, then
+# horizontally to the 45-degree line to use next stock as current stock.
+# Both paths use the discrete transition table, not the connecting lines.
+trace_stock <- function(initial_stock, periods = 10) {
+  stock <- initial_stock
+  segments <- list()
+  for (tt in seq_len(periods)) {
+    next_stock <- results$next_stock[match(stock, results$stock)]
+    if (next_stock == stock) break
+    segments[[tt]] <- data.frame(
+      x = c(stock, stock), y = c(stock, next_stock),
+      xend = c(stock, next_stock), yend = c(next_stock, next_stock),
+      path = paste("Start at", initial_stock)
+    )
+    stock <- next_stock
+  }
+  bind_rows(segments)
+}
+cobweb_paths <- bind_rows(trace_stock(2), trace_stock(16))
+
+# Build the diagram cumulatively for classroom discussion. Each named object
+# can be printed separately, and sourcing the script prints them in order.
+# Keep the same axis limits and aspect ratio at every stage.
+phase_plot_1 <- ggplot(results, aes(x = stock, y = next_stock)) +
   geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray40") +
+  scale_x_continuous(limits = c(0, Smax)) +
+  scale_y_continuous(limits = c(0, Smax + 1.5)) +
+  coord_equal() +
+  labs(
+    title = "Stock Dynamics under the Optimal Harvest Policy",
+    subtitle = "1. The 45-degree line: next-period stock equals current stock",
+    x = expression(paste("Current stock  ", s[t])),
+    y = expression(paste("Next-period stock  ", s[t+1])),
+    caption = "Above the dashed line: stock increases; below: stock decreases."
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+print(phase_plot_1)
+
+# Stage 2: add the policy-induced transition and mark its fixed points.
+phase_plot_2 <- phase_plot_1 +
   geom_line(color = "darkorange", linewidth = 0.7) +
   geom_point(color = "darkorange", size = 2) +
   geom_point(data = steady_states, shape = 21, fill = "white",
              color = "firebrick", size = 3, stroke = 1) +
   geom_text(data = steady_states, aes(label = paste0("s* = ", stock)),
             nudge_y = 0.8, color = "firebrick", size = 3.5) +
-  coord_equal(xlim = c(0, Smax), ylim = c(0, Smax + 1.5)) +
   labs(
-    title = "Stock Dynamics under the Optimal Harvest Policy",
-    subtitle = "Above the dashed line: stock increases; below: stock decreases",
-    x = expression(paste("Current stock  ", s[t])),
-    y = expression(paste("Next-period stock  ", s[t+1])),
+    subtitle = "2. Add next-period stock under optimal harvest",
     caption = paste(
-      "Dashed line: unchanged stock. Outlined points: steady states.",
-      "Connecting lines are visual guides between discrete states.",
+      "Outlined points: steady states.",
+      "Orange connecting lines are visual guides between discrete states.",
       sep = "\n"
     )
-  ) +
-  theme_minimal(base_size = 12)
-print(phase_plot)
+  )
+print(phase_plot_2)
+
+# Stage 3: trace rebuilding from stock 2 (2 -> 3 -> 4 -> 6).
+phase_plot_3 <- phase_plot_2 +
+  geom_segment(data = filter(cobweb_paths, path == "Start at 2"),
+               aes(x = x, y = y, xend = xend, yend = yend, color = path),
+               inherit.aes = FALSE, linewidth = 0.65,
+               arrow = grid::arrow(length = grid::unit(0.10, "inches"),
+                                   type = "closed")) +
+  scale_color_manual(values = c("Start at 2" = "steelblue",
+                                "Start at 16" = "#00796B"),
+                     breaks = c("Start at 2", "Start at 16"), name = NULL) +
+  labs(
+    subtitle = "3. Start at stock 2: follow the blue arrows",
+    caption = paste(
+      "Arrows: vertical to next stock, then horizontal to the dashed line; repeat.",
+      "Orange connecting lines are visual guides between discrete states.",
+      sep = "\n"
+    )
+  )
+print(phase_plot_3)
+
+# Stage 4: add the path from high stock (16 -> 6).
+phase_plot_4 <- phase_plot_3 +
+  geom_segment(data = filter(cobweb_paths, path == "Start at 16"),
+               aes(x = x, y = y, xend = xend, yend = yend, color = path),
+               inherit.aes = FALSE, linewidth = 0.65,
+               arrow = grid::arrow(length = grid::unit(0.10, "inches"),
+                                   type = "closed")) +
+  labs(subtitle = "4. Start at stock 16: add the green arrows")
+print(phase_plot_4)
+
+# Preserve the original name for the completed figure.
+phase_plot <- phase_plot_4
 
 # Harvest and escapement at every stock
 composition_plot <- results %>%
