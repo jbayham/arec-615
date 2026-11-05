@@ -94,7 +94,7 @@
   - title: "Reed (1984)"
   materials:
     - title: "Mine Example Spreadsheet"
-      url: "mine_example.xlsx"
+    #  url: "mine_example.xlsx"
     - title: "Forest Example R Script"
       url: "forest_harvest.R"
     - title: "Fishery Example R Script"
