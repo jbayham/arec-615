@@ -1,0 +1,303 @@
+---
+title: "Burt (1964) groundwater as a dynamic program: Reproducing the empirical results in R"
+---
+
+## Context
+
+- Burt generalizes Hotelling (1931) by formulating resource extraction as a dynamic programming problem with some uncertainty.
+- Applies to both exhaustible and partially renewable resources (e.g., groundwater, fisheries, petroleum).
+- The goal: derive approximate decision rules for optimal extraction when analytical solutions to the Bellman equation are intractable.
+
+## Model
+
+- $s_t$ = stock of the resource
+- $x_t$ = amount extracted in the period
+- $w_t$ = stochastic natural recharge
+- $G(x_t,s_t)$ = expected net output per period (benefit minus cost)
+- $\beta = (1 + r)^{-1}$ = discount factor
+- $h(w_t,s_t)$ = probability density of recharge given stock
+- $\omega(s)$ = expectation of $w$ for a given stock level
+- the stock evolves as $s_{t+1} = s_t + w_t - x_t$
+
+The infinite time Bellman equation is
+$$ V(s) = \max_{x \in [0,s]} \left\{ G(x,s) + \beta \int V(s + w - x)\,h(w,s)\,dw \right\} $$
+where the integral over $w$ captures the expectation over stochastic recharge.
+
+The goal is to characterize an approximate interior policy rule that relates the marginal benefit of extraction to the marginal value of the resource in situ. The decision satisfies,
+$$
+G_x(x^*,s) = \frac{1}{r-\omega'(s)} G_s(x^*,s)
+$$
+
+where $G_x$ and $G_s$ are the partial derivatives of $G$ with respect to extraction and stock, respectively, and $\omega'(s)$ is the derivative of the expected recharge with respect to stock. Expand extraction until the marginal gain from using one more unit now equals the capitalized value of the marginal benefit of having it in storage.
+
+- When expected recharge is independent of stock, $\omega'(s)=0$, the rule simplifies to $G_x(x^*,s)=G_s(x^*,s)/r$. Within Burt's first-degree approximation, the right-hand side is the present value of a perpetual annuity equal to $G_s(x^*,s)$ per period, beginning next period.
+
+- That is, if holding one more unit in the ground yields a cost saving of $\frac{\partial G}{\partial s}$ each period forever, its total present value is $\frac{1}{r}\frac{\partial G}{\partial s}$.
+
+- At the optimum, you are indifferent between:
+
+    - extracting and earning $\frac{\partial G}{\partial x}$ today, or
+    - leaving it in the ground and earning the discounted stream of future benefits from lower costs (the annuity value on the right-hand side).
+
+### Derivation of the condition
+
+- Burt argues that in many cases, the problem is analytically intractable (and computers weren't powerful enough in 1964), so he proposes Taylor series approximation methods to solve for $V(s)$ and the optimal extraction policy.
+
+$$
+V(s+w-x) \approx V(s) + V'(s)(w - x) 
+$$
+
+- In the neighborhood of $s$, the change in the value function due to stochastic recharge and extraction can be approximated linearly. This seems to simplify the stochastic recharge component.
+
+- Then substituting this approximation in the Bellman equation,.
+$$
+V(s) = max_{x \in [0,s]} \left\{ G(x,s) + \beta \int [ V(s) + V'(s)(w - x) ] h(w,s) dw \right\}
+$$
+
+- Since $V(s)$ is not a function of $w$ or $x$, we can pull it out of the integral. The integral of $h(w,s)$ over $w$ is 1 (since it's a probability density function), and the integral of $w h(w,s)$ over $w$ is just the expectation of $w$ given $s$, which we denote as $\omega(s)$. Thus, we have:
+$$
+V(s) = \frac{1}{1-\beta } \max_{x \in [0,s]} \left\{ G(x,s) + \beta V'(s)(\omega(s) - x) \right\}
+$$
+
+- We want a closed form expression for $V(s)$.
+
+- Taking the FOC with respect to $x$ gives us an implicit equation for the optimal extraction, $x^*$:
+$$
+G_x(x^*,s) - \beta V'(s) = 0
+$$
+
+- This equation relates the familiar marginal benefit of extraction to the discounted marginal value of the resource in situ.
+
+- Envelope Condition: Next, we differentiate the Bellman equation with respect to $s$ to get an expression for $V'(s)$:
+$$
+V'(s) = \frac{1}{1-\beta} \left\{ G_s(x^*,s) + G_x(x^*,s) x_s + \beta V''(s)(\omega(s) - x^*) + \beta V'(s) \omega'(s) - \beta V'(s)x_s \right\}
+$$
+- note that 
+  1. Burt ignores second-order terms like $V''(s)$ for tractability.
+  2. from the FOC, we have $G_x(x^*,s) = \beta V'(s)$, so the terms with $x_s$ cancel out.
+  
+- Collecting terms and rearranging yields the equilibrium condition:
+$$
+V'(s) = \frac{1}{1- \beta (1+  \omega'(s))} G_s(x^*,s)
+$$  
+
+- Substituting this back into the FOC and noting that $\beta = \frac{1}{1+r}$ gives:
+$$
+G_x(x^*,s) = \frac{1}{r - \omega'(s)} G_s(x^*,s)
+$$
+For $\omega'(s)=0$, Burt gives the following interpretation: Expand production to the point where marginal net output with respect to current
+consumption of the resource is equal to present value of a perpetual annuity equal
+in value to marginal net output with respect to quantity of resource in stock.
+
+:::{.callout-note}
+
+## From Burt's condition to a perpetual annuity
+
+An annuity is a stream of equal payments. A stream that continues forever is a **perpetuity**. Let $A$ be the payment each period and let $r>0$ be the discount rate. If the first payment arrives **next period**, its present value is
+
+$$
+PV = \sum_{t=1}^{\infty} \frac{A}{(1+r)^t}
+   = A\beta + A\beta^2 + A\beta^3 + \cdots,
+\qquad \beta=\frac{1}{1+r}.
+$$
+
+To evaluate this geometric series, multiply both sides by $\beta$:
+$$
+\beta PV = A\beta^2 + A\beta^3 + A\beta^4 + \cdots.
+$$
+Subtracting cancels every term except the first payment:
+$$
+(1-\beta)PV=A\beta
+\quad\Longrightarrow\quad
+PV=\frac{\beta}{1-\beta}A
+  =\frac{1/(1+r)}{1-1/(1+r)}A
+  =\frac{A}{r}.
+$$
+
+Now connect this to Burt's approximate decision rule. When $\omega'(s)=0$, the derivative of the approximated Bellman equation gives
+$$
+V'(s)\approx\frac{G_s(x^*,s)}{1-\beta}.
+$$
+The extraction first-order condition is $G_x(x^*,s)\approx\beta V'(s)$. Substituting gives
+$$
+G_x(x^*,s)
+\approx\frac{\beta}{1-\beta}G_s(x^*,s)
+=\frac{G_s(x^*,s)}{r}
+=\sum_{t=1}^{\infty}\frac{G_s(x^*,s)}{(1+r)^t}.
+$$
+
+Thus, the annuity payment is **$A=G_s(x^*,s)$**: the marginal benefit per period of an additional unit in storage. For groundwater, $G_s(x^*,s)=-c'(s)x^*$ is the pumping-cost saving from an extra unit of stock, holding extraction fixed. Within the approximation, this marginal benefit is treated as constant over time. The rule equates the marginal gain from extracting today to the present value of those future savings.
+
+
+
+:::
+
+
+{{< pagebreak >}}
+
+## Application: the groundwater model lab
+
+The lab uses a groundwater-only model inspired by Burt's trade-off: extraction provides benefits today, but reduces storage and raises future pumping costs. The following specification matches `burt_model_lab.R`; its parameters are illustrative rather than empirical estimates.
+
+**State, decision, and timing.** A basin planner observes beginning-of-period groundwater storage $s_t\in[0,\bar s]$ and chooses extraction $x_t\in[0,s_t]$. Constant natural recharge $w$ arrives **after extraction**, so it cannot be pumped in the current period. Storage and extraction are measured in million acre-feet.
+
+**Benefits and costs.** Water use generates diminishing benefits,
+$$
+B(x)=a\log(1+x).
+$$
+The storage-dependent component of unit pumping cost is
+$$
+c(s)=c_0+c_1\frac{\bar s-s}{s+\varepsilon},
+$$
+which rises as storage falls. The positive constant $\varepsilon$ keeps costs finite at zero storage. Total pumping costs and current net benefits are
+$$
+C(x,s)=c(s)x+\frac{c_2}{2}x^2,
+\qquad G(x,s)=B(x)-C(x,s).
+$$
+The quadratic term makes marginal pumping cost rise with extraction within a period. Benefits and costs are measured in million dollars per period.
+
+**Storage transition and objective.** The aquifer has capacity $\bar s$; any recharge above capacity spills out. The transition is
+$$
+s_{t+1}=F(s_t,x_t)=\min\{\bar s,\ s_t-x_t+w\}.
+$$
+The planner maximizes the infinite discounted sum of net benefits. With $0<\beta<1$, the Bellman equation is
+$$
+V(s)=\max_{0\leq x\leq s}
+\left\{a\log(1+x)-c(s)x-\frac{c_2}{2}x^2+\beta V(F(s,x))\right\}.
+$$
+
+**Baseline parameters.** The code uses
+$$
+a=10,\quad c_0=0.5,\quad c_1=2,\quad c_2=0.5,
+\qquad \bar s=10,\quad\varepsilon=1,\quad w=0.5,\quad\beta=0.95.
+$$
+These values produce an interior long-run storage level near 5.7, where extraction equals recharge. At sufficiently low stocks, zero extraction is optimal.
+
+**Numerical solution.** Starting from $V_0(s)=0$, the code applies the Bellman operator repeatedly on 401 storage nodes and 401 extraction grid points, adding the feasible endpoint $x=s$ when necessary. It linearly interpolates continuation values and stops when the maximum change in value falls below $10^{-7}$. It then recovers the policy and simulates 80 periods from initial stocks of 2 and 8. Bounded rewards and discounting make the Bellman operator a contraction.
+
+{{< pagebreak >}}
+
+## Groundwater lab: numerical results
+
+The following figures come from `burt_model_lab.R`, an illustrative groundwater-only model inspired by Burt. They are not a reproduction of his empirical application. The script solves the nonlinear model by value function iteration; all five figures use the same cached solution. The first render solves the model; subsequent renders load the cached results. Changes to `burt_model_lab.R` automatically invalidate the cache. To force a new solve, render with `quarto render burt.qmd --cache-refresh`.
+
+```{r}
+#| label: groundwater-solve
+#| include: false
+#| cache: true
+#| cache.extra: !expr unname(tools::md5sum("burt_model_lab.R"))
+source("burt_model_lab.R", local = TRUE)
+```
+
+## Groundwater lab: value function
+
+```{r}
+#| fig-pos: H
+#| fig-align: center
+#| label: fig-groundwater-value
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Present value of net benefits under optimal groundwater management."
+print(value_plot)
+```
+
+The value function gives the discounted sum of net benefits from managing the aquifer optimally, starting at each storage level. Higher initial storage raises value because it provides water for future use and reduces pumping costs. The slope measures the marginal value of an additional unit in storage; the height is total value, not current-period profit.
+
+{{< pagebreak >}}
+
+## Groundwater lab: extraction policy
+
+```{r}
+#| fig-pos: H
+#| fig-align: center
+#| label: fig-groundwater-policy
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Optimal dynamic extraction compared with extraction that maximizes current-period net benefits."
+print(policy_plot)
+```
+
+The dynamic policy accounts for the effect of today's pumping on future storage and pumping costs. The myopic policy ignores those future consequences and extracts more in this baseline. Where the dynamic policy lies below the dotted recharge line, storage builds; where it lies above recharge, storage declines. Their crossing near storage of 5.7 identifies an interior steady state. The small steps reflect the discrete extraction grid.
+
+{{< pagebreak >}}
+
+## Groundwater lab: storage paths
+
+```{r}
+#| fig-pos: H
+#| fig-align: center
+#| label: fig-groundwater-storage
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Groundwater storage over time from low and high initial stocks under the dynamic policy."
+print(storage_plot)
+```
+
+Starting with storage of 2, the planner initially pumps less than recharge and rebuilds the aquifer. Starting with storage of 8, the planner initially pumps more than recharge and draws storage down. Both paths approach approximately 5.7. The small difference between their terminal stocks reflects a narrow interval where the grid policy sets extraction exactly equal to recharge.
+
+{{< pagebreak >}}
+
+## Groundwater lab: extraction paths
+
+```{r}
+#| fig-pos: H
+#| fig-align: center
+#| label: fig-groundwater-extraction
+#| echo: false
+#| fig-width: 8
+#| fig-height: 5
+#| fig-cap: "Extraction over time along the two storage paths."
+print(extraction_plot)
+```
+
+Extraction rises as the initially depleted aquifer recovers and falls as the initially abundant aquifer is drawn down. Both paths approach recharge of 0.5 per period, shown by the dotted line. At that rate, inflows balance withdrawals and storage stops changing. The paths show how the same state-dependent policy produces different decisions as storage evolves.
+
+{{< pagebreak >}}
+
+## Groundwater lab: phase diagram and cobweb paths
+
+```{r}
+#| fig-pos: H
+#| fig-align: center
+#| label: fig-groundwater-phase
+#| out-width: "100%"
+#| echo: false
+#| fig-width: 8
+#| fig-height: 8
+#| fig-cap: "The optimal storage transition map and cobweb paths from initial stocks of 2 and 8."
+print(phase_plot)
+```
+
+In the groundwater lab, the phase diagram plots next period's storage, $s_{t+1}$, against current storage, $s_t$. The blue curve is the transition map under the optimal extraction policy. The dashed identity line marks where next period's storage equals current storage ($s_{t+1}=s_t$). Their intersections are steady states.
+
+The arrow paths, or **cobweb paths**, trace successive applications of the transition rule:
+
+1. Start on the dashed line at the initial storage level. Move **vertically to the blue curve** to find next period's storage.
+2. Move **horizontally back to the dashed line** to carry that new storage value onto the horizontal axis. It now becomes the starting stock for the next period.
+3. Repeat these two steps to follow storage over time.
+
+For the lab's baseline parameters, below the steady-state stock, extraction is less than recharge, so storage increases and the steps move up and right. Above the steady-state stock, extraction exceeds recharge, so storage decreases and the steps move down and left. Both paths approach the intersection, where extraction equals recharge and storage remains constant. With a discrete extraction grid, a small interval of stocks can satisfy this condition; refining the grids narrows that interval.
+
+The apparent bouncing between the curves is a graphical bookkeeping device: **the vertical step applies the transition rule; the horizontal step resets the starting point for the next period.** It does not mean that groundwater storage itself oscillates. In this baseline, storage approaches the steady state monotonically from either side.
+
+{{< pagebreak >}}
+
+## Potential extensions
+
+Use an extension to investigate a dynamic mechanism, rather than simply changing a parameter. Begin with a prediction, modify the model, and use the numerical solution to explain whether the prediction holds. The following are possible directions, not a checklist of required modifications.
+
+**Uncertain recharge: the value of a buffer.** Replace constant recharge with low and high realizations that have the same mean as the baseline. Keep extraction before recharge is observed, and replace continuation value with its probability-weighted expectation. Does uncertainty increase desired storage? Compare policies, average net benefits, and the frequency of low-storage outcomes. Explain the roles of nonlinear pumping costs and spill; do not assume uncertainty must always increase conservation.
+
+**Persistent drought: why history matters.** Add an observed wet/dry climate state with Markov transition probabilities. Let the current climate state determine the distribution of recharge arriving after extraction. Compare independent and persistent recharge processes with the same long-run distribution. At identical groundwater storage, how does the climate state change extraction? How does persistence change the depth and duration of drawdowns? The value function now depends on both storage and climate.
+
+**Ecological benefits: another reason to retain water.** Add a benefit from stored groundwater, or a loss when storage falls below an ecological threshold. Specify whether the benefit depends on beginning- or end-of-period storage. Does the planner avoid the threshold, or sometimes cross it? Compare extraction and storage with the baseline and explain how ecological benefits change the opportunity cost of pumping.
+
+**Fixed pumping costs: when to operate.** Add a fixed operating cost whenever extraction is positive, while retaining the variable pumping costs. Does the planner pump every period or alternate between pumping and recovery? Look for an inaction region and jumps in the extraction policy. A smooth policy is no longer guaranteed; retain a search over feasible controls rather than relying only on a local first-order condition.
+
+**Irreversible aquifer damage: consequences that outlast depletion.** Introduce a damage state that changes permanently if storage crosses a threshold. Damage could raise future pumping costs or reduce storage capacity; specify how any capacity reduction affects existing water. Compare this with a temporary low-storage penalty. Does the possibility of permanent damage change extraction before the threshold is reached? Storage alone no longer describes the state of the system.
+
+**Investment: changing future options.** Allow the planner to pay for pumping capacity that constrains future extraction. Add installed capacity as a state and investment as a control, with explicit installation timing and depreciation. When is investment worthwhile, and how does it interact with groundwater conservation? Compare immediate investment costs with future gains, and investigate whether greater pumping capacity can lead to lower long-run storage.
+

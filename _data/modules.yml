@@ -99,6 +99,10 @@
       url: "forest_harvest.R"
     - title: "Fishery Example R Script"
       url: "fishery.R"
+    - title: "Burt Notes"
+      url: "burt.pdf"
+    - title: "Burt Model Lab R Script"
+      url: "Bert_Model_Lab.R"
 
 #   ps:
 #     - title: "Problem Set 3"

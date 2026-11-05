@@ -14,3 +14,6 @@ tmp/
 .vscode/
 *exam*
 !modules/dynamic_programming/mine_example.xlsx
+
+# Regenerable Quarto/knitr solver cache
+/modules/dynamic_programming/burt_cache/
