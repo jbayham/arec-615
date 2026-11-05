@@ -1,10 +1,10 @@
 ---
-title: "Burt (1964) groundwater as a dynamic program: Reproducing the empirical results in R"
+title: "Burt (1964) Model Lab"
 ---
 
 ## Context
 
-- Burt generalizes Hotelling (1931) by formulating resource extraction as a dynamic programming problem with some uncertainty.
+- Burt formulates resource extraction as a dynamic programming problem with some uncertainty about recharge.
 - Applies to both exhaustible and partially renewable resources (e.g., groundwater, fisheries, petroleum).
 - The goal: derive approximate decision rules for optimal extraction when analytical solutions to the Bellman equation are intractable.
 
@@ -41,11 +41,32 @@ where $G_x$ and $G_s$ are the partial derivatives of $G$ with respect to extract
 
 ### Derivation of the condition
 
-- Burt argues that in many cases, the problem is analytically intractable (and computers weren't powerful enough in 1964), so he proposes Taylor series approximation methods to solve for $V(s)$ and the optimal extraction policy.
+Burt argues that in many cases, the problem is analytically intractable (and computers weren't powerful enough in 1964), so he proposes Taylor series approximation methods to solve for $V(s)$ and the optimal extraction policy.
 
 $$
 V(s+w-x) \approx V(s) + V'(s)(w - x) 
 $$
+
+The Bellman equation requires the value of **next period's stock**, $V(s+w-x)$, but that function is unknown. A Taylor approximation expresses this continuation value using the value and derivatives at **current stock**, $s$.
+
+Let $\Delta s=w-x$, so next period's stock is $s+\Delta s$. Expanding around $s$ gives
+$$
+V(s+\Delta s)
+\approx V(s)+V'(s)\Delta s+\frac{1}{2}V''(s)(\Delta s)^2.
+$$
+The first-degree approximation keeps only the constant and linear terms:
+$$
+\boxed{V(s+w-x)\approx V(s)+V'(s)(w-x).}
+$$
+
+
+- $V(s)$ is the value if storage were unchanged.
+- $V'(s)$ is the marginal value of an additional unit of groundwater in storage.
+- $w-x$ is the change in storage. Multiplying it by $V'(s)$ approximates the gain or loss in continuation value.
+- The omitted quadratic term captures curvature: the marginal value of storage generally changes as storage changes.
+
+Geometrically, we replace the value function near $s$ with its tangent line at $s$. For example, if recharge exceeds extraction by 0.1 million acre-feet and the marginal storage value is 10 dollars per acre-foot, the linear approximation predicts a gain of 1 million dollars in continuation value. If extraction exceeds recharge by the same amount, it predicts an equal loss. Discounting by $\beta$ occurs when this continuation value enters the Bellman equation.
+
 
 - In the neighborhood of $s$, the change in the value function due to stochastic recharge and extraction can be approximated linearly. This seems to simplify the stochastic recharge component.
 
@@ -54,10 +75,45 @@ $$
 V(s) = max_{x \in [0,s]} \left\{ G(x,s) + \beta \int [ V(s) + V'(s)(w - x) ] h(w,s) dw \right\}
 $$
 
-- Since $V(s)$ is not a function of $w$ or $x$, we can pull it out of the integral. The integral of $h(w,s)$ over $w$ is 1 (since it's a probability density function), and the integral of $w h(w,s)$ over $w$ is just the expectation of $w$ given $s$, which we denote as $\omega(s)$. Thus, we have:
+For a given current stock $s$ and choice $x$, both $V(s)$ and $V'(s)$ are constant with respect to the integration variable $w$. Distribute the integral across the terms:
 $$
-V(s) = \frac{1}{1-\beta } \max_{x \in [0,s]} \left\{ G(x,s) + \beta V'(s)(\omega(s) - x) \right\}
+\begin{aligned}
+&\int [V(s)+V'(s)(w-x)]h(w,s)\,dw \\
+&\quad=V(s)\int h(w,s)\,dw
++V'(s)\left[\int w h(w,s)\,dw-x\int h(w,s)\,dw\right].
+\end{aligned}
 $$
+Since $h(w,s)$ is the conditional density of recharge,
+$$
+\int h(w,s)\,dw=1,
+\qquad
+\int w h(w,s)\,dw=\mathbb{E}[w\mid s]=\omega(s).
+$$
+Therefore, the integral simplifies to
+$$
+V(s)+V'(s)[\omega(s)-x].
+$$
+Substituting this into the approximated Bellman equation gives
+$$
+V(s)=\max_{x\in[0,s]}
+\left\{G(x,s)+\beta V(s)+\beta V'(s)[\omega(s)-x]\right\}.
+$$
+The term $\beta V(s)$ does not depend on the choice $x$, so adding it to every feasible choice does not change which choice maximizes the expression. We can move it outside the maximization:
+$$
+V(s)=\beta V(s)+\max_{x\in[0,s]}
+\left\{G(x,s)+\beta V'(s)[\omega(s)-x]\right\}.
+$$
+Subtract $\beta V(s)$ from both sides and collect terms:
+$$
+(1-\beta)V(s)=\max_{x\in[0,s]}
+\left\{G(x,s)+\beta V'(s)[\omega(s)-x]\right\}.
+$$
+Finally, divide by $1-\beta>0$:
+$$
+V(s)=\frac{1}{1-\beta}\max_{x\in[0,s]}
+\left\{G(x,s)+\beta V'(s)[\omega(s)-x]\right\}.
+$$
+These equalities describe the first-degree approximation; the original continuation value was replaced by its linear Taylor approximation.
 
 - We want a closed form expression for $V(s)$.
 
