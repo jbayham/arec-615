@@ -91,10 +91,10 @@
   readings:
   - title: "Miranda & Fackler Ch. 7-8"
   - title: "Burt (1964)"
-  - title: "Reed (1984)"
+  - title: "Martell (1980)"
   materials:
     - title: "Mine Example Spreadsheet"
-    #  url: "mine_example.xlsx"
+      url: "mine_example.xlsx"
     - title: "Forest Example R Script"
       url: "forest_harvest.R"
     - title: "Fishery Example R Script"
