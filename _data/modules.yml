@@ -103,6 +103,12 @@
       url: "burt.pdf"
     - title: "Burt Model Lab R Script"
       url: "burt_model_lab.R"
+    - title: "Martell Notes"
+      url: "martell.pdf"
+    - title: "Martell Regeneration Model Lab R Script"
+      url: "martell_model_lab.R"
+    - title: "Martell Age-State Model Lab R Script"
+      url: "martell_model_lab_state_age.R"
 
 #   ps:
 #     - title: "Problem Set 3"

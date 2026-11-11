@@ -1,0 +1,492 @@
+---
+title: "Martell (1980) Model Lab"
+subtitle: "Forest rotation with fire risk in discrete time"
+format:
+  pdf:
+    fig-pos: H
+execute:
+  echo: false
+  warning: false
+---
+
+Equation numbers refer to these notes; references to Martell's equation numbers are identified explicitly.
+
+## Context and the economic question
+
+A stand of trees becomes more valuable as it grows, but waiting delays timber revenue and exposes that revenue to fire. Harvest also releases the site for the next stand. Martell asks how a forest manager should choose the planned rotation when a catastrophic fire may end the stand before its planned harvest.
+
+The objective is the **expected discounted net return from an infinite sequence of stands**. Time is measured in years. A fire ends the current stand, but the stand has some residual value. Replanting is compulsory; the model has no abandonment option, even if an extension makes land value negative.
+
+Each script runs independently, section by section in RStudio:
+
+- `martell_model_lab.R`: Martell's regeneration formulation, Tables 1--2, and the rotation-value plot.
+- `martell_model_lab_state_age.R`: the annual age-state formulation, Tables 1--2, policy simulation, and value and decision plots.
+
+We solve the same economic problem in two ways:
+
+1. **Martell's regeneration formulation.** Choose a planned rotation $k$ (years) at planting. Calculate the expected discounted revenue and time to regeneration, then compare the values of all candidate rotations. The method in the paper.
+2. **An annual age-state formulation.** Observe stand age at the beginning of each year and choose harvest or wait. Solve the Bellman equation by value function iteration. Martell mentions this as an alterative.
+
+
+
+```{r}
+#| label: solve-martell
+#| include: false
+source("martell_model_lab.R", local = TRUE)
+# Run the age-state lab independently so its objects do not overwrite this lab.
+age_lab <- new.env(parent = globalenv())
+sys.source("martell_model_lab_state_age.R", envir = age_lab)
+age <- age_lab$age
+value_plot <- age_lab$value_plot
+action_plot <- age_lab$action_plot
+policy_plot <- age_lab$policy_plot
+path_plot <- age_lab$path_plot
+comparison <- data.frame(method = c("Regeneration", "Age-state DP"),
+                         k_star = c(k_star, age$k_star), f = c(f, age$f))
+stopifnot(k_star == age$k_star, abs(f - age$f) < 1e-7,
+          all(table1$k_star == age_lab$table1$k_star),
+          max(abs(table1$f - age_lab$table1$f)) < 1e-7)
+# Compare a general case with planting cost, salvage, and unequal fire risks.
+check_PI <- seq(.005, .04, length.out = N)
+check_PIH <- pmin(1, check_PI + .01)
+check_rotation <- rotation_values(R, .2 * R, 10, alpha, check_PI, check_PIH)
+check_age <- age_lab$solve_age(R, .2 * R, 10, alpha, check_PI, check_PIH)
+stopifnot(abs(max(check_rotation$f_k) - check_age$f) < 1e-7,
+          which.max(check_rotation$f_k) == check_age$k_star)
+```
+
+{{< pagebreak >}}
+
+## Martell's notation and the timing of a stand
+
+| Symbol | Meaning | R object |
+|:--|:--|:--|
+| $j$ | Growing year, starting at 1 | `j` |
+| $k$ | Planned rotation interval (years) | `k` |
+| $N$ | Maximum allowable rotation (years) | `N` |
+| $C$ | Cost of planting the stand | `C` |
+| $R_j$ | Net revenue from harvest at year-end | `R[j]` |
+| $S_j$ | Net revenue from salvage at year-end | `S[j]` |
+| $PI_j$ | Conditional fire probability without harvesting | `PI` |
+| $PIH_j$ | Conditional fire probability with harvesting | `PIH` |
+| $P_j$ | Probability the stand first burns in year $j$ | `P[j]` |
+| $i$ | Annual interest rate (%) | `i` |
+| $\alpha$ | Discount factor, $[1+(i/100)]^{-1}$ | `alpha` |
+| $f$ | Soil expectation value | `f` |
+| $A$ | Stand age, measured in years | `A` |
+| $GMV$ | Gross merchantable volume ($\mathrm{m}^3$/ha) | `GMV` |
+| $v$ | Net return per cubic metre of wood | `v` |
+
+
+**Use $i=5$ for a 5% rate**, as in the paper.
+
+A cycle starts with bare land and planting cost $C$. Growing year $j$ begins after $j-1$ years of growth. Under planned rotation $k$, harvest occurs during growing year $k$ unless the stand has already burned.
+
+- If it survives harvest year $k$, it earns $R_k$ at year-end.
+- If it burns in year $j\leq k$, it earns $S_j$ at year-end instead.
+- After either event, the owner starts the next stand at the beginning of the following year.
+
+The end of one year and the beginning of the next are the same discounting date. The next cycle's value is therefore discounted by $\alpha^j$ when fire occurs in year $j$, and by $\alpha^k$ when the stand reaches harvest.
+
+Martell assumes that fire during harvesting damages harvested and standing timber equally. Both formulations retain this harvest-year fire risk.
+
+## Fire probabilities: conditional versus unconditional
+
+$PI_j$ is the conditional probability that a stand which has grown for $j-1$ years ignites and burns during its $j$th growing year, with no harvesting activity. $PIH_j$ is the corresponding conditional probability when the stand is harvested during that year. $P_j$ is the probability that the stand survives years 1 through $j-1$ and burns during year $j$. For a fixed planned rotation $k$,
+$$
+P_j=\left[\prod_{\ell=1}^{j-1}(1-PI_\ell)\right]PI_j,
+\qquad j<k,
+$$ {#eq-martell-01}
+and in the harvest year,
+$$
+P_k=\left[\prod_{\ell=1}^{k-1}(1-PI_\ell)\right]PIH_k.
+$$ {#eq-martell-02}
+
+The probability of making it to harvest without fire (survival) is $1-\sum_{j=1}^kP_j$. These probabilities partition all outcomes of a cycle. The $P_j$ values depend on the candidate $k$, because its final year uses $PIH_k$.
+
+> The product of these probability indicates that fire risk in each year is?
+
+{{< pagebreak >}}
+
+## The regeneration equation: follow one stand, then start again
+
+At planting, choose $k\in\{1,\ldots,N\}$. Conditional on each possible outcome, add the current stand's terminal net revenue to the value of starting over. Martell's equation (4) is
+$$
+\begin{aligned}
+f=\max_{k=1,\ldots,N}\bigg\{-C +\left(1-\sum_{j=1}^kP_j\right)\alpha^k(R_k+f) +\sum_{j=1}^kP_j\alpha^j(S_j+f)\bigg\}.
+\end{aligned}
+$$ {#eq-martell-03}
+The planting cost $C$ is paid now; harvest and salvage revenues are discounted and weighted by their outcome probabilities.
+
+1. The first term is the planting cost.
+2. The second term is the discounted revenue from harvest, weighted by the probability of surviving to harvest.
+3. The third term is the discounted revenue from salvage, weighted by the probability of burning in each year. The continuation value $f$ appears in both the second and third terms, because after either event the owner starts the next stand at the beginning of the following year.
+
+### Separate timing from revenue
+
+Following Martell's equations (5)--(6), write
+$$
+E_1(\alpha\mid P,k)
+=\left(1-\sum_{j=1}^kP_j\right)\alpha^k
++\sum_{j=1}^kP_j\alpha^j,
+$$ {#eq-martell-04}
+$$
+E_2(R\mid P,k,S)
+=\left(1-\sum_{j=1}^kP_j\right)\alpha^kR_k
++\sum_{j=1}^kP_j\alpha^jS_j.
+$$ {#eq-martell-05}
+$E_1$ is the expected discount factor to the next regeneration. $E_2$ is expected discounted net revenue from the current stand. Both depend on the candidate $k$. 
+
+Factoring out $f$ gives $E_1f$, not $f$: replanting is certain, but its date is random. The separated equation is Martell's equation (7):
+$$
+f=\max_k\{\underbrace{E_2(\alpha\mid P,k)-C}_{\text{current stand}}+\underbrace{E_1(R \mid P,k, S) f}_{\text{future stands}}\}.
+$$ {#eq-martell-06}
+
+### Evaluate each policy, then choose the best one
+
+Temporarily fix $k$ and repeat that rotation after every regeneration. Let $f_k$ denote its bare-land value. This subscript is an added label for a candidate policy, not a different economic value concept:
+$$
+f_k=E_2-C + E_1 f_k.
+$$ {#eq-martell-07}
+Move the continuation term to the left and divide:
+$$
+(1-E_1)f_k=E_2-C
+\quad\Longrightarrow\quad
+f_k=\frac{E_2-C}{1-E_1}.
+$$ {#eq-martell-08}
+Because a cycle lasts at least one year and $0<\alpha<1$, $E_1\leq\alpha<1$. The denominator is positive. Stationarity and identical regeneration states let us choose the same best rotation at every renewal, giving Martell's equation (8):
+$$
+\boxed{f=\max_{k=1,\ldots,N}\frac{E_2(R\mid P,k,S)-C}{1-E_1(\alpha\mid P,k)}.}
+$$ {#eq-martell-09}
+The solution requires evaluating a finite list of integer rotations. A continuous first-order condition is unnecessary.
+
+{{< pagebreak >}}
+
+## The simplified model used in Martell's example
+
+Martell's numerical example sets
+$$
+C=0,\qquad S_j=0,\qquad PI_j=PIH_j=PI\quad\text{for every }j.
+$$ {#eq-martell-10}
+The first-fire probabilities are geometric:
+$$
+P_j=(1-PI)^{j-1}PI,\qquad
+1-\sum_{j=1}^kP_j=(1-PI)^k.
+$$ {#eq-martell-11}
+Thus,
+$$
+E_1=\alpha^k(1-PI)^k
++PI\sum_{j=1}^k\alpha^j(1-PI)^{j-1},
+\qquad
+E_2=\alpha^k(1-PI)^kR_k.
+$$ {#eq-martell-12}
+Fire has zero current revenue, but its continuation term remains in $E_1$. Dropping that term would incorrectly eliminate the option to grow future stands after a fire.
+
+### A useful geometric-series simplification
+
+For this algebra only, abbreviate $b=\alpha(1-PI)$. Then
+$$
+\sum_{j=1}^k\alpha^j(1-PI)^{j-1}
+=\alpha\sum_{j=0}^{k-1}b^j
+=\alpha\frac{1-b^k}{1-b}.
+$$ {#eq-martell-13}
+Consequently,
+$$
+E_1=b^k+\alpha PI\frac{1-b^k}{1-b},\qquad E_2=b^kR_k.
+$$ {#eq-martell-14}
+Factor the denominator:
+$$
+\begin{aligned}
+1-E_1
+&=(1-b^k)\left(1-\frac{\alpha PI}{1-b}\right)\\
+&=(1-b^k)\frac{1-b-\alpha PI}{1-b}
+=\frac{(1-\alpha)(1-b^k)}{1-b}.
+\end{aligned}
+$$ {#eq-martell-15}
+Therefore the simplified policy value is
+$$
+\boxed{f_k=\frac{R_k b^k(1-b)}{(1-\alpha)(1-b^k)},\qquad b=\alpha(1-PI).}
+$$ {#eq-martell-16}
+This shortcut is derived from Martell's equation (8); it is not a replacement for the more general expression when planting costs, salvage, or fire probabilities change. The script checks that the two calculations agree under the simplifying assumptions.
+
+**Check the no-fire case.** With $PI=0$, $b=\alpha$ and
+$$
+f_k=\frac{\alpha^kR_k}{1-\alpha^k}.
+$$ {#eq-martell-17}
+With nonzero planting cost but still no fire, the general equation instead gives
+$$
+f_k=\frac{\alpha^kR_k-C}{1-\alpha^k}
+=\frac{R_k-C(1+i/100)^k}{(1+i/100)^k-1},
+$$ {#eq-martell-18}
+which is Martell's equation (9).
+
+{{< pagebreak >}}
+
+## Jack pine application: reproduce the paper
+
+For jack pine on site class II land in Ontario, Martell uses
+$$
+GMV(A)=\begin{cases}
+0, & 0\leq A\leq22,\\
+397.49-1865.5A^{-0.5}, & 22<A\leq100.
+\end{cases}
+$$ {#eq-martell-19}
+where $GMV$ is gross merchantable volume in cubic metres per hectare and $A$ is stand age in years. This combines Martell's equation (12) with his zero-volume convention for ages $A\leq22$. We use the curve through age 100, without extrapolating beyond its stated range.
+
+Net harvest revenue is his equation (13):
+$$
+R_j=v\,GMV_j,\qquad GMV_j=GMV(j),\qquad v=2\text{ dollars per cubic metre}.
+$$ {#eq-martell-20}
+**Economic role:** @eq-martell-19 describes biological growth; @eq-martell-20 converts that timber volume into net harvest revenue. Waiting increases the volume available to harvest. The model weighs this gain against discounting, fire risk, and delaying the next rotation.
+
+The interest rate is $i=5$, so $\alpha=1/1.05$. We enumerate $k=1,\ldots,100$, retaining the zero-revenue young ages. For a worked baseline, take $PI=0.025$.
+
+```{r}
+#| label: fig-martell-rotation
+#| fig-width: 7
+#| fig-height: 3.7
+#| fig-cap: "The value of repeating each planned rotation at annual fire probability 0.025. The maximum occurs at k = 31."
+print(rotation_plot)
+```
+
+The maximizing policy is $k^*=$ `r k_star` growing years, with $f=$ `r sprintf("$%.5f", f)` per hectare. The current cycle's expected discounted net revenue is `r sprintf("$%.5f", cycle_accounting$E2)` and the continuation value contributes `r sprintf("$%.5f", cycle_accounting$continuation)`. Their sum equals $f$, since $C=0$.
+
+**Interpretation:** a planned 31-year rotation does not mean that every stand is harvested after 31 years. Many burn first. Conditional on no fire, the owner harvests during growing year 31 and receives the revenue at its end.
+
+{{< pagebreak >}}
+
+## Reproduce Table 1: risk changes policy and value
+
+```{r}
+#| label: martell-table-one
+knitr::kable(table1[c("PI", "f", "Martell_f", "k_star", "Martell_k")],
+             digits = c(4, 4, 2, 0, 0),
+             col.names = c("PI", "Calculated f", "Paper f", "Calculated k", "Paper k"))
+```
+
+All 17 optimal rotation ages match the printed table. At $PI=0.0010$ and $0.0450$, the printed inputs give land values that round one cent below the published values; all unrounded discrepancies are less than $0.01$/ha. We retain the printed inputs rather than adjust the model to force those last digits.
+
+Greater fire risk lowers soil expectation value and shortens the optimal rotation in steps. The steps reflect integer-year decisions, not a failure of the numerical solver. The age-state script solves the annual problem at every probability in this table. Rendering these notes checks agreement between the two independent scripts.
+
+{{< pagebreak >}}
+
+## Fire management benefits: Martell's second result
+
+Let $B$ be annual fire management expenditure in dollars per unit area (per hectare here), independent of stand age. Management changes $PI_j(B)$ and $PIH_j(B)$, which change optimal soil expectation value $f(B)$. The expected present value of fire management activities, $EPV(B)$, is Martell's equation (10):
+$$
+EPV(B)=f(B)-f(0).
+$$ {#eq-martell-21}
+Here **$f(0)$ means value with zero fire-management expenditure**, not value with zero probability of fire. Reoptimize the rotation under each management regime.
+
+Martell expresses these benefits as an equivalent average annual return $A(B)$, received at the **start of every year**, including today. This use of the function $A(B)$ follows the paper; it is distinct from stand age $A$:
+$$
+EPV(B)=A(B)+\alpha A(B)+\alpha^2A(B)+\cdots
+=\frac{A(B)}{1-\alpha}.
+$$ {#eq-martell-22}
+Therefore his equation (11) is
+$$
+\boxed{A(B)=(1-\alpha)[f(B)-f(0)].}
+$$ {#eq-martell-23}
+Subtract $B$ to obtain the annual net benefit of protection. If annual payments instead began at the end of the first year, the annuity conversion would differ. The lab follows Martell's beginning-of-year convention.
+
+### Reproduce Table 2
+
+Rows below are $PI$ **without management**; columns are $PI$ **with management**. Entries are annual timber benefits in dollars per hectare, before subtracting management expenditure. Darker blue indicates larger benefits.
+
+```{r}
+#| label: martell-table-two
+#| fig-width: 7
+#| fig-height: 3.3
+print(benefit_plot)
+```
+
+In Martell's example, reducing $PI$ from 0.0250 to 0.0015 raises $f$ from approximately $20.93$ to $35.28$/ha. The equivalent annual benefit is
+$$
+(1-1/1.05)(35.28-20.93)\approx0.68\text{ dollars/ha/year}.
+$$ {#eq-martell-24}
+At annual management cost $B=0.48$, the annual net benefit is about $0.20$/ha. The script calculates from unrounded values and checks all Table 2 entries against the paper within one cent. Several entries also round one cent differently from the printed table. These are timber benefits; the model does not value avoided losses to homes, health, or other forest services.
+
+{{< pagebreak >}}
+
+## Reformulate the same problem: stand age as the state
+
+Martell notes on p. 31 that the problem can be written as a Markov decision process with stand age as the state and harvest-or-wait as the decision. Here we develop and solve that formulation. **The following value and action notation is added for the annual formulation; all economic inputs retain Martell's symbols.**
+
+Let $A\in\{0,1,\ldots,N-1\}$ be the age of an already planted stand at the **start** of the year. Its current growing year is
+$$
+j=A+1.
+$$ {#eq-martell-25}
+Define
+$$
+u\in\{0,1\},\qquad
+u=0:\text{ wait},\qquad u=1:\text{ harvest during this year}.
+$$ {#eq-martell-26}
+Let $f_A$ be the optimal value of this already planted stand, just before the decision. In the code, `f_A[A + 1]` stores $f_A$, because R indexes vectors starting at one. Martell's $f$ remains the value of **bare land before planting**:
+$$
+\boxed{f=-C+f_0.}
+$$ {#eq-martell-27}
+For the simplified example, $C=0$ and $f=f_0$. Keeping the distinction explicit prevents errors when adding planting costs later.
+
+### State transitions and payoffs
+
+| Decision | Outcome during year $j=A+1$ | Receipt at year-end | State next year |
+|:--|:--|:--|:--|
+| Wait | Survive, probability $1-PI_j$ | $0$ | Established stand of age $A+1$ |
+| Wait | Fire, probability $PI_j$ | $S_j$ | Bare land, then replant |
+| Harvest | Survive, probability $1-PIH_j$ | $R_j$ | Bare land, then replant |
+| Harvest | Fire, probability $PIH_j$ | $S_j$ | Bare land, then replant |
+
+After each reset the next established stand has age zero, but planting costs $C$. Its continuation value is $f_0-C=f$. Waiting and surviving is the only branch that does not reset or pay for planting.
+
+At $A=N-1$, harvest is mandatory. This matches the constraint $k\leq N$ in the paper's rotation problem. It is an **age boundary**, not the end of a finite calendar-time horizon: new stands continue forever.
+
+## Derive the harvest and wait action values
+
+Harvest ends the current stand regardless of whether a fire occurs. Both outcomes lead to replanting next year, so their probabilities sum to one and the value of starting over separates as $\alpha f$:
+$$
+\begin{aligned}
+Q_H(A)
+&=\alpha\{(1-PIH_{A+1})(R_{A+1}+f)
++PIH_{A+1}(S_{A+1}+f)\}\\
+&=\alpha\{(1-PIH_{A+1})R_{A+1}+PIH_{A+1}S_{A+1}\}+\alpha f.
+\end{aligned}
+$$ {#eq-martell-28}
+If the owner waits and the stand survives, it enters next year at age $A+1$ without replanting. Only fire triggers salvage and replanting next year, so the starting-over term is $\alpha PI_{A+1}f$:
+$$
+Q_W(A)=\alpha\{(1-PI_{A+1})f_{A+1}+PI_{A+1}S_{A+1}\}+\alpha PI_{A+1}f.
+$$ {#eq-martell-29}
+The Bellman equation is
+$$
+f_A=\max\{Q_H(A),Q_W(A)\}\quad(A<N-1),\qquad
+f_{N-1}=Q_H(N-1),
+$$ {#eq-martell-30}
+with $f=f_0-C$. The code represents the inadmissible wait action at $N-1$ by $Q_W=-\infty$.
+
+{{< pagebreak >}}
+
+## Solve the simplified annual Bellman equation
+
+Substitute $C=S_j=0$ and $PI_j=PIH_j=PI$ into the preceding expressions. Since $f=f_0$,
+$$
+\boxed{
+\begin{aligned}
+Q_H(A)&=\alpha\{(1-PI)R_{A+1}+f_0\},\\
+Q_W(A)&=\alpha\{(1-PI)f_{A+1}+PI f_0\},\\
+f_A&=\max\{Q_H(A),Q_W(A)\}.
+\end{aligned}
+}
+$$ {#eq-martell-31}
+The fire branch is present in both decisions. Harvest earns timber revenue only if no fire occurs, but both harvest outcomes return to the age-zero problem.
+
+### Value function iteration
+
+Initialize $f_A^{(0)}=0$ for every age. Given the old value vector, calculate both actions and update:
+$$
+\begin{aligned}
+Q_H^{(n)}(A)&=\alpha\{(1-PI)R_{A+1}+f_0^{(n)}\},\\
+Q_W^{(n)}(A)&=\alpha\{(1-PI)f_{A+1}^{(n)}+PI f_0^{(n)}\},\\
+f_A^{(n+1)}&=\max\{Q_H^{(n)}(A),Q_W^{(n)}(A)\}.
+\end{aligned}
+$$ {#eq-martell-32}
+Use only old values on the right-hand side during an iteration. Force harvest at the maximum age. Each action's continuation weights sum to $\alpha<1$, so the Bellman operator is a contraction in the maximum norm.
+
+The script stops when the largest successive change is below $10^{-10}$, then recalculates action values and the policy from the final vector. It reports the Bellman residual and the bound
+$$
+\|f^{(n)}_A-f_A^*\|_\infty
+\leq\frac{\|\mathcal{T}f^{(n)}_A-f^{(n)}_A\|_\infty}{1-\alpha}.
+$$ {#eq-martell-33}
+This bound concerns the annual finite-state model. It does not assess whether the biological parameters describe a particular forest well.
+
+### Recover and interpret the policy
+
+Choose harvest when $Q_H(A)\geq Q_W(A)$, with harvest used for exact ties. Starting at age zero, the first harvest state $A^*$ determines the no-fire planned rotation:
+$$
+\boxed{k^*=A^*+1.}
+$$ {#eq-martell-34}
+For the baseline, $A^*=$ `r age$k_star - 1`: choose harvest at the beginning of growing year `r age$k_star`, receive its proceeds at the end of that year, and replant at the next boundary. Reporting $A^*$ as the planned rotation would introduce a one-year error.
+
+```{r}
+knitr::kable(comparison, digits = c(0, 0, 6),
+             col.names = c("Solution method", "Planned rotation k", "Bare-land value f"))
+```
+
+Both methods produce the same policy from a new stand and the same bare-land value. The age-state method additionally gives optimal actions and values for stands inherited at other ages.
+
+{{< pagebreak >}}
+
+## Annual solution: values and decisions
+
+```{r}
+#| label: fig-martell-value
+#| fig-width: 7
+#| fig-height: 3.4
+#| fig-cap: "Value of an already planted stand at each beginning-of-year age. Bare-land value is f_0 minus C."
+print(value_plot)
+```
+
+```{r}
+#| label: fig-martell-actions
+#| fig-width: 7
+#| fig-height: 3.4
+#| fig-cap: "Harvest and wait values near the optimal decision boundary. Points represent integer-age states; connecting lines are visual guides."
+print(action_plot)
+```
+
+Higher age provides more timber, but optimal value is not just this year's harvest revenue. Both action values account for future uses of the site and the possibility of a fire during the current year. Inspect `Q_H`, `Q_W`, and their difference near the crossing to explain the selected action.
+
+{{< pagebreak >}}
+
+## Annual solution: policy and realized paths
+
+```{r}
+#| label: fig-martell-policy
+#| fig-width: 7
+#| fig-height: 2.5
+#| fig-cap: "The baseline annual policy waits at young ages and harvests from beginning age 30 onward."
+print(policy_plot)
+```
+
+```{r}
+#| label: fig-martell-paths
+#| fig-width: 7
+#| fig-height: 4.5
+#| fig-cap: "A simulated fire path and a no-fire realization under the same policy. The no-fire panel does not reoptimize the decision rule."
+print(path_plot)
+```
+
+The policy is stationary: it depends on age, not calendar time. Realized intervals between resets vary because fire can interrupt a planned rotation. At the same age, a surviving stand faces the same decision regardless of how many earlier stands burned.
+
+{{< pagebreak >}}
+
+## Why the two formulations agree
+
+Begin with a newly planted stand and follow the annual policy along a path with no fire. Before its first harvest decision, the only possible surviving state sequence is ages $0,1,2,\ldots$. Thus the first harvest decision defines a planned rotation $k$. After fire or harvest, the same age-zero problem begins again.
+
+Expand the annual Bellman recursion along this path. For each year $j<k$, the fire branch contributes
+$$
+\left[\prod_{\ell=1}^{j-1}(1-PI_\ell)\right]PI_j\alpha^j(S_j+f)
+=P_j\alpha^j(S_j+f).
+$$ {#eq-martell-35}
+At year $k$, fire contributes $P_k\alpha^k(S_k+f)$ and surviving harvest contributes
+$$
+\left[\prod_{\ell=1}^{k-1}(1-PI_\ell)\right](1-PIH_k)\alpha^k(R_k+f).
+$$ {#eq-martell-36}
+Subtract the initial planting cost $C$. The resulting expression is exactly Martell's equation (4). The equivalence relies on identical regeneration states, stationary inputs, and age being the only observed state affecting the decision. Additional observed price or weather states can make a single fixed rotation inadequate.
+
+The baseline policy is a threshold at all ages, but a modified model need not have that shape everywhere. For agreement with the regeneration calculation, recover the **first** harvest year reached from a new stand, rather than impose a threshold on every possible inherited stand.
+
+### Numerical verification
+
+The lab checks more than equality at one baseline:
+
+- Both formulations agree in land value and planned rotation for all 17 probabilities in Table 1.
+- The geometric-series shortcut agrees with the general regeneration formula under the simplified assumptions.
+- The annual solver's recovered policy is independently evaluated by a linear system. If $M$ is its transition matrix and $g$ is its expected year-end net revenue less any reset planting cost, then
+  $$\boldsymbol f_A=\alpha(\boldsymbol g+M\boldsymbol f_A)
+  \quad\Longrightarrow\quad
+  \boldsymbol f_A=(I-\alpha M)^{-1}\alpha\boldsymbol g.$$
+  The code uses `solve()` rather than explicitly constructing an inverse.
+- A separate hypothetical check adds nonzero planting costs and salvage, age-dependent fire risk, and different harvest-year risk. Agreement in that case checks cost timing and reset accounting that the zero-cost example could otherwise conceal.
+
+
+
