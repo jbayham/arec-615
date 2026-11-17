@@ -1,0 +1,605 @@
+---
+format:
+  pdf:
+    number-sections: false
+    fontsize: 10pt
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Dynamic Programming: Problem Set Solutions
+
+This key follows the four problems in the ungraded practice set. Values are measured at the date indicated by their subscript, so continuation values are discounted once when carried back one period. Problems 1 and 4 minimize costs; Problems 2 and 3 maximize profits. Problem 2 takes an interior optimum as given throughout its derivative calculations.
+
+## Problem 1: Production and Inventory
+
+### a. State, feasible choices, and the Bellman equation
+
+The **state** is beginning inventory $i_t$ and the **control** is current production $y_t$. Demand is known in advance, so calendar time $t$ tells us which demands remain. The transition is
+$$
+i_{t+1}=i_t+y_t-D_t.
+$$
+Define remaining demand by
+$$
+R_t=\sum_{\tau=t}^{T-1}D_\tau,\qquad R_T=0.
+$$
+At date $t$, the feasible inventory states are $0\leq i_t\leq R_t$. An inventory above $R_t$ could never be used up: production cannot be negative, disposal is prohibited, and terminal inventory must be zero.
+
+We obtain the bounds on production one restriction at a time:
+
+1. Nonnegative production requires $y_t\geq0$.
+2. Meeting current demand without backorders requires
+   $$i_t+y_t-D_t\geq0\quad\Longrightarrow\quad y_t\geq D_t-i_t.$$
+3. Being able to use up next period's inventory requires
+   $$i_t+y_t-D_t\leq R_{t+1}\quad\Longrightarrow\quad y_t\leq R_{t+1}+D_t-i_t=R_t-i_t.$$
+
+Thus the feasible action interval is
+$$
+\boxed{\mathcal Y_t(i)=\left[\max\{0,D_t-i\},\;R_t-i\right].}
+$$
+For $0\leq i\leq R_t$, this interval is nonempty. The upper bound rules out overproduction that would make the terminal condition impossible.
+
+Define the minimum cost-to-go as
+$$
+V_t(i)=\min_{\{y_\tau\}_{\tau=t}^{T-1}}
+\sum_{\tau=t}^{T-1}\beta^{\tau-t}
+\left(\frac{c_2}{2}y_\tau^2+c_1y_\tau+\frac h2 i_\tau^2\right),
+$$
+subject to the inventory balances, nonnegativity, $i_t=i$, and $i_T=0$. The Bellman equation is
+$$
+\boxed{
+V_t(i)=\min_{y\in\mathcal Y_t(i)}
+\left\{\frac{c_2}{2}y^2+c_1y+\frac h2 i^2
++\beta V_{t+1}(i+y-D_t)\right\}.
+}
+$$
+The terminal condition is
+$$
+V_T(i)=\begin{cases}0,&i=0,\\+\infty,&i\ne0.\end{cases}
+$$
+There is no decision or additional holding charge at date $T$. Equivalently, define $V_T$ only at its sole feasible state, $i=0$, and enforce the feasible state domains at every earlier date.
+
+**Intuition.** Producing today incurs production cost now and changes how much inventory enters tomorrow. The continuation function includes all later production and holding costs. Holding cost today depends on the inventory already present when today's decision is made.
+
+\newpage
+
+### b. Interior first-order condition and the final period
+
+Hold the current state $i$ fixed and write the Bellman objective as
+$$
+Q_t(y;i)=\frac{c_2}{2}y^2+c_1y+\frac h2 i^2+\beta V_{t+1}(i+y-D_t).
+$$
+The derivatives of the individual terms are
+$$
+\frac{d}{dy}\left(\frac{c_2}{2}y^2+c_1y\right)=c_2y+c_1,
+\qquad
+\frac{\partial}{\partial y}\left(\frac h2 i^2\right)=0,
+\qquad
+\frac{\partial i_{t+1}}{\partial y}=1.
+$$
+Applying the chain rule to continuation cost gives
+$$
+\frac{\partial Q_t}{\partial y}
+=c_2y+c_1+\beta V_{t+1}'(i+y-D_t).
+$$
+At the differentiable interior optimum specified in the question,
+$$
+\boxed{c_2y_t^*+c_1=-\beta V_{t+1}'(i_{t+1}^*),
+\qquad i_{t+1}^*=i_t+y_t^*-D_t.}
+$$
+Rearranging,
+$$
+\boxed{y_t^*=\frac{-c_1-\beta V_{t+1}'(i_t+y_t^*-D_t)}{c_2}.}
+$$
+This is **implicit**: the unknown production choice also appears inside the argument of the unknown continuation derivative. It is not an explicit numerical policy until we know the continuation function and solve this equation.
+
+**Intuition.** One extra unit of production costs $c_2y_t+c_1$ now and supplies one extra unit of next period's inventory. Because $V$ measures costs, a negative $V_{t+1}'$ means additional inventory reduces future costs. The right side of the first-order condition is the discounted marginal cost saving. An interior choice balances today's production cost against that saving. Inventory need not always reduce the cost-to-go: excess inventory also incurs holding costs. The interior condition applies where the marginal balance holds.
+
+If a proposed stationary point is outside $\mathcal Y_t(i)$, it is infeasible. Minimize over the actual interval: compare the objective at its endpoints and at any feasible stationary point. This is a convex cost-minimization problem: production and holding costs are convex, and all constraints are linear. Hence the one-period objective is convex on its feasible domain. If it is increasing throughout the interval, use the lower endpoint; if decreasing throughout, use the upper endpoint. This reasoning uses ordinary one-variable minimization.
+
+At $t=T-1$, the terminal requirement determines production directly:
+$$
+0=i_T=i_{T-1}+y_{T-1}-D_{T-1}
+\quad\Longrightarrow\quad
+\boxed{y_{T-1}^*=D_{T-1}-i_{T-1}.}
+$$
+For a feasible state $0\leq i_{T-1}\leq D_{T-1}$, both production bounds equal this quantity. There is no interior choice to differentiate. Therefore
+$$
+\boxed{
+V_{T-1}(i)=\frac{c_2}{2}(D_{T-1}-i)^2
++c_1(D_{T-1}-i)+\frac h2 i^2.
+}
+$$
+This expression can start backward induction. Do not differentiate the terminal penalty $+\infty$ as if it were an ordinary continuation function.
+
+\newpage
+
+### c. Higher holding cost changes production timing
+
+A higher $h$ makes inventory carried into later periods more expensive. This discourages producing early merely to store output for later demand. The opposing incentive is production smoothing: since production cost is convex, concentrating production in a high-demand period can be costly. The firm balances smoother production against the expense of carrying inventory.
+
+To see why production cannot fall in every period, sum the inventory balances:
+$$
+\begin{aligned}
+\sum_{t=0}^{T-1}(i_{t+1}-i_t)
+&=\sum_{t=0}^{T-1}y_t-\sum_{t=0}^{T-1}D_t,\\
+i_T-i_0&=\sum_{t=0}^{T-1}y_t-\sum_{t=0}^{T-1}D_t.
+\end{aligned}
+$$
+Using $i_T=0$,
+$$
+\boxed{\sum_{t=0}^{T-1}y_t=\sum_{t=0}^{T-1}D_t-i_0.}
+$$
+The right side is fixed. If the firm produces less in some periods after $h$ rises, it must produce more in others. Production may also remain unchanged if existing constraints already determine its timing.
+
+A precise aggregate statement is that the optimal **discounted sum of squared inventories** cannot increase with $h$. To see this without assuming a particular production pattern, write the cost of a feasible plan as
+$$
+A+hB,\qquad
+A=\sum_t\beta^t C(y_t),\qquad
+B=\frac12\sum_t\beta^t i_t^2.
+$$
+Let $(A_L,B_L)$ be optimal at $h_L$ and $(A_H,B_H)$ be optimal at $h_H>h_L$. Each plan was available under either holding-cost parameter. Optimality therefore gives
+$$
+\begin{aligned}
+A_L+h_LB_L&\leq A_H+h_LB_H,\\
+A_H+h_HB_H&\leq A_L+h_HB_L.
+\end{aligned}
+$$
+Adding and cancelling $A_L+A_H$ yields
+$$
+(h_H-h_L)(B_H-B_L)\leq0
+\quad\Longrightarrow\quad
+B_H\leq B_L.
+$$
+This establishes the aggregate inventory response; it does not assert that inventory or production must fall at every date.
+
+Finally, at a given state $i_t$, today's inventory charge is already determined:
+$$
+\frac{\partial H(i_t)}{\partial y_t}=0.
+$$
+But today's production changes $i_{t+1}$. In the next period, holding cost includes
+$$
+\frac h2 i_{t+1}^2=\frac h2(i_t+y_t-D_t)^2,
+$$
+and later decisions and inventories change too. These effects are included in $V_{t+1}$ and its derivative. Thus $h$ can change today's optimal production through continuation cost even though the current holding-cost term has zero direct derivative with respect to production.
+
+\newpage
+
+## Problem 2: Primary Material and Recycling
+
+### a. Dynamic program
+
+The state vector is $X_t=(s_t,a_t)$: remaining ore and available scrap. The controls are extraction $x_t$ and scrap processing $u_t$. Secondary output is $\eta u_t$, so total sales are
+$$
+y_t=x_t+\eta u_t.
+$$
+The transitions are
+$$
+s_{t+1}=s_t-x_t,\qquad
+a_{t+1}=a_t-u_t+\theta(x_t+\eta u_t).
+$$
+Feasible actions satisfy $0\leq x_t\leq s_t$ and $0\leq u_t\leq a_t$. Sales made today return as scrap next period and cannot relax today's scrap-processing limit.
+
+Revenue is price times total sales:
+$$
+P(y)y=(\alpha-by)y=\alpha y-by^2.
+$$
+Subtracting both production costs gives one-period profit
+$$
+\begin{aligned}
+\pi(x,u)={}&\alpha(x+\eta u)-b(x+\eta u)^2\\
+&-\kappa_p x-\frac{\gamma_p}{2}x^2
+-\kappa_r u-\frac{\gamma_r}{2}u^2.
+\end{aligned}
+$$
+Define $V_t(s,a)$ as the maximum discounted profit from dates $t$ through $T-1$, given the two current stocks. The Bellman equation is
+$$
+\boxed{
+V_t(s,a)=\max_{\substack{0\leq x\leq s\\0\leq u\leq a}}
+\left\{\pi(x,u)+\beta V_{t+1}\bigl(s-x,a-u+\theta(x+\eta u)\bigr)\right\}.
+}
+$$
+The terminal condition is $V_T(s,a)=0$ for all nonnegative stocks. Unused stocks have no terminal value, but the firm is not required to use them up.
+
+### b. Deriving the interior first-order conditions
+
+For compactness, write the induced next state as $(s',a')$ and define
+$$
+\lambda_s=V_{t+1}^{(s)}(s',a'),\qquad
+\lambda_a=V_{t+1}^{(a)}(s',a').
+$$
+These are **next-period** marginal values, before discounting. They are derivatives of the value function, not additional choice variables. We take the stated interior and differentiability assumptions as given.
+
+First differentiate revenue with respect to total sales:
+$$
+MR(y)=\frac{d}{dy}(\alpha y-by^2)=\alpha-2by.
+$$
+The relevant transition and sales derivatives are
+
+| Derivative | With respect to $x$ | With respect to $u$ |
+|:--|:--:|:--:|
+| Sales $y=x+\eta u$ | $1$ | $\eta$ |
+| Next ore $s'=s-x$ | $-1$ | $0$ |
+| Next scrap $a'=a-u+\theta(x+\eta u)$ | $\theta$ | $-1+\theta\eta$ |
+
+\newpage
+
+### b. First-order conditions, continued
+
+**Extraction.** Differentiate current profit and continuation value with respect to $x$:
+$$
+\begin{aligned}
+\frac{\partial\pi}{\partial x}
+&=(\alpha-2by)\frac{\partial y}{\partial x}-\kappa_p-\gamma_p x
+=MR(y)-\kappa_p-\gamma_p x,\\
+\frac{\partial}{\partial x}\bigl[\beta V_{t+1}(s',a')\bigr]
+&=\beta\left(\lambda_s\frac{\partial s'}{\partial x}
++\lambda_a\frac{\partial a'}{\partial x}\right)
+=\beta(-\lambda_s+\theta\lambda_a).
+\end{aligned}
+$$
+Set their sum equal to zero:
+$$
+\boxed{MR(y)-\kappa_p-\gamma_p x-\beta\lambda_s+\beta\theta\lambda_a=0.}
+$$
+Equivalently,
+$$
+\boxed{MR(y)=C_p'(x)+\beta\lambda_s-\beta\theta\lambda_a.}
+$$
+
+**Recycling.** One unit of scrap input produces $\eta$ units of sales. Therefore
+$$
+\begin{aligned}
+\frac{\partial\pi}{\partial u}
+&=(\alpha-2by)\eta-\kappa_r-\gamma_r u
+=\eta MR(y)-\kappa_r-\gamma_r u,\\
+\frac{\partial}{\partial u}\bigl[\beta V_{t+1}(s',a')\bigr]
+&=\beta\left[\lambda_s(0)+\lambda_a(-1+\theta\eta)\right]
+=-\beta(1-\theta\eta)\lambda_a.
+\end{aligned}
+$$
+Adding and setting equal to zero gives
+$$
+\boxed{\eta MR(y)-\kappa_r-\gamma_r u-\beta(1-\theta\eta)\lambda_a=0.}
+$$
+Equivalently,
+$$
+\boxed{\eta MR(y)=C_r'(u)+\beta(1-\theta\eta)\lambda_a.}
+$$
+To express this per unit of secondary output, divide by $\eta>0$:
+$$
+MR(y)=\frac{C_r'(u)}{\eta}
++\beta\left(\frac1\eta-\theta\right)\lambda_a.
+$$
+All terms in these equations are evaluated at the optimal current choices and their induced next state. The equations characterize the interior marginal balance; they do not by themselves provide an explicit policy because the shadow values depend on the continuation problem.
+
+### c. Economic intuition
+
+For **extraction**, an extra unit creates one unit of sales and earns $MR(y)$ in current revenue. It costs $C_p'(x)$ to extract. It also removes one unit of next period's ore, worth $\beta\lambda_s$ today, while creating $\theta$ units of next period's scrap, worth $\beta\theta\lambda_a$. The scrap credit offsets part of the opportunity cost of using ore now. If $\theta=0$, that credit is zero.
+
+For **recycling**, an extra unit processed creates only $\eta$ units of sales, so its current marginal revenue is $\eta MR(y)$. It uses one unit of scrap now but returns $\theta\eta$ units through those sales next period. The net effect on next scrap is
+$$
+\boxed{\frac{\partial a'}{\partial u}=-1+\theta\eta=-(1-\theta\eta).}
+$$
+Thus the opportunity cost is the value of the **net scrap loss**, $\beta(1-\theta\eta)\lambda_a$, in addition to the direct processing cost. If $\theta\eta=1$, the scrap input is fully restored next period; otherwise, processing reduces next period's scrap. It never creates an extra ore unit, so there is no ore-shadow-value term in the recycling derivative.
+
+\newpage
+
+## Problem 3: Equipment Maintenance under Uncertainty
+
+### a. Value functions and timing
+
+Let $V_t(G)$ and $V_t(W)$ be the maximum expected discounted net returns from season $t$ onward, conditional on observing a good or worn pump at the start of that season. Values and returns are in **hundreds of dollars**.
+
+The farmer observes the current condition, chooses an action, receives the listed current return, and then faces the transition to next season's condition. The action is chosen before that next condition is known. Conditional on the current condition and chosen action, expected continuation value is the probability-weighted average of next season's values.
+
+The two Bellman equations are
+$$
+\boxed{
+V_t(G)=\max\left\{
+\begin{array}{ll}
+6+0.9[0.5V_{t+1}(G)+0.5V_{t+1}(W)] & \text{run},\\
+5+0.9V_{t+1}(G) & \text{service}.
+\end{array}\right.
+}
+$$
+$$
+\boxed{
+V_t(W)=\max\left\{
+\begin{array}{ll}
+2+0.9V_{t+1}(W) & \text{run},\\
+1+0.9V_{t+1}(G) & \text{repair}.
+\end{array}\right.
+}
+$$
+The terminal values are $V_3(G)=V_3(W)=0$. Current returns are not discounted inside the recursion because they are received now. Only continuation values receive the factor $0.9$.
+
+### b. Backward induction
+
+**Season $t=2$: one season remains.** Substitute the terminal values into both action comparisons:
+$$
+\begin{aligned}
+V_2(G)&=\max\{6+0.9[0.5(0)+0.5(0)],\;5+0.9(0)\}\\
+&=\max\{6,5\}=6\qquad\text{(run)},\\[3pt]
+V_2(W)&=\max\{2+0.9(0),\;1+0.9(0)\}\\
+&=\max\{2,1\}=2\qquad\text{(run)}.
+\end{aligned}
+$$
+There is no remaining payoff from improving next season's condition, so the farmer chooses the larger current return in each state.
+
+**Season $t=1$: two seasons remain.** Use $V_2(G)=6$ and $V_2(W)=2$ for every action:
+
+| Condition and action | Current return plus discounted continuation | Total |
+|:--|:--|--:|
+| $G$, run | $6+0.9[0.5(6)+0.5(2)]=6+3.6$ | $9.6$ |
+| $G$, service | $5+0.9(6)=5+5.4$ | $10.4$ |
+| $W$, run | $2+0.9(2)=2+1.8$ | $3.8$ |
+| $W$, repair | $1+0.9(6)=1+5.4$ | $6.4$ |
+
+Hence
+$$
+\boxed{V_1(G)=10.4\ \text{(service)},\qquad V_1(W)=6.4\ \text{(repair)}.}
+$$
+
+\newpage
+
+### b. Initial decision and value
+
+Starting worn at $t=0$, compare the two feasible actions using $V_1$:
+$$
+\begin{aligned}
+Q_0(W,\text{run})&=2+0.9V_1(W)=2+0.9(6.4)=7.76,\\
+Q_0(W,\text{repair})&=1+0.9V_1(G)=1+0.9(10.4)=10.36.
+\end{aligned}
+$$
+Therefore
+$$
+\boxed{V_0(W)=10.36\ \text{hundreds of dollars},\qquad
+\text{optimal initial action: repair}.}
+$$
+This is $\$1{,}036$ in date-0 dollars. As a check, repair at $t=0$ guarantees $G$ at $t=1$, and service then guarantees $G$ at $t=2$. Running in the final season gives the realized return sequence $1,5,6$, so
+$$
+1+0.9(5)+0.9^2(6)=1+4.5+4.86=10.36.
+$$
+This equality also checks that each return has been discounted the correct number of periods.
+
+### c. Why the horizon and observed condition matter
+
+With one season remaining, a good pump is run normally: $6>5$. With two seasons remaining, it is serviced: $10.4>9.6$.
+
+The current cost of service is the foregone return $6-5=1$. Service raises the probability of a good pump next season from $0.5$ to $1$. The discounted benefit of that improvement is
+$$
+0.9\,[V_2(G)-V_2(W)](1-0.5)
+=0.9(6-2)(0.5)=1.8.
+$$
+The benefit exceeds the cost by $0.8$, exactly the difference $10.4-9.6$. In the last season the continuation benefit is zero, so paying for service is not worthwhile.
+
+A finite-horizon policy specifies an action for each **date and observed condition**. At $t=1$, for example, the policy is service if $G$ and repair if $W$. The Bellman comparison accounts for each possible next condition and the best action after observing it. A fixed action sequence would not generally respond to a random deterioration event.
+
+In this particular numerical example, optimal repair and service make the path from the specified initial state deterministic: $W,G,G$. It is possible to list the actions along that path. That path is the outcome of the state-contingent policy, however; it does not replace the decision rules used to value other conditions and actions.
+
+### d. Stationary equations and two value-function updates
+
+For an infinite horizon, the table and discount factor do not depend on time. Drop the calendar-time subscripts:
+$$
+\begin{aligned}
+V(G)&=\max\{6+0.9[0.5V(G)+0.5V(W)],\;5+0.9V(G)\},\\
+V(W)&=\max\{2+0.9V(W),\;1+0.9V(G)\}.
+\end{aligned}
+$$
+Let $k$ count iterations. Starting from $V^{(0)}(G)=V^{(0)}(W)=0$, update both states using the same old vector:
+$$
+\begin{aligned}
+V^{(k+1)}(G)&=\max\{6+0.9[0.5V^{(k)}(G)+0.5V^{(k)}(W)],\;5+0.9V^{(k)}(G)\},\\
+V^{(k+1)}(W)&=\max\{2+0.9V^{(k)}(W),\;1+0.9V^{(k)}(G)\}.
+\end{aligned}
+$$
+The first update gives $V^{(1)}(G)=\max\{6,5\}=6$ and $V^{(1)}(W)=\max\{2,1\}=2$. The second gives
+$$
+\begin{aligned}
+V^{(2)}(G)&=\max\{6+0.9[0.5(6)+0.5(2)],\;5+0.9(6)\}=10.4,\\
+V^{(2)}(W)&=\max\{2+0.9(2),\;1+0.9(6)\}=6.4.
+\end{aligned}
+$$
+Thus $V^{(1)}=V_2$ and $V^{(2)}=V_1$ from the three-season problem. Starting from zero, one update values one season and two updates value two seasons. The iteration index counts updates, not calendar dates. These first two iterates are not yet the infinite-horizon fixed point.
+
+\newpage
+
+## Problem 4: Pollution Abatement and a Bellman Update
+
+### a. Bellman equation and feasible transitions
+
+The state $s$ is pollution observed before the decision, and the control $z$ is current abatement. The cost-to-go is the minimum discounted sum of current damage and abatement costs. Its stationary Bellman equation is
+$$
+\boxed{
+V(s)=\min_{0\leq z\leq2}
+\left\{s^2+z^2+0.9V\left(\frac12s+2-z\right)\right\},
+\qquad 0\leq s\leq4.
+}
+$$
+There is no terminal condition because the horizon is infinite. Time-invariant costs, transitions, and feasible choices allow a stationary formulation.
+
+To check the state range, use $0\leq s\leq4$ and $0\leq z\leq2$:
+$$
+\frac12s+2-z\geq\frac12s\geq0,
+\qquad
+\frac12s+2-z\leq\frac12s+2\leq4.
+$$
+Every feasible choice therefore produces a next state in $[0,4]$.
+
+**Intuition.** Today's damage $s^2$ cannot be undone by abating today's emissions. Abatement costs money now but reduces pollution and damage from the next period onward. That benefit enters through continuation cost.
+
+### b. One update using $W(s)=2s^2$
+
+Substitute the supplied guess into the objective:
+$$
+\begin{aligned}
+\widetilde V(s)
+&=\min_{0\leq z\leq2}\{s^2+z^2+0.9[2(\tfrac12s+2-z)^2]\}\\
+&=\min_{0\leq z\leq2}\{s^2+z^2+1.8(\tfrac12s+2-z)^2\}.
+\end{aligned}
+$$
+For a fixed $s$, let $B=\frac12s+2$ and write
+$$
+Q(z;s)=s^2+z^2+1.8(B-z)^2.
+$$
+Differentiating with respect to $z$,
+$$
+\begin{aligned}
+Q_z(z;s)&=2z+1.8\,[2(B-z)](-1)\\
+&=2z-3.6(B-z)=5.6z-3.6B,\\
+Q_{zz}(z;s)&=5.6>0.
+\end{aligned}
+$$
+The positive second derivative means the objective is strictly convex. Setting its first derivative to zero gives the unique unconstrained minimum:
+$$
+5.6z=3.6B
+\quad\Longrightarrow\quad
+\boxed{z^{\mathrm{unc}}(s)=\frac{3.6}{5.6}B=\frac9{14}\left(\frac12s+2\right).}
+$$
+On $s\in[0,4]$, we have $B\in[2,4]$, so this candidate is always positive. It is at most 2 precisely when
+$$
+\begin{aligned}
+\frac9{14}\left(\frac12s+2\right)&\leq2,\\
+\frac12s+2&\leq\frac{28}{9},\\
+s&\leq\frac{20}{9}.
+\end{aligned}
+$$
+
+\newpage
+
+### b. Feasible choices and next stocks
+
+When the unconstrained minimum exceeds 2, the convex objective is decreasing over the feasible interval up to its upper endpoint, so the feasible minimum is $z=2$. The rule for this update is
+$$
+\boxed{
+z_W(s)=\min\left\{2,\frac9{14}\left(\frac12s+2\right)\right\}
+=\begin{cases}
+\dfrac9{14}(\frac12s+2),&0\leq s<\frac{20}{9},\\[4pt]
+2,&\frac{20}{9}\leq s\leq4.
+\end{cases}
+}
+$$
+At $s=20/9$, the unconstrained minimum is exactly the upper bound.
+
+**At $s=0$:**
+$$
+z_W(0)=\frac9{14}(2)=\frac97,
+\qquad
+s'=0+2-\frac97=\frac57.
+$$
+Since $0<9/7<2$, the abatement choice is interior, even though the current stock is at the lower endpoint of its state range.
+
+**At $s=4$:**
+$$
+z^{\mathrm{unc}}(4)=\frac9{14}(4)=\frac{18}{7}>2,
+\qquad z_W(4)=2,
+\qquad s'=\frac12(4)+2-2=2.
+$$
+Here the abatement choice is at its upper bound. Even full abatement of new emissions cannot remove the half of the existing stock that survives.
+
+For later use, we can also calculate the entire updated cost function. When the choice is interior, $z_W=9B/14$ and $s'=B-z_W=5B/14$, so
+$$
+\begin{aligned}
+\widetilde V(s)
+&=s^2+\left(\frac{9B}{14}\right)^2
++\frac95\left(\frac{5B}{14}\right)^2\\
+&=s^2+\frac{81+45}{196}B^2
+=s^2+\frac9{14}B^2.
+\end{aligned}
+$$
+At the upper bound, $z_W=2$ and $s'=s/2$, giving
+$$
+\widetilde V(s)=s^2+4+1.8\left(\frac s2\right)^2
+=\frac{29}{20}s^2+4.
+$$
+Thus
+$$
+\boxed{
+\widetilde V(s)=\begin{cases}
+s^2+\dfrac9{14}(\frac12s+2)^2,&0\leq s\leq\frac{20}{9},\\[4pt]
+\dfrac{29}{20}s^2+4,&\frac{20}{9}<s\leq4.
+\end{cases}
+}
+$$
+The two formulas agree where the choice reaches its upper bound. As numerical checks,
+$$
+\widetilde V(0)=\frac{18}{7},\qquad
+\widetilde V(4)=16+4+0.9(2\cdot2^2)=27.2.
+$$
+These are the values from **one update using $W$**, not the solved infinite-horizon cost-to-go.
+
+\newpage
+
+### c. Envelope derivative and the marginal trade-off
+
+At an interior abatement choice, apply the envelope theorem to the update, holding $z_W(s)$ fixed when taking the partial derivative with respect to current stock:
+$$
+\begin{aligned}
+\widetilde V'(s)
+&=\left.\frac{\partial}{\partial s}
+\left[s^2+z^2+0.9W\left(\frac12s+2-z\right)\right]\right|_{z=z_W(s)}\\
+&=2s+0+0.9W'(s')\left(\frac12\right).
+\end{aligned}
+$$
+Since $W'(s')=4s'$, this becomes
+$$
+\boxed{\widetilde V'(s)=2s+1.8s',\qquad
+s'=\frac12s+2-z_W(s).}
+$$
+The term $2s$ is marginal damage today. An extra unit of current pollution also leaves half a unit next period. That half unit incurs marginal continuation cost $W'(s')$, discounted by $0.9$, giving the second term.
+
+To see why the derivative of the policy disappears, differentiate along the chosen rule instead. At a state where the interior rule is differentiable,
+$$
+\begin{aligned}
+\widetilde V'(s)
+&=2s+2z_W(s)z_W'(s)
++0.9W'(s')\left(\frac12-z_W'(s)\right)\\
+&=2s+0.45W'(s')
++\underbrace{[2z_W(s)-0.9W'(s')]}_{=0\text{ by the interior FOC}}z_W'(s).
+\end{aligned}
+$$
+The bracket is zero because the current choice already balances the marginal cost and benefit of abatement. A small induced change in the optimal choice has no first-order effect on the minimized objective.
+
+Indeed, the abatement first-order condition can be written
+$$
+\boxed{2z_W(s)=0.9W'(s')=3.6s'.}
+$$
+One extra unit of abatement costs $2z$ now and reduces next pollution by one unit, avoiding discounted continuation cost $0.9W'(s')$. At an interior minimum these are equal. Today's damage has no abatement derivative because today's stock is fixed when the action is chosen.
+
+As a cross-check, in the interior region $s'=5B/14$, so the envelope formula is
+$$
+\widetilde V'(s)=2s+1.8\left(\frac{5B}{14}\right)=2s+\frac9{14}B.
+$$
+Direct differentiation of $\widetilde V(s)=s^2+(9/14)B^2$, with $dB/ds=1/2$, gives the same result. These derivative statements refer to the updated function $\widetilde V$, not to the unknown fixed point $V$.
+
+\newpage
+
+### d. A zero continuation guess and subsequent updates
+
+With $W_0(s)=0$, the update reduces to
+$$
+\min_{0\leq z\leq2}\{s^2+z^2\}.
+$$
+For fixed $s$, the objective is minimized at $\boxed{z=0}$, and the updated value is $s^2$. This guess assigns no cost to future pollution, so abatement provides no modeled benefit while still costing $z^2$ now. A positive current pollution stock does not alter that choice because current damage is already determined.
+
+By contrast, $W(s)=2s^2$ assigns a cost to the next stock. The resulting update chooses positive abatement to reduce that cost. The difference demonstrates why continuation values matter for today's decision.
+
+To continue from the update based on $W$, set $W^{(0)}(s)=2s^2$ and $W^{(1)}=\widetilde V$. The next update is
+$$
+W^{(2)}(s)=\min_{0\leq z\leq2}
+\left\{s^2+z^2+0.9\widetilde V\left(\frac12s+2-z\right)\right\}.
+$$
+Evaluate $\widetilde V$ at each candidate **next state** and optimize again; the old minimizing action need not remain optimal. In operator notation,
+$$
+(\mathcal T W)(s)=\min_{0\leq z\leq2}
+\{s^2+z^2+0.9W(\tfrac12s+2-z)\},
+\qquad W^{(k+1)}=\mathcal T W^{(k)}.
+$$
+The optimal cost-to-go is a fixed point:
+$$
+\boxed{V=\mathcal T V.}
+$$
+At that function, one more Bellman update reproduces the same costs at every state. The problem asks for the update logic and this equation, not for a solution of the fixed point.

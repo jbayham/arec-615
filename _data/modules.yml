@@ -112,5 +112,7 @@
   ps:
     - title: "Problem Set 3"
       url: "problem_set.pdf"
+    - title: "Problem Set 3 Solutions"
+      url: "problem_set_key.pdf"
 
   
