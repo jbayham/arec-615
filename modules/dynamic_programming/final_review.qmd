@@ -1,0 +1,620 @@
+---
+title: "Dynamic Programming: Final Review"
+subtitle: "Formulation, recursion, marginal values, and repeated decisions"
+toc: false
+format:
+  pdf:
+    fontsize: 10pt
+    number-sections: false
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+# Taxonomy: what kind of dynamic problem is this?
+
+Classify **time, states, choices, uncertainty, and horizon separately**.
+Continuous stock does not imply continuous time. An infinite horizon does
+not imply a constant stock or a constant action.
+
+The coverage labels below refer to the dynamic programming unit materials.
+**All four families in this table use discrete time.**
+
+| State space | Deterministic dynamics | Stochastic dynamics |
+|:--|:--|:--|
+| **Discrete** | **Worked through:** mine management; finite-horizon tables and backward induction. | **Worked through:** forest age and fire risk; expected values and regeneration. Discrete price states appear in the stochastic-price extension. |
+| **Continuous** | **Worked through:** fishery stock and harvest; derivatives, constraints, and numerical solution. | **Discussed and formulated:** Burt's groundwater model with random recharge and value-function approximations. |
+
+**Continuous-time models were outside this unit's solution methods.** They
+include switching or jump models with discrete states, and optimal control
+or stochastic control with continuous states. Both deterministic and
+stochastic versions exist.
+
+**Choice space is another dimension.** The mine uses integer extraction
+choices; the fishery permits fractional harvest; a replacement decision can
+be discrete even when equipment condition is measured continuously.
+Putting a continuous model on a numerical grid creates a finite approximation,
+not a change in the underlying economic question.
+
+## The horizon determines how we close the recursion
+
+| Problem | What anchors the solution? | Main method used in the unit |
+|:--|:--|:--|
+| Finite horizon | A specified terminal payoff or terminal requirement | Backward induction |
+| Infinite horizon, time-invariant model | A value function consistent with its own continuation values | Value function iteration; first-order and envelope conditions |
+| Repeated cycles returning to the same state | The value of starting the next cycle | A regeneration equation and comparison of cycle policies |
+
+\newpage
+
+# From a planning problem to a Bellman equation
+
+**Review concepts:** state, control, feasibility, timing, value, and policy.
+
+Before doing algebra, identify the following objects.
+
+| Object | Question to answer |
+|:--|:--|
+| State $s_t$ | What information is already known and needed to make the decision? |
+| Control $x_t$ | What can the decision maker choose now? |
+| Feasible set $X_t(s_t)$ | Which choices are possible at this state? |
+| Payoff $\pi_t(s_t,x_t)$ | What is earned or paid now? |
+| Transition $s_{t+1}=f_t(s_t,x_t)$ | How does this choice change the next state? |
+| Terminal value $V_T$ | What happens after the last decision? |
+
+The state must summarize the relevant history. If prices are persistent and
+observed before the decision, for example, current price may need to be part
+of the state along with physical stock.
+
+## Finite horizon: solve the future before choosing today
+
+With decisions at $t=0,\ldots,T-1$, the objective is
+
+$$
+\max_{\{x_t\}}\left\{
+\sum_{t=0}^{T-1}\beta^t\pi_t(s_t,x_t)+\beta^T V_T(s_T)
+\right\}.
+$$
+
+The Bellman equation expresses the same optimization recursively:
+
+$$
+\boxed{V_t(s)=\max_{x\in X_t(s)}
+\left\{\pi_t(s,x)+\beta V_{t+1}\!\left(f_t(s,x)\right)\right\}.}
+$$
+
+The **value function** gives the best attainable discounted payoff. The
+**policy** $x_t^*(s)$ gives a maximizing action for each state and date.
+
+
+Start at $V_T$, solve all relevant states at $T-1$, and continue backward.
+Only after solving the policy do we start at $s_0$ and trace a path forward.
+A terminal payoff of zero is not the same restriction as requiring $s_T=0$.
+
+## Infinite horizon and uncertainty
+
+With time-invariant primitives and an infinite horizon, a stationary Bellman
+equation has the form
+
+$$
+\boxed{V(s)=\max_{x\in X(s)}
+\left\{\pi(s,x)+\beta V\!\left(f(s,x)\right)\right\}.}
+$$
+
+There is no last period to solve first. The unknown function appears on both
+sides: we seek a fixed point of this updating rule.
+
+
+
+\newpage
+
+# Worked example 1: battery dispatch by backward induction
+
+**Review concepts:** integer choices, state transitions, column maxima,
+and the distinction between a policy and a path.
+
+A small battery has capacity 2 energy units and initially holds $s_0=1$.
+During each of three periods, $t=0,1,2$, its owner can sell at most one unit:
+
+$$
+x_t\in\{0,1\},\qquad x_t\leq s_t,\qquad s_t\in\{0,1,2\}.
+$$
+
+Sales earn $p_t x_t$ dollars immediately. After period 0's sale, one unit of
+solar energy arrives; no energy arrives after the other periods. Energy
+above capacity is lost. There is no charging cost, and unused energy has
+zero value after period 2. The discount factor is $\beta=0.9$.
+
+| Period $t$ | Price $p_t$ (dollars per unit) | Inflow $a_t$ after the sale |
+|---:|---:|---:|
+| 0 | 2 | 1 |
+| 1 | 5 | 0 |
+| 2 | 3 | 0 |
+
+## Formulate the problem
+
+The state is stored energy, and the control is energy sold. The transition is
+
+$$
+s_{t+1}=\min\{2,s_t-x_t+a_t\}.
+$$
+
+The Bellman recursion and terminal condition are
+
+$$
+\boxed{
+V_t(s)=\max_{x\in\{0,1\},\,x\leq s}
+\left\{p_t x+0.9V_{t+1}\!\left(\min\{2,s-x+a_t\}\right)\right\},
+\quad V_3(s)=0.
+}
+$$
+
+All values below are in dollars at the date of the corresponding decision.
+A dash marks an infeasible action.
+
+## Step 1: solve the last decision period, $t=2$
+
+Since $V_3=0$, only current sales matter:
+
+$$
+V_2(s)=\max_{x\in\{0,1\},\,x\leq s}\{3x\}.
+$$
+
+| | $s=0$ | $s=1$ | $s=2$ |
+|:--|---:|---:|---:|
+| $V_2(s)$ | **0** | **3** | **3** |
+| $x=0$ | 0 | 0 | 0 |
+| $x=1$ | --- | 3 | 3 |
+| Optimal $x_2^*(s)$ | **0** | **1** | **1** |
+
+At stock 2, one unit remains after the final sale because the discharge
+capacity is only one unit per period. Zero terminal value does not eliminate
+that physical constraint.
+
+\newpage
+
+# Continue backward, then trace the battery's path
+
+## Step 2: period $t=1$
+
+There is no inflow after this period, so
+
+$$
+V_1(s)=\max_{x\in\{0,1\},\,x\leq s}\{5x+0.9V_2(s-x)\}.
+$$
+
+| | $s=0$ | $s=1$ | $s=2$ |
+|:--|---:|---:|---:|
+| $V_1(s)$ | **0.00** | **5.00** | **7.70** |
+| $x=0$ | 0.00 | 2.70 | 2.70 |
+| $x=1$ | --- | 5.00 | 7.70 |
+| Optimal $x_1^*(s)$ | **0** | **1** | **1** |
+
+For example, at $s=2$, selling one unit gives
+$5+0.9V_2(1)=5+2.70=7.70$. Waiting gives only $0.9V_2(2)=2.70$:
+the owner cannot sell both stored units during the single remaining period.
+
+## Step 3: period $t=0$
+
+Now the incoming solar energy affects the next stock:
+
+$$
+V_0(s)=\max_{x\in\{0,1\},\,x\leq s}
+\{2x+0.9V_1(\min\{2,s-x+1\})\}.
+$$
+
+| | $s=0$ | $s=1$ | $s=2$ |
+|:--|---:|---:|---:|
+| $V_0(s)$ | **4.50** | **6.93** | **8.93** |
+| $x=0$ | 4.50 | 6.93 | 6.93 |
+| $x=1$ | --- | 6.50 | 8.93 |
+| Optimal $x_0^*(s)$ | **0** | **0** | **1** |
+
+At the actual initial stock $s_0=1$, waiting gives $0.9V_1(2)=6.93$;
+selling gives $2+0.9V_1(1)=6.50$. **Wait now, then sell in each of the next
+two periods.** At stock 2 instead, selling now makes room for the solar inflow.
+
+## Follow the policy forward from $s_0=1$
+
+| Date | Starting stock | Optimal sale | Inflow | Next stock |
+|---:|---:|---:|---:|---:|
+| 0 | 1 | 0 | 1 | 2 |
+| 1 | 2 | 1 | 0 | 1 |
+| 2 | 1 | 1 | 0 | 0 |
+
+$$
+\boxed{(x_0,x_1,x_2)=(0,1,1),\qquad
+V_0(1)=0+0.9(5)+0.9^2(3)=\$6.93.}
+$$
+
+The same stock can call for different actions at different dates:
+$x_0^*(1)=0$ but $x_1^*(1)=1$. Here both prices and the remaining horizon
+matter. A policy specifies these contingent choices; a path uses only the
+states actually visited.
+
+\newpage
+
+# Worked example 2: a fishery with continuous stock
+
+**Review concepts:** a continuous choice inside the Bellman equation,
+the chain rule, marginal opportunity cost, and feasible bounds.
+
+Time is discrete, but stock $s$ and harvest $h$ can take fractional values.
+The fishery has carrying capacity 16, earns net revenue of \$1 per unit
+harvested, and discounts by $\beta=0.8$. Harvest occurs before growth.
+Define **escapement** as fish left after harvest, $e=s-h$.
+
+$$
+0\leq h\leq s\leq16,\qquad
+s'=G(e)=e+e\left(1-\frac{e}{16}\right)=2e-\frac{e^2}{16}.
+$$
+
+The prime in $s'$ means next period. A prime on a function, such as $G'$
+or $V'$, means a derivative. This growth function is increasing and concave
+on $[0,16]$ and keeps stocks in that interval.
+
+## Formulate the Bellman equation
+
+$$
+\boxed{V(s)=\max_{0\leq h\leq s}
+\{h+0.8V(G(s-h))\}.}
+$$
+
+The state is available biomass, the choice is current harvest, and the
+continuation value is evaluated at the stock **after growth**.
+
+## Derive the harvest first-order condition
+
+For a given stock, write $Q_s(h)=h+0.8V(G(s-h))$. Since
+
+$$
+G'(e)=2-\frac{e}{8},\qquad
+\frac{\partial G(s-h)}{\partial h}=-G'(s-h),
+$$
+
+the derivative of the Bellman objective is
+
+$$
+Q_s'(h)=1-0.8V'(s')G'(s-h).
+$$
+
+At an interior optimum,
+
+$$
+\boxed{1=0.8V'(s')G'(e).}
+$$
+
+Harvesting an extra unit earns \$1 now. Leaving it produces $G'(e)$ additional
+units next period, each worth $V'(s')$, discounted by 0.8. The condition
+balances these two marginal values.
+
+## Check the bounds
+
+The interior equality does not describe every state. For $s>0$:
+
+$$
+\begin{cases}
+Q_s'(0)\leq0, & h^*(s)=0,\\
+Q_s'(h^*)=0, & 0<h^*(s)<s,\\
+Q_s'(s)\geq0, & h^*(s)=s.
+\end{cases}
+$$
+
+These conditions are sufficient when $Q_s$ is concave. This model has an
+increasing, concave value function: linear harvest profits and increasing,
+concave growth preserve these properties in Bellman updates. At $s=0$,
+the only feasible harvest is zero.
+
+\newpage
+
+# Use the envelope condition to solve the fishery policy
+
+**Review concepts:** the marginal value of the state and the cancellation
+of the optimal policy's indirect effect.
+
+At an interior harvest choice, differentiate the Bellman objective with
+respect to $s$, holding $h$ fixed:
+
+$$
+\boxed{V'(s)=0.8V'(s')G'(s-h^*(s)).}
+$$
+
+Why can we hold the choice fixed? Differentiating along the optimal policy
+instead gives
+
+$$
+V'(s)=0.8V'(s')G'(e)
++\underbrace{[1-0.8V'(s')G'(e)]}_{=0\text{ at an interior optimum}}
+\frac{dh^*(s)}{ds}.
+$$
+
+The policy response need not be zero. Its coefficient is zero by the harvest
+first-order condition. Combining that condition with the envelope condition
+gives $V'(s)=1$ wherever harvest is interior: an extra fish is worth its
+current net harvest revenue.
+
+## Find the target escapement
+
+If next period's harvest is also interior, $V'(s')=1$. Substituting into the
+current harvest condition yields
+
+$$
+1=0.8G'(e)
+=0.8\left(2-\frac{e}{8}\right)
+\quad\Longrightarrow\quad
+\boxed{e^*=6.}
+$$
+
+Leaving six units produces $G(6)=12-36/16=9.75$ next period. Since
+$9.75>6$, positive harvest next period is consistent with the assumption.
+When current stock exceeds 6, harvest down to 6. If current stock is below
+6, it is impossible to leave 6, so the optimal choice is to let all stock grow:
+
+$$
+\boxed{e^*(s)=\min\{s,6\},\qquad h^*(s)=\max\{0,s-6\}.}
+$$
+
+To check the low-stock case, an extra fish is worth at least \$1 because it
+can be harvested immediately. Thus $V'\geq1$ where differentiable. For
+$e<6$, $0.8G'(e)>1$, so leaving more fish raises the Bellman objective.
+The bound $e\leq s$ therefore binds when $s<6$. For $e\geq6$, next stock
+is in the harvesting region; the marginal return to escapement is
+$-1+0.8G'(e)$, which is zero at 6 and negative above 6.
+
+## Interpret the policy
+
+Below the target, the fishery rebuilds. Above it, the manager harvests the
+excess and preserves the same breeding stock. Greater impatience (a lower
+$\beta$) lowers the target, while a higher $\beta$ raises it. In this
+particular linear-profit model, multiplying the constant net price by a
+positive number scales the value function but does not change the policy.
+
+The envelope formula used above is an interior formula. At a binding choice
+bound, we must account for the constraint rather than impose $V'(s)=1$
+everywhere.
+
+\newpage
+
+# Fishery values, paths, and stationarity
+
+## Trace the same policy from two initial stocks
+
+| Initial stock | Date | Stock $s_t$ | Harvest $h_t$ | Escapement | Next stock |
+|---:|---:|---:|---:|---:|---:|
+| 4 | 0 | 4.00 | 0.00 | 4.00 | 7.00 |
+| 4 | 1 | 7.00 | 1.00 | 6.00 | 9.75 |
+| 4 | 2 onward | 9.75 | 3.75 | 6.00 | 9.75 |
+| 12 | 0 | 12.00 | 6.00 | 6.00 | 9.75 |
+| 12 | 1 onward | 9.75 | 3.75 | 6.00 | 9.75 |
+
+The rule is **stationary**: it depends on the current stock, not the date.
+The path can still change over time. A positive steady-state stock satisfies
+$\bar s=G(\bar s-h^*(\bar s))$. Here,
+
+$$
+\boxed{\bar s=9.75,\qquad \bar h=3.75.}
+$$
+
+Zero is also a fixed point: no fish can grow from zero stock. It is not the
+positive steady state reached from the initial stocks above.
+
+## Recover the value function
+
+At stock 9.75, the fishery earns \$3.75 every period, starting now:
+
+$$
+V(9.75)=3.75+0.8V(9.75)
+\quad\Longrightarrow\quad
+\boxed{V(9.75)=18.75.}
+$$
+
+For any $s\geq6$, harvest $s-6$ now and start next period at 9.75:
+
+$$
+\boxed{V(s)=s-6+0.8(18.75)=s+9,\qquad 6\leq s\leq16.}
+$$
+
+For $0<s<6$, harvest zero and use $V(s)=0.8V(G(s))$ until the stock reaches
+6 or more. If $\tau$ is the first date that the no-harvest growth path reaches
+that threshold, then $V(s)=0.8^\tau(s_\tau+9)$. Also, $V(0)=0$.
+
+For the two illustrated paths,
+
+$$
+\boxed{V(12)=21,\qquad V(4)=0.8V(7)=0.8(16)=12.80.}
+$$
+
+Check the low-stock path directly:
+$0+0.8(1)+0.8^2(18.75)=12.80$.
+
+**Keep three objects separate:** the policy $h^*(s)$ is a rule, the value
+$V(s)$ is a discounted payoff, and the path $\{s_t,h_t\}$ follows from the
+rule and an initial stock. A stationary value function also measures payoff
+from the current date forward; it is not a value repeatedly discounted back
+to the original date 0.
+
+\newpage
+
+# Value function iteration: solve without guessing the policy
+
+**Review concepts:** repeated Bellman updates, the inner maximization,
+stopping, and recovering actions from values.
+
+The fishery above has a simple analytical solution. More generally, its
+continuation values are unknown. Start with a guess, such as $V^{(0)}(s)=0$,
+and update all states using the same previous guess:
+
+$$
+\boxed{V^{(k+1)}(s)=\max_{0\leq h\leq s}
+\{h+0.8V^{(k)}(G(s-h))\}.}
+$$
+
+The index $k$ counts iterations, not calendar dates. The inner maximization
+chooses harvest given continuation values. The outer iteration improves
+those continuation values.
+
+## See the first updates in this example
+
+With $V^{(0)}=0$, the first update gives $V^{(1)}(s)=s$: harvest everything
+when the current guess assigns no future value to fish. The second update is
+
+$$
+V^{(2)}(s)=\max_{0\leq e\leq s}\{s-e+0.8G(e)\}.
+$$
+
+Differentiating with respect to escapement gives $-1+0.8G'(e)=0$, whose
+interior solution is 6. Thus this update leaves $\min\{s,6\}$ fish.
+At stock 4, $V^{(2)}(4)=0.8G(4)=5.60$; at stock 12,
+$V^{(2)}(12)=6+0.8G(6)=13.80$.
+
+| Value estimate | At stock 4 | At stock 12 |
+|:--|---:|---:|
+| $V^{(0)}$ | 0.00 | 0.00 |
+| $V^{(1)}$ | 4.00 | 12.00 |
+| $V^{(2)}$ | 5.60 | 13.80 |
+| $V^{(3)}$ | 7.04 | 15.24 |
+| Limit $V$ | **12.80** | **21.00** |
+
+Here the harvest rule from the second update already equals the optimal
+rule, while values continue changing. This is a special feature of this
+example, not a general two-iteration solution method.
+
+## Stop and recover a policy
+
+For a numerical state table, stop when
+$\max_s|V^{(k+1)}(s)-V^{(k)}(s)|<\varepsilon$. Then choose the maximizing
+harvest at every state using the final continuation values. An initial stock
+is needed only to simulate the resulting path.
+
+With bounded rewards and a well-defined discounted Bellman operator,
+$0<\beta<1$ makes the updating rule a contraction: continuation-value
+differences shrink. At the fixed point, another update reproduces the same
+value function.
+
+In practice, continuous states and choices may be approximated using grids
+and interpolation or rounded transitions. Compare feasible actions within
+that numerical model. Tightening the iteration tolerance solves that model
+more closely; finer grids check its approximation to the continuous model.
+Derivatives describe the continuous problem, not a table with discrete jumps.
+
+\newpage
+
+# Worked example 3: pump replacement with failure risk
+
+**Review concepts:** uncertain cycle lengths, interim cash flows, timing,
+and the value of returning to the same decision state.
+
+A farm must maintain a pump indefinitely. Each replacement cycle begins
+immediately before buying a new pump for \$12. The farmer commits to replacing
+it after either **one year** or **two years**, unless a failure forces earlier
+replacement. The annual discount factor is $\beta=0.8$.
+
+- Every new pump earns an operating net return of \$8 at the end of year 1.
+- Immediately after that return is received, an inspection reveals failure
+  with probability $0.25$. A failed pump is sold for \$2 and replaced immediately.
+- With probability $0.75$, the pump is still working. Under the one-year plan,
+  it is sold for \$10 and replaced immediately.
+- Under the two-year plan, a working pump continues for one more year, earns
+  \$14 at the end of year 2, is sold for \$6, and is replaced immediately.
+  There is no additional failure risk in the second year.
+
+Operating returns are net of operating costs but exclude purchase and resale.
+Failure outcomes are independent across replacement cycles. 
+
+Let $F$ be the optimal value of the ongoing pumping operation at a replacement
+date, **before purchasing the next pump**. Every cycle ends in this same
+decision state. If we instead modeled annual decisions, pump age and whether
+it is working would describe the relevant equipment state.
+
+## Track cash flows and restart dates
+
+| Plan and outcome | Probability | End of year 1 | End of year 2 | Restart date |
+|:--|---:|:--|:--|---:|
+| One year; failure | 0.25 | \$8 operating return + \$2 resale | --- | 1 |
+| One year; working | 0.75 | \$8 operating return + \$10 resale | --- | 1 |
+| Two years; failure | 0.25 | \$8 operating return + \$2 resale | --- | 1 |
+| Two years; working | 0.75 | \$8 operating return | \$14 operating return + \$6 resale | 2 |
+
+The \$12 purchase occurs now in every case. The \$8 operating return always
+arrives at date 1, including when the cycle lasts two years. Do not discount
+it for two periods merely because replacement occurs at date 2.
+
+## Write the regeneration equation
+
+The next cycle's value belongs at the restart date in every outcome:
+
+$$
+\begin{aligned}
+F=\max\bigl\{
+&-12+0.8[8+0.25(2+F)+0.75(10+F)],\\
+&-12+0.8(8)+0.25(0.8)(2+F)
+ +0.75(0.8)^2(14+6+F)
+\bigr\}.
+\end{aligned}
+$$
+
+The first alternative replaces after one year; the second retains a working
+pump for two. Each continuation value already includes the next purchase
+cost, so that cost must not be charged a second time outside $F$.
+
+\newpage
+
+# Solve the repeated replacement problem
+
+Collect the immediate expected present value and the continuation coefficient:
+
+$$
+\boxed{F=\max\{0.80+0.80F,\quad4.40+0.68F\}.}
+$$
+
+The two-year plan's $A_2=4.40$ includes the current cycle's purchase,
+operating returns, and resale. Its continuation coefficient is
+$D_2=0.25(0.8)+0.75(0.8)^2=0.68$, the expected discount factor to replacement.
+The probability of eventually replacing is one, but the discounted
+continuation coefficient is less than one.
+
+## Evaluate each repeated plan
+
+If a plan $j$ is repeated, its value solves $F_j=A_j+D_jF_j$. Therefore,
+
+$$
+\boxed{F_j=\frac{A_j}{1-D_j}.}
+$$
+
+| Repeated plan | Current-cycle value $A_j$ | Continuation coefficient $D_j$ | Ongoing value $F_j$ |
+|:--|---:|---:|---:|
+| Replace after one year | 0.80 | 0.80 | $0.80/0.20=4.00$ |
+| Replace after two years if working | 4.40 | 0.68 | $4.40/0.32=13.75$ |
+
+At $F=13.75$, the alternatives in the optimal Bellman equation are
+
+$$
+0.80+0.80(13.75)=11.80,\qquad
+4.40+0.68(13.75)=13.75.
+$$
+
+Thus the value reproduces itself, and the two-year plan is preferred at
+every replacement date:
+
+$$
+\boxed{\text{Replace after two years if working, or immediately after failure};
+\quad F=\$13.75.}
+$$
+
+This is a stationary decision at the replacement state, although actual
+cycle lengths vary with failures. The same logic applies to repeated
+production batches, equipment overhauls, and other investments that return
+to a common starting state.
+
+## Connect the solution methods
+
+| Method | What anchors or closes the solution? |
+|:--|:--|
+| Backward induction | A terminal condition and the next date's solved values. |
+| Continuous-state optimization | First-order and envelope conditions, bounds, and the Bellman equation. |
+| Value function iteration | An update that reproduces the same value function. |
+| Regeneration | Current-cycle returns plus discounted restart value reproduce the same value. |
+
+**Across all three applications:** identify when information arrives, connect
+the current action to the next state, discount to the correct date, and
+distinguish a maximizing action from the value that action delivers.
