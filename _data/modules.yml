@@ -93,6 +93,8 @@
   - title: "Burt (1964)"
   - title: "Martell (1980)"
   materials:
+    - title: "Final Review"
+      url: "final_review.pdf"
     - title: "Mine Example Spreadsheet"
       url: "mine_example.xlsx"
     - title: "Forest Example R Script"
